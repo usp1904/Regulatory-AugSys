@@ -1,0 +1,2517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>MARAS v6.2 — Regulatory Business Assurance</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0f2540;--navy2:#1a3558;--navy3:#1e4068;
+  --ink:#111827;--ink2:#374151;--ink3:#6b7280;--ink4:#9ca3af;--ink5:#d1d5db;
+  --white:#ffffff;--bg:#f7f8fa;--bg2:#eef0f4;--bg3:#e8eaee;
+  --border:#e5e7eb;--border2:#d1d5db;
+  --blue:#1d6fce;--blue-t:#eff6ff;--blue-h:#1558a8;
+  --teal:#0e7a62;--teal-t:#ecfdf5;--teal-h:#0a6452;
+  --amber:#92400e;--amber-t:#fffbeb;
+  --red:#991b1b;--red-t:#fef2f2;
+  --green:#166534;--green-t:#f0fdf4;
+  --violet:#4338ca;--violet-t:#eef2ff;
+  --r:6px;--r2:10px;--shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.04);--shadow2:0 4px 12px rgba(0,0,0,.1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-size:13px;line-height:1.5;display:flex;flex-direction:column}
+
+/* ── TOP NAV ── */
+.nav{background:var(--navy);height:50px;display:flex;align-items:center;padding:0 18px;gap:12px;flex-shrink:0}
+.nav-brand{display:flex;align-items:center;gap:9px;margin-right:8px}
+.nav-icon{width:30px;height:30px;background:linear-gradient(135deg,#3b7dd8,#1a4fa0);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0}
+.nav-brand-text{line-height:1.15}
+.nav-title{font-size:14px;font-weight:600;color:#fff;letter-spacing:-.2px}
+.nav-sub{font-size:9px;color:rgba(255,255,255,.4);font-weight:400}
+.nav-sep{width:1px;height:20px;background:rgba(255,255,255,.1)}
+.nav-tabs{display:flex;gap:1px}
+.nav-tab{padding:5px 11px;border-radius:5px;font-size:12px;font-weight:500;color:rgba(255,255,255,.55);cursor:pointer;border:none;background:none;font-family:inherit;transition:all .14s;display:flex;align-items:center;gap:5px}
+.nav-tab:hover{color:rgba(255,255,255,.88);background:rgba(255,255,255,.07)}
+.nav-tab.on{color:#fff;background:rgba(255,255,255,.12)}
+.nav-tab-pip{width:5px;height:5px;border-radius:50%;background:#41d9aa}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.mode-switch{display:flex;align-items:center;gap:1px;background:rgba(255,255,255,.08);border-radius:20px;padding:2px}
+.ms-btn{font-size:11px;font-weight:500;padding:4px 12px;border-radius:16px;cursor:pointer;border:none;font-family:inherit;transition:all .14s;color:rgba(255,255,255,.45)}
+.ms-btn.on{background:rgba(255,255,255,.15);color:#fff}
+.nav-stats{display:flex;gap:14px}
+.nstat{text-align:center}
+.nstat-v{font-size:15px;font-weight:700;color:#fff;line-height:1}
+.nstat-l{font-size:9px;color:rgba(255,255,255,.38);text-transform:uppercase;letter-spacing:.4px;margin-top:1px}
+.nstat-v.lit{color:#5bc4f0}
+
+/* ── DEMO BANNER ── */
+.demo-bar{background:var(--teal-t);border-bottom:1px solid rgba(14,122,98,.18);padding:6px 18px;display:flex;align-items:center;gap:8px;font-size:11px;color:var(--teal);flex-shrink:0}
+.demo-bar b{font-weight:600}
+.demo-bar-btn{margin-left:auto;font-size:11px;font-weight:600;color:var(--blue);cursor:pointer;border:none;background:none;font-family:inherit;white-space:nowrap}
+
+/* ── LAYOUT ── */
+.layout{display:flex;flex:1;overflow:hidden}
+
+/* ── SIDEBAR ── */
+.sidebar{width:248px;flex-shrink:0;background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.sb-hdr{padding:10px 12px 6px;border-bottom:1px solid var(--bg2);display:flex;align-items:center;gap:6px}
+.sb-hdr-title{font-size:12px;font-weight:600;color:var(--ink);flex:1}
+.sb-hdr-btn{font-size:10px;padding:2px 7px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--ink3);cursor:pointer;font-family:inherit;transition:all .12s}
+.sb-hdr-btn:hover{border-color:var(--blue);color:var(--blue)}
+.sb-search{padding:7px 10px;border-bottom:1px solid var(--bg2)}
+.sb-search-inner{position:relative}
+.sb-search-inner input{width:100%;padding:6px 9px 6px 28px;font-size:11px;border:1px solid var(--border);border-radius:var(--r);background:var(--bg);color:var(--ink);font-family:inherit;outline:none;transition:border-color .14s}
+.sb-search-inner input:focus{border-color:var(--blue);background:#fff}
+.sb-search-inner input::placeholder{color:var(--ink4)}
+.sb-si{position:absolute;left:8px;top:50%;transform:translateY(-50%);color:var(--ink4);font-size:11px;pointer-events:none}
+.sb-count{font-size:10px;color:var(--ink4);padding:0 10px 5px;margin-top:4px}
+.sb-qtpl{padding:6px 10px 8px;border-bottom:1px solid var(--bg2)}
+.sb-ql{font-size:9px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.sb-qtags{display:flex;flex-wrap:wrap;gap:3px}
+.qtag{font-size:10px;padding:3px 8px;border-radius:10px;border:1px solid var(--border);background:var(--white);color:var(--ink2);cursor:pointer;transition:all .12s;white-space:nowrap}
+.qtag:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-t)}
+.qtag.on{background:var(--blue-t);border-color:var(--blue);color:var(--blue)}
+.sb-tree{flex:1;overflow-y:auto;padding:4px 0}
+.sb-tree::-webkit-scrollbar{width:3px}
+.sb-tree::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:2px}
+.tg{margin-bottom:1px}
+.tg-h{display:flex;align-items:center;gap:6px;padding:5px 10px;cursor:pointer;user-select:none;transition:background .12s}
+.tg-h:hover{background:var(--bg)}
+.tg-arr{font-size:9px;color:var(--ink4);width:12px;text-align:center;transition:transform .14s;flex-shrink:0}
+.tg-arr.open{transform:rotate(90deg)}
+.tg-ico{font-size:11px;flex-shrink:0}
+.tg-name{font-size:11px;font-weight:600;color:var(--ink);flex:1}
+.tg-n{font-size:10px;color:var(--ink4)}
+.ti-wrap{display:none;padding-left:2px}
+.ti-wrap.open{display:block}
+.ti{display:flex;align-items:center;gap:6px;padding:4px 10px 4px 24px;cursor:pointer;transition:background .12s}
+.ti:hover{background:var(--bg)}
+.ti.on{background:var(--blue-t)}
+.ti-cb{width:13px;height:13px;border:1.5px solid var(--border2);border-radius:3px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:8px;transition:all .12s}
+.ti.on .ti-cb{background:var(--blue);border-color:var(--blue);color:#fff}
+.ti-name{font-size:11px;color:var(--ink2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ti.on .ti-name{color:var(--blue);font-weight:500}
+.ti-n{font-size:9px;padding:1px 5px;border-radius:8px;background:var(--bg2);color:var(--ink4);flex-shrink:0}
+.ti.on .ti-n{background:var(--blue-t);color:var(--blue)}
+.sb-upload{padding:8px 10px;border-top:1px solid var(--bg2);flex-shrink:0}
+.sb-upl-zone{border:1.5px dashed var(--border);border-radius:var(--r);padding:9px 10px;text-align:center;cursor:pointer;position:relative;transition:all .14s;background:var(--bg)}
+.sb-upl-zone:hover{border-color:var(--blue);background:var(--blue-t)}
+.sb-upl-zone input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.sb-upl-ico{font-size:14px;margin-bottom:2px}
+.sb-upl-t{font-size:11px;font-weight:500;color:var(--ink2)}
+.sb-upl-s{font-size:10px;color:var(--ink4);margin-top:1px}
+.sb-docs{margin-top:5px;display:flex;flex-direction:column;gap:2px;max-height:60px;overflow-y:auto}
+.sd-row{display:flex;align-items:center;gap:5px;padding:3px 7px;background:#fff;border-radius:4px;border:1px solid var(--border)}
+.sd-name{font-size:10px;color:var(--ink2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sd-rm{font-size:11px;color:var(--ink4);border:none;background:none;cursor:pointer;padding:0;line-height:1;flex-shrink:0}
+.sd-rm:hover{color:var(--red)}
+.sb-sel{font-size:10px;color:var(--ink3);text-align:center;margin-top:5px}
+
+/* ── RIGHT PANEL ── */
+.rpanel{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+.rpanel::-webkit-scrollbar{width:5px}
+.rpanel::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:3px}
+
+/* ── GENERATE VIEW ── */
+.gv{max-width:800px;margin:0 auto;padding:16px 20px 100px;width:100%}
+
+/* Project Context card */
+.card{background:#fff;border:1px solid var(--border);border-radius:var(--r2);margin-bottom:12px;box-shadow:var(--shadow)}
+.card-hdr{padding:11px 14px 0;display:flex;align-items:center;gap:7px}
+.card-ico{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
+.card-title{font-size:12px;font-weight:600;color:var(--ink)}
+.card-opt{font-size:10px;color:var(--ink4);margin-left:4px;font-weight:400}
+.card-body{padding:10px 14px 14px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.row4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px}
+.fld label{font-size:10px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:3px}
+.fld input,.fld select{width:100%;padding:7px 9px;font-size:12px;border:1px solid var(--border);border-radius:var(--r);background:#fff;color:var(--ink);font-family:inherit;outline:none;transition:border-color .14s}
+.fld input:focus,.fld select:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(29,111,206,.07)}
+.fld input::placeholder{color:var(--ink4)}
+.fld select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236b7280'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center;appearance:none;padding-right:24px}
+.divider{height:1px;background:var(--bg2);margin:10px 0}
+
+/* Chips within cards */
+.chip-section{margin-bottom:0}
+.cs-lbl{font-size:10px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px}
+.chips{display:flex;flex-wrap:wrap;gap:4px}
+.chip{font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:#fff;color:var(--ink2);cursor:pointer;transition:all .12s;white-space:nowrap;user-select:none}
+.chip:hover{border-color:rgba(0,0,0,.2);color:var(--ink)}
+.chip.on{background:var(--blue-t);border-color:var(--blue);color:var(--blue)}
+.chip.on.teal{background:var(--teal-t);border-color:var(--teal);color:var(--teal)}
+
+/* Regulatory categories cards */
+.cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.cat-card{border:1px solid var(--border);border-radius:var(--r);padding:8px 10px;cursor:pointer;transition:all .14s;background:#fff;position:relative}
+.cat-card:hover{border-color:var(--blue);background:var(--blue-t)}
+.cat-card.on{border-color:var(--blue);background:var(--blue-t)}
+.cat-card-hdr{display:flex;align-items:center;gap:6px;margin-bottom:3px}
+.cat-letter{width:20px;height:20px;border-radius:4px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cat-name{font-size:11px;font-weight:600;color:var(--ink);line-height:1.2}
+.cat-card.on .cat-name{color:var(--blue)}
+.cat-count{font-size:9px;padding:1px 5px;border-radius:8px;background:var(--bg2);color:var(--ink4);position:absolute;top:8px;right:8px}
+.cat-card.on .cat-count{background:var(--blue-t);color:var(--blue)}
+.cat-sub{font-size:10px;color:var(--ink4);line-height:1.35}
+.cat-card.on .cat-sub{color:rgba(29,111,206,.7)}
+.cat-footer{font-size:10px;color:var(--ink4);text-align:center;margin-top:8px;padding-top:8px;border-top:1px solid var(--bg2)}
+
+/* Requirement card */
+.req-hdr{display:flex;align-items:center;gap:8px}
+.req-ico{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;background:var(--blue-t);flex-shrink:0}
+.req-title{font-size:13px;font-weight:600;color:var(--ink)}
+.req-ta{width:100%;min-height:85px;padding:10px 12px;font-size:13px;border:1px solid var(--border);border-radius:var(--r);background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;resize:vertical;outline:none;line-height:1.6;transition:all .14s}
+.req-ta:focus{border-color:var(--blue);background:#fff;box-shadow:0 0 0 3px rgba(29,111,206,.07)}
+.req-ta::placeholder{color:var(--ink4);font-size:12px}
+.try-row{display:flex;align-items:center;gap:6px;margin-top:7px;flex-wrap:wrap}
+.try-lbl{font-size:11px;color:var(--ink4);font-weight:400;white-space:nowrap}
+.try-chip{font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid var(--border);background:#fff;color:var(--ink3);cursor:pointer;transition:all .12s;white-space:nowrap;overflow:hidden;max-width:220px;text-overflow:ellipsis}
+.try-chip:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-t)}
+.upload-row{display:flex;align-items:center;gap:9px;margin-top:10px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--r);cursor:pointer;position:relative;transition:all .14s;background:var(--bg)}
+.upload-row:hover{border-color:var(--blue);background:var(--blue-t)}
+.upload-row input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.ur-ico{width:22px;height:22px;border:1px solid var(--border);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;background:#fff;flex-shrink:0}
+.ur-txt{font-size:12px;color:var(--ink2)}
+.ur-types{font-size:10px;color:var(--ink4);margin-left:auto}
+
+/* Model strip */
+.model-strip{display:flex;align-items:center;gap:10px;margin-top:12px;padding:10px 12px;background:var(--bg);border-radius:var(--r);border:1px solid var(--bg3)}
+.ms-lbl{font-size:11px;font-weight:600;color:var(--ink3);white-space:nowrap}
+.ms-opts{display:flex;gap:5px;flex-wrap:wrap;flex:1}
+.ms-opt{display:flex;align-items:center;gap:6px;padding:6px 11px;border:1px solid var(--border);border-radius:var(--r);cursor:pointer;transition:all .12s;background:#fff}
+.ms-opt:hover{border-color:var(--border2)}
+.ms-opt.on{border-color:var(--blue);background:var(--blue-t)}
+.ms-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.ms-name{font-size:12px;font-weight:500;color:var(--ink)}
+.ms-opt.on .ms-name{color:var(--blue)}
+.ms-tag-best{font-size:9px;padding:1px 5px;border-radius:6px;background:var(--green-t);color:var(--green);white-space:nowrap}
+.ms-tag-cost{font-size:9px;padding:1px 5px;border-radius:6px;background:var(--amber-t);color:var(--amber);white-space:nowrap}
+.ms-key-row{margin-top:8px;display:flex;gap:6px;align-items:center;display:none}
+.ms-key-row.show{display:flex}
+.ms-key-inp{flex:1;padding:6px 9px;font-size:11px;border:1px solid var(--border);border-radius:var(--r);font-family:inherit;outline:none}
+.ms-key-inp:focus{border-color:var(--blue)}
+.ms-key-save{padding:6px 11px;font-size:11px;font-weight:600;background:var(--teal);color:#fff;border:none;border-radius:var(--r);cursor:pointer;font-family:inherit;white-space:nowrap}
+.ms-key-st{font-size:10px;color:var(--ink4)}
+
+/* SUBMIT BUTTON — full width, at page bottom, matches Image 1 exactly */
+.submit-footer{position:sticky;bottom:0;background:linear-gradient(transparent,var(--bg) 35%);padding:14px 0 0}
+.submit-btn{width:100%;padding:12px 16px;font-size:13px;font-weight:600;border:none;border-radius:var(--r2);cursor:pointer;font-family:inherit;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:8px;color:#fff;box-shadow:var(--shadow2)}
+.submit-btn.demo{background:var(--teal)}
+.submit-btn.demo:hover{background:var(--teal-h)}
+.submit-btn.live{background:var(--navy)}
+.submit-btn.live:hover{background:var(--navy2)}
+.submit-btn:disabled{background:var(--ink4);cursor:not-allowed;box-shadow:none}
+.sb-send-icon{font-size:14px}
+
+/* ── RESULTS VIEW ── */
+.rv{max-width:800px;margin:0 auto;padding:16px 20px 40px;width:100%}
+.status-strip{display:flex;align-items:center;gap:8px;padding:9px 13px;border-radius:var(--r2);margin-bottom:14px;font-size:12px;font-weight:500;border:1px solid transparent}
+.ss-idle{background:var(--bg2);color:var(--ink3);border-color:var(--bg3)}
+.ss-run{background:var(--amber-t);color:var(--amber);border-color:rgba(146,64,14,.2)}
+.ss-done{background:var(--green-t);color:var(--green);border-color:rgba(22,101,52,.2)}
+.ss-block{background:var(--red-t);color:var(--red);border-color:rgba(153,27,27,.2)}
+.spin{display:inline-block;width:11px;height:11px;border:2px solid rgba(146,64,14,.2);border-top-color:var(--amber);border-radius:50%;animation:sp .7s linear infinite;flex-shrink:0}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* Step progress bar */
+.step-prog{background:#fff;border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;margin-bottom:14px;box-shadow:var(--shadow)}
+.sp-hdr{background:var(--navy);padding:9px 14px;display:flex;align-items:center;justify-content:space-between}
+.sp-title{font-size:12px;font-weight:600;color:#fff}
+.sp-sub{font-size:10px;color:rgba(255,255,255,.4)}
+.sp-steps{display:flex}
+.sp-step{flex:1;padding:10px 8px;border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;transition:background .12s}
+.sp-step:last-child{border-right:none}
+.sp-step:hover{background:var(--bg)}
+.sp-step.active{background:var(--amber-t)}
+.sp-step.done{background:var(--green-t)}
+.sp-step.blocked{background:var(--red-t)}
+.sp-ico{width:26px;height:26px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;background:#fff;transition:all .15s}
+.sp-step.active .sp-ico{border-color:var(--amber);background:var(--amber-t)}
+.sp-step.done .sp-ico{border-color:var(--teal);background:var(--teal-t)}
+.sp-step.blocked .sp-ico{border-color:var(--red);background:var(--red-t)}
+.sp-name{font-size:10px;font-weight:600;color:var(--ink2);text-align:center;line-height:1.3}
+.sp-step.active .sp-name{color:var(--amber)}
+.sp-step.done .sp-name{color:var(--teal)}
+.sp-status{font-size:9px;color:var(--ink4);text-align:center}
+.sp-step.done .sp-status{color:var(--teal)}
+.sp-step.active .sp-status{color:var(--amber)}
+
+/* Step detail cards */
+.step-card{background:#fff;border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;margin-bottom:8px;box-shadow:var(--shadow)}
+.scd-hdr{padding:9px 13px;display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;transition:background .12s}
+.scd-hdr:hover{background:var(--bg)}
+.scd-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.scd-name{font-size:12px;font-weight:600;color:var(--ink);flex:1}
+.scd-badge{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:500}
+.scdb-wait{background:var(--bg2);color:var(--ink4)}
+.scdb-run{background:var(--amber-t);color:var(--amber)}
+.scdb-done{background:var(--green-t);color:var(--green)}
+.scdb-block{background:var(--red-t);color:var(--red)}
+.scd-chev{font-size:10px;color:var(--ink4);transition:transform .14s}
+.scd-body{padding:11px 13px;font-size:11px;color:var(--ink2);line-height:1.7;white-space:pre-wrap;max-height:200px;overflow-y:auto;border-top:1px solid var(--bg2);display:none;background:var(--bg)}
+.scd-body.show{display:block}
+
+/* STORY CARDS */
+.stories-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px}
+.st-info .st-title{font-size:14px;font-weight:600;color:var(--ink)}
+.st-info .st-meta{font-size:11px;color:var(--ink3);margin-top:2px}
+.exp-btns{display:flex;gap:5px}
+.exp-btn{padding:6px 12px;font-size:11px;font-weight:600;border:none;border-radius:var(--r);cursor:pointer;color:#fff;font-family:inherit;transition:opacity .14s}
+.exp-btn:hover{opacity:.85}
+.story-card{background:#fff;border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;margin-bottom:8px;box-shadow:var(--shadow);transition:box-shadow .14s}
+.story-card:hover{box-shadow:var(--shadow2)}
+.sc-top{padding:12px 14px}
+.sc-num{font-size:10px;font-weight:600;color:var(--ink4);margin-bottom:4px;display:flex;align-items:center;gap:6px}
+.sc-num-badge{font-size:9px;padding:1px 6px;border-radius:8px;background:var(--bg2);color:var(--ink4)}
+.sc-title{font-size:13px;font-weight:600;color:var(--ink);line-height:1.35;margin-bottom:7px}
+.sc-tags{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px}
+.tag{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:500;white-space:nowrap}
+.t-must{background:#fee2e2;color:#991b1b}
+.t-should{background:#fef3c7;color:#92400e}
+.t-could{background:#d1fae5;color:#065f46}
+.t-sp{background:#dbeafe;color:#1e40af}
+.t-reg{background:var(--blue-t);color:var(--blue)}
+.t-phase{background:var(--teal-t);color:var(--teal)}
+.t-gamp{background:var(--bg2);color:var(--ink3)}
+.sc-story{font-size:12px;color:var(--ink2);line-height:1.65}
+.sc-expand{width:100%;padding:6px 14px;background:none;border:none;border-top:1px solid var(--bg2);display:flex;justify-content:space-between;align-items:center;font-size:11px;font-weight:500;color:var(--ink4);cursor:pointer;font-family:inherit;text-align:left;transition:background .12s}
+.sc-expand:hover{background:var(--bg)}
+.sc-ac{padding:10px 14px 12px;background:var(--bg);display:none;border-top:1px solid var(--bg2)}
+.sc-ac.show{display:block}
+.ac-item{display:flex;gap:7px;margin-bottom:5px}
+.ac-n{width:17px;height:17px;border-radius:50%;background:var(--blue-t);color:var(--blue);font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.ac-t{font-size:11px;color:var(--ink2);line-height:1.55}
+.ac-ref{font-size:10px;font-family:monospace;color:var(--ink4);border-top:1px solid var(--bg3);margin-top:6px;padding-top:6px}
+.sc-footer{padding:6px 14px;border-top:1px solid var(--bg2);display:flex;gap:5px;background:var(--bg)}
+.ftr-btn{padding:3px 10px;border-radius:20px;border:1px solid var(--border);background:#fff;color:var(--ink3);font-size:10px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .12s}
+.ftr-btn:hover{color:var(--ink);border-color:var(--border2)}
+.ftr-btn.v{background:var(--green-t);color:var(--green);border-color:rgba(22,101,52,.2)}
+.ftr-btn.c{background:var(--amber-t);color:var(--amber);border-color:rgba(146,64,14,.2)}
+
+/* Save package */
+.save-bar{background:#fff;border:1px solid var(--border);border-radius:var(--r2);padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:8px;box-shadow:var(--shadow)}
+.save-bar-lbl{font-size:12px;font-weight:500;color:var(--ink2);white-space:nowrap}
+.save-bar input{flex:1;padding:6px 9px;font-size:12px;border:1px solid var(--border);border-radius:var(--r);font-family:inherit;outline:none}
+.save-bar input:focus{border-color:var(--blue)}
+.save-bar-btn{padding:6px 13px;background:var(--teal);color:#fff;border:none;border-radius:var(--r);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap}
+.save-ok{font-size:11px;color:var(--teal);font-weight:600}
+
+/* Saved packages */
+.saved-card{background:#fff;border:1px solid var(--border);border-radius:var(--r2);padding:12px 14px;margin-bottom:8px;box-shadow:var(--shadow)}
+.svc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.svc-name{font-size:13px;font-weight:600;color:var(--ink)}
+.svc-ctx{font-size:10px;color:var(--ink4);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:400px}
+.svc-meta{font-size:10px;color:var(--ink3);margin-top:3px}
+.svc-btns{display:flex;gap:5px;flex-shrink:0}
+.svc-btn{padding:4px 10px;font-size:11px;font-weight:500;border-radius:var(--r);border:1px solid;cursor:pointer;font-family:inherit}
+.svc-load{background:var(--blue-t);color:var(--blue);border-color:rgba(29,111,206,.2)}
+.svc-rm{background:var(--red-t);color:var(--red);border-color:rgba(153,27,27,.2)}
+
+/* Empty state */
+.empty{text-align:center;padding:56px 20px;color:var(--ink4)}
+.empty-ico{font-size:36px;margin-bottom:10px;opacity:.35}
+.empty-t{font-size:13px;font-weight:500;color:var(--ink3);margin-bottom:4px}
+.empty-s{font-size:11px}
+
+/* ── SIDEBAR MODEL SECTION ── */
+.sb-model{border-top:1px solid var(--border);background:var(--white);flex-shrink:0}
+.sbm-hdr{padding:8px 10px 0}
+.sbm-mode-tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:0;padding:0 0 8px}
+.sbm-tab{display:flex;flex-direction:column;align-items:center;gap:1px;padding:8px 4px;border:1.5px solid var(--border);border-radius:var(--r);cursor:pointer;transition:all .14s;background:var(--bg);font-family:inherit;text-align:center}
+.sbm-tab:hover{border-color:var(--border2);background:#fff}
+.sbm-tab.on{border-color:var(--blue);background:var(--blue-t)}
+.sbmt-ico{font-size:16px;line-height:1}
+.sbmt-label{font-size:11px;font-weight:600;color:var(--ink);margin-top:2px}
+.sbm-tab.on .sbmt-label{color:var(--blue)}
+.sbmt-sub{font-size:9px;color:var(--ink4)}
+.sbm-tab.on .sbmt-sub{color:rgba(29,111,206,.6)}
+.sbm-info-box{margin:0 10px 10px;padding:8px 10px;border-radius:var(--r);font-size:11px}
+.sbm-info-demo{background:var(--teal-t);border:1px solid rgba(14,122,98,.18)}
+.sbm-info-title{font-weight:600;color:var(--teal);margin-bottom:2px}
+.sbm-info-body{color:rgba(14,122,98,.8);line-height:1.5;font-size:10px}
+.sbm-picker-lbl{font-size:10px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.4px;padding:0 10px;margin-bottom:6px}
+.sbm-models{display:flex;flex-direction:column;gap:3px;padding:0 10px;margin-bottom:8px;max-height:180px;overflow-y:auto}
+.sbm-models::-webkit-scrollbar{width:3px}
+.sbm-models::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:2px}
+.sbm-model-card{display:flex;align-items:center;gap:8px;padding:7px 9px;border:1px solid var(--border);border-radius:var(--r);cursor:pointer;transition:all .12s;background:#fff}
+.sbm-model-card:hover{border-color:var(--border2);background:var(--bg)}
+.sbm-model-card.on{border-color:var(--blue);background:var(--blue-t)}
+.sbm-model-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.sbm-model-info{flex:1;min-width:0}
+.sbm-model-name{font-size:11px;font-weight:600;color:var(--ink);line-height:1.2}
+.sbm-model-card.on .sbm-model-name{color:var(--blue)}
+.sbm-model-desc{font-size:10px;color:var(--ink4);line-height:1.3;margin-top:1px}
+.sbm-model-tags{display:flex;gap:3px;flex-wrap:wrap;flex-shrink:0}
+.sbm-tag{font-size:9px;padding:1px 5px;border-radius:6px;white-space:nowrap}
+.sbm-tag-best{background:var(--green-t);color:var(--green)}
+.sbm-tag-free{background:#ecfdf5;color:#065f46}
+.sbm-tag-warn{background:var(--amber-t);color:var(--amber)}
+.sbm-tag-cost{background:#f0fdf4;color:var(--green)}
+#sbm-key-area{padding:0 10px 10px}
+.sbm-key-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.sbm-key-lbl{font-size:10px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.4px}
+.sbm-key-link{font-size:10px;color:var(--blue);text-decoration:none}
+.sbm-key-link:hover{text-decoration:underline}
+.sbm-key-row{display:flex;gap:4px}
+.sbm-key-inp{flex:1;padding:6px 8px;font-size:11px;border:1px solid var(--border);border-radius:var(--r);font-family:inherit;outline:none}
+.sbm-key-inp:focus{border-color:var(--blue)}
+.sbm-key-save{padding:6px 10px;font-size:11px;font-weight:600;background:var(--teal);color:#fff;border:none;border-radius:var(--r);cursor:pointer;font-family:inherit;white-space:nowrap}
+#sbm-key-st{font-size:10px;margin-top:3px;min-height:14px}
+.sbm-key-note{font-size:10px;color:var(--ink4);margin-top:4px;line-height:1.4;padding:5px 7px;background:var(--bg2);border-radius:5px}
+
+/* Assurance */
+.assurance-view{display:none;padding:16px 20px 48px;max-width:1040px;margin:0 auto;width:100%}
+.assurance-hero{background:#fff;border:1px solid var(--border);border-radius:var(--r2);box-shadow:var(--shadow);padding:16px;margin-bottom:14px}
+.assurance-kicker{font-size:10px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.assurance-title{font-size:19px;font-weight:700;color:var(--ink);letter-spacing:0;line-height:1.25}
+.assurance-sub{font-size:12px;color:var(--ink3);max-width:760px;margin-top:5px}
+.assurance-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.assurance-btn{border:none;border-radius:var(--r);background:var(--navy);color:#fff;font-size:11px;font-weight:700;padding:8px 11px;cursor:pointer;font-family:inherit}
+.assurance-btn.secondary{background:var(--teal)}
+.metric-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px}
+.metric-card{border:1px solid var(--border);border-radius:var(--r);background:var(--bg);padding:10px}
+.metric-v{font-size:18px;font-weight:800;color:var(--ink);line-height:1}
+.metric-l{font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:.35px;margin-top:4px}
+.assurance-section{background:#fff;border:1px solid var(--border);border-radius:var(--r2);box-shadow:var(--shadow);margin-bottom:14px;overflow:hidden}
+.assurance-section-h{display:flex;align-items:center;gap:8px;padding:11px 14px;background:var(--bg);border-bottom:1px solid var(--border);flex-wrap:wrap}
+.assurance-section-t{font-size:13px;font-weight:700;color:var(--ink)}
+.assurance-section-s{font-size:11px;color:var(--ink3);margin-left:auto;min-width:0}
+.assurance-body{padding:12px 14px}
+.assurance-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+#source-trust-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));align-items:stretch;overflow-x:auto;overflow-y:visible;padding-bottom:4px;scrollbar-gutter:stable}
+#source-trust-grid::-webkit-scrollbar{height:6px}
+#source-trust-grid::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:999px}
+#source-trust-grid::-webkit-scrollbar-track{background:transparent}
+.source-card,.criterion-card,.scenario-card{border:1px solid var(--border);border-radius:var(--r);background:#fff;padding:11px;min-width:0}
+.source-top,.criterion-top,.scenario-top{display:flex;align-items:flex-start;gap:8px;margin-bottom:7px;min-width:0}
+.source-top>div,.criterion-top>div,.scenario-top>div{min-width:0;flex:1}
+.source-name,.criterion-name,.scenario-name{font-size:12px;font-weight:700;color:var(--ink);line-height:1.3;flex:1}
+.source-meta,.criterion-meta,.scenario-meta{font-size:10px;color:var(--ink4);line-height:1.4;overflow-wrap:anywhere}
+.status-pill{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.35px;border-radius:999px;padding:3px 7px;white-space:nowrap}
+.status-pass{background:var(--green-t);color:var(--green)}
+.status-partial{background:var(--amber-t);color:var(--amber)}
+.status-gate{background:var(--red-t);color:var(--red)}
+.source-url{font-size:10px;color:var(--blue);overflow:visible;text-overflow:clip;white-space:normal;overflow-wrap:anywhere;word-break:break-word;margin:5px 0;line-height:1.35}
+.bullet-list{display:flex;flex-direction:column;gap:4px;margin-top:7px}
+.bullet-item{font-size:11px;color:var(--ink2);line-height:1.35;padding-left:12px;position:relative}
+.bullet-item:before{content:"";width:4px;height:4px;border-radius:50%;background:var(--teal);position:absolute;left:0;top:6px}
+.comparison{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.compare-box{border-radius:var(--r);border:1px solid var(--border);padding:11px;background:var(--bg)}
+.compare-box strong{display:block;font-size:12px;color:var(--ink);margin-bottom:5px}
+.compare-box p{font-size:11px;color:var(--ink3);line-height:1.5}
+.scenario-flow{font-size:11px;color:var(--ink2);line-height:1.45;margin-top:7px;padding:8px;background:var(--bg);border-radius:var(--r)}
+.assurance-note{font-size:11px;color:var(--ink3);line-height:1.5;background:var(--amber-t);border:1px solid rgba(146,64,14,.18);border-radius:var(--r);padding:10px;margin-top:10px}
+.value-hero{background:#fff;border:1px solid var(--border);border-radius:var(--r2);box-shadow:var(--shadow);padding:14px;margin-bottom:12px}
+.value-hero-title{font-size:17px;font-weight:800;color:var(--ink);line-height:1.25}
+.value-hero-sub{font-size:12px;color:var(--ink3);line-height:1.45;margin-top:4px}
+.value-chain{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:12px}
+.value-chain-step{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:8px}
+.value-chain-step b{display:block;font-size:11px;color:var(--ink)}
+.value-chain-step span{display:block;font-size:10px;color:var(--ink3);margin-top:2px;line-height:1.3}
+
+@media(max-width:860px){
+  .sidebar{width:210px}
+  .cat-grid{grid-template-columns:repeat(2,1fr)}
+  .row3{grid-template-columns:1fr 1fr}
+  .row4{grid-template-columns:1fr 1fr}
+  .metric-row{grid-template-columns:repeat(2,1fr)}
+  .assurance-grid,.comparison{grid-template-columns:1fr}
+  .value-chain{grid-template-columns:1fr 1fr}
+}
+@media(max-width:640px){
+  .sidebar{display:none}
+  .cat-grid{grid-template-columns:repeat(2,1fr)}
+  .metric-row{grid-template-columns:1fr}
+  .value-chain{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<div class="nav">
+  <div class="nav-brand">
+    <div class="nav-icon">M</div>
+    <div class="nav-brand-text">
+      <div class="nav-title">MARAS</div>
+      <div class="nav-sub">Multi Agent Regulatory Augmented System</div>
+    </div>
+  </div>
+  <div class="nav-sep"></div>
+  <div class="nav-tabs">
+    <button class="nav-tab on" id="ntab-gen" onclick="goTab('gen',this)"><span class="nav-tab-pip"></span>Assure</button>
+    <button class="nav-tab" id="ntab-results" onclick="goTab('results',this)">Value Package</button>
+    <button class="nav-tab" id="ntab-assurance" onclick="goTab('assurance',this)">Assurance</button>
+    <button class="nav-tab" id="ntab-saved" onclick="goTab('saved',this)">Saved Packages</button>
+  </div>
+  <div class="nav-right">
+    <div class="mode-switch">
+      <button class="ms-btn on" id="msb-demo" onclick="setMode('demo')">Demo</button>
+      <button class="ms-btn" id="msb-live" onclick="setMode('live')">Live AI</button>
+    </div>
+    <div class="nav-sep"></div>
+    <div class="nav-stats">
+      <div class="nstat"><div class="nstat-v" id="ns-stories">0</div><div class="nstat-l">Value Items</div></div>
+      <div class="nstat"><div class="nstat-v" id="ns-chunks">17</div><div class="nstat-l">Curated Controls</div></div>
+      <div class="nstat"><div class="nstat-v" id="ns-packages">0</div><div class="nstat-l">Packages</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- DEMO BANNER -->
+<div class="demo-bar" id="demo-bar">
+  <span>🎯</span>
+  <span><b>Demo Mode — No AI required</b> &nbsp;Business value packages built only from curated sourced controls — full evaluation, zero cost, works offline</span>
+  <button class="demo-bar-btn" onclick="setMode('live')">Switch to Live AI →</button>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sb-hdr">
+    <span class="sb-hdr-title">Regulatory Library</span>
+    <button class="sb-hdr-btn" onclick="selAll(true)">All</button>
+    <button class="sb-hdr-btn" onclick="selAll(false)">None</button>
+  </div>
+  <div class="sb-search">
+    <div class="sb-search-inner">
+      <span class="sb-si">🔍</span>
+      <input type="text" placeholder="Search regulations, clauses, keywords..." oninput="filterTree(this.value)">
+    </div>
+  </div>
+  <div class="sb-count" id="sb-count">0 of 56 selected</div>
+  <div class="sb-qtpl">
+    <div class="sb-ql">Quick Templates</div>
+    <div class="sb-qtags" id="qtags"></div>
+  </div>
+  <div class="sb-tree" id="tree"></div>
+  <div class="sb-upload">
+    <div class="sb-upl-zone">
+      <input type="file" multiple accept=".pdf,.docx,.doc,.xlsx,.xls,.txt,.csv,.json" onchange="handleSBDocs(this.files)">
+      <div class="sb-upl-ico">📄</div>
+      <div class="sb-upl-t">Upload Regulatory PDF</div>
+      <div class="sb-upl-s">FDA · EMA · ICH · WHO · ISO docs &nbsp;<span style="color:var(--ink4)">(optional)</span></div>
+    </div>
+    <div class="sb-docs" id="sb-docs"></div>
+    <div class="sb-sel" id="sb-sel">0 of 56 selected</div>
+  </div>
+
+  <!-- AI MODEL SECTION — prominent in sidebar -->
+  <div class="sb-model" id="sb-model-section">
+    <div class="sbm-hdr">
+      <div class="sbm-mode-tabs">
+        <button class="sbm-tab on" id="sbmt-demo" onclick="setMode('demo')">
+          <span class="sbmt-ico">⚡</span>
+          <span class="sbmt-label">Try it out</span>
+          <span class="sbmt-sub">Instant · No setup</span>
+        </button>
+        <button class="sbm-tab" id="sbmt-live" onclick="setMode('live')">
+          <span class="sbmt-ico">🤖</span>
+          <span class="sbmt-label">Assure with AI</span>
+          <span class="sbmt-sub">Your org's LLM</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Demo mode info -->
+    <div id="sbm-demo-info" class="sbm-info-box sbm-info-demo">
+      <div class="sbm-info-title">Value packages from 56 regulatory knowledge items</div>
+      <div class="sbm-info-body">Works offline · Zero cost · No API key · Shows business controls, evidence and productivity impact</div>
+    </div>
+
+    <!-- Live AI model picker -->
+    <div id="sbm-live-picker" style="display:none">
+      <div class="sbm-picker-lbl">Choose your organisation's AI model</div>
+      <div class="sbm-models" id="sbm-models"></div>
+      <div id="sbm-key-area" style="display:none">
+        <div class="sbm-key-hdr">
+          <span class="sbm-key-lbl" id="sbm-key-lbl">API key</span>
+          <a href="#" id="sbm-key-link" class="sbm-key-link" target="_blank">Get a key →</a>
+        </div>
+        <div class="sbm-key-row">
+          <input type="password" id="sbm-key-inp" class="sbm-key-inp" placeholder="Paste your API key here...">
+          <button class="sbm-key-save" onclick="saveSessionKey()">Save</button>
+        </div>
+        <div id="sbm-key-st" class="sbm-key-st"></div>
+        <div class="sbm-key-note">Key is stored in your browser session only — cleared when you close this tab</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RIGHT PANEL -->
+<div class="rpanel" id="rpanel">
+
+<!-- GENERATE VIEW -->
+<div id="view-gen" class="gv">
+
+  <div class="value-hero">
+    <div class="value-hero-title">From regulation to business assurance package</div>
+    <div class="value-hero-sub">MARAS converts validated regulatory sources into business-specific controls, PBIs, risk rationale, test obligations, evidence gaps and productivity proof. Work items are the execution output, not the product.</div>
+    <div class="value-chain">
+      <div class="value-chain-step"><b>Source Truth</b><span>Authority, version, license and usage rule</span></div>
+      <div class="value-chain-step"><b>Business Control</b><span>Regulatory clause converted to customer outcome</span></div>
+      <div class="value-chain-step"><b>Traceable PBI</b><span>Only from explicit source requirements</span></div>
+      <div class="value-chain-step"><b>Evidence Need</b><span>Tests, gaps, review and approval record</span></div>
+      <div class="value-chain-step"><b>Productivity</b><span>Manual triage and rework avoided</span></div>
+    </div>
+  </div>
+
+  <!-- Project Context -->
+  <div class="card">
+    <div class="card-hdr">
+      <div class="card-ico" style="background:#f0f4ff">📋</div>
+      <span class="card-title">Project Context <span class="card-opt">(optional)</span></span>
+    </div>
+    <div class="card-body">
+      <div class="row3" style="margin-bottom:8px">
+        <div class="fld"><label>Organisation</label><input type="text" id="f-org" placeholder="Your Organisation"></div>
+        <div class="fld"><label>Site / Division</label><input type="text" id="f-site" placeholder="Manufacturing Site A"></div>
+        <div class="fld"><label>Project Name</label><input type="text" id="f-proj" placeholder="LIMS CSV Implementation — Q3 2025"></div>
+      </div>
+      <div class="row3">
+        <div class="fld">
+          <label>System Type <span style="color:var(--ink4);font-weight:400;text-transform:none">(optional)</span></label>
+          <select id="f-system">
+            <option value="">Select system type...</option>
+            <optgroup label="Laboratory & Manufacturing">
+              <option value="LIMS">LIMS — Laboratory Information Management System</option>
+              <option value="MES">MES — Manufacturing Execution System</option>
+              <option value="SCADA / DCS">SCADA / DCS — Supervisory Control &amp; Data Acquisition / Distributed Control System</option>
+              <option value="Serialization">Serialization — Product Serialization &amp; Track-Trace System</option>
+            </optgroup>
+            <optgroup label="Quality & Compliance">
+              <option value="QMS">QMS — Quality Management System</option>
+              <option value="EDMS">EDMS — Electronic Document Management System</option>
+              <option value="CDS">CDS — Chromatography Data System</option>
+              <option value="PV System">PV System — Pharmacovigilance &amp; Drug Safety System</option>
+            </optgroup>
+            <optgroup label="Clinical & Regulatory">
+              <option value="EDC / eCRF">EDC / eCRF — Electronic Data Capture / Electronic Case Report Form</option>
+              <option value="CTMS">CTMS — Clinical Trial Management System</option>
+              <option value="eTMF">eTMF — Electronic Trial Master File</option>
+              <option value="Safety Reporting">Safety Reporting — Adverse Event &amp; Safety Reporting System</option>
+              <option value="Regulatory Info Mgmt">RIM — Regulatory Information Management System</option>
+            </optgroup>
+            <optgroup label="Enterprise">
+              <option value="ERP / SAP">ERP / SAP — Enterprise Resource Planning System</option>
+              <option value="Supply Chain">Supply Chain — Supply Chain Management System</option>
+            </optgroup>
+          </select>
+        </div>
+        <div class="fld">
+          <label>Regulatory Framework <span style="color:var(--ink4);font-weight:400;text-transform:none;font-size:10px">— auto-selects regulations on left</span></label>
+          <select id="f-fw" onchange="applyFramework(this.value)">
+            <optgroup label="North America">
+              <option>FDA</option>
+              <option>Health Canada</option>
+            </optgroup>
+            <optgroup label="Europe">
+              <option>EMA / EU GMP</option>
+              <option>MHRA</option>
+            </optgroup>
+            <optgroup label="International">
+              <option>ICH</option>
+              <option>WHO</option>
+            </optgroup>
+            <optgroup label="Asia-Pacific">
+              <option>PMDA</option>
+              <option>TGA</option>
+              <option>HSA (Singapore)</option>
+            </optgroup>
+            <optgroup label="BRICS &amp; Emerging Markets">
+              <option>CDSCO (India)</option>
+              <option>NMPA (China)</option>
+              <option>EAEU (Russia)</option>
+              <option>ANVISA (Brazil)</option>
+            </optgroup>
+            <optgroup label="Africa &amp; Middle East">
+              <option>SAHPRA (South Africa)</option>
+            </optgroup>
+            <optgroup label="Global">
+              <option>Multi-Regional</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <div class="fld">
+          <label>Business Outcome</label>
+          <input type="text" id="f-outcome" placeholder="Reduce batch-release risk; prevent audit observations">
+        </div>
+      </div>
+      <div class="divider"></div>
+      <!-- Domain chips -->
+      <div class="chip-section">
+        <div class="cs-lbl">Industry Domain</div>
+        <div class="chips" id="ch-domain"></div>
+      </div>
+      <div class="divider"></div>
+      <div class="row3">
+        <div class="fld">
+          <label>Client Operating Region</label>
+          <input type="text" id="f-client-region" placeholder="Belgium / EU · US · Japan · Middle East">
+        </div>
+        <div class="fld">
+          <label>Client Process Delta</label>
+          <input type="text" id="f-client-delta" placeholder="Local SOP, plant process, tool gap, audit observation">
+        </div>
+        <div class="fld">
+          <label>Past Backlog / Audit Gap</label>
+          <input type="text" id="f-gap-input" placeholder="Known missed control, CAPA, deviation, audit finding">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Regulatory Control Categories -->
+  <div class="card">
+    <div class="card-hdr" style="padding-bottom:10px">
+      <div class="card-ico" style="background:#fff0f0">⚠️</div>
+      <span class="card-title">Regulatory Control Categories</span>
+      <span style="font-size:10px;color:var(--ink4);margin-left:6px">— select to focus</span>
+      <button onclick="selCats(true)" style="margin-left:auto;font-size:10px;padding:2px 7px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--ink3);cursor:pointer;font-family:inherit">All</button>
+      <button onclick="selCats(false)" style="font-size:10px;padding:2px 7px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--ink3);cursor:pointer;font-family:inherit;margin-left:4px">Clear</button>
+    </div>
+    <div style="padding:0 14px 14px">
+      <div class="cat-grid" id="cat-grid"></div>
+      <div class="cat-footer" id="cat-footer">No selection — all curated controls used</div>
+    </div>
+  </div>
+
+  <!-- Compliance Requirement -->
+  <div class="card">
+    <div class="card-hdr" style="margin-bottom:10px">
+      <div class="req-ico">💬</div>
+      <span class="req-title">Define the business compliance outcome</span>
+    </div>
+    <div class="card-body" style="padding-top:0">
+      <textarea class="req-ta" id="req-ta" rows="4"
+        placeholder="Describe the regulated business outcome — e.g. 'For LIMS batch release, prove Part 11 audit trail and e-signature controls with source traceability, risk, tests, evidence and inspection questions.'"></textarea>
+      <div class="try-row">
+        <span class="try-lbl">Try:</span>
+        <span class="try-chip" onclick="setReq(this)">LIMS batch-release audit trail assurance under 21 CFR Part 11</span>
+        <span class="try-chip" onclick="setReq(this)">ALCOA+ data integrity controls for business-critical records</span>
+        <span class="try-chip" onclick="setReq(this)">Annex 11 evidence package for QMS change control</span>
+        <span class="try-chip" onclick="setReq(this)">Validation evidence package for regulated laboratory operations</span>
+      </div>
+      <div class="upload-row" id="req-upload-row">
+        <input type="file" multiple accept=".pdf,.docx,.xlsx,.txt,.csv" onchange="handleReqFiles(this.files)">
+        <div class="ur-ico">📎</div>
+        <span class="ur-txt" id="req-upload-lbl">Upload your requirements file</span>
+        <span class="ur-types">PDF · Excel · CSV · TXT &nbsp;<span style="color:var(--ink4)">(optional)</span></span>
+      </div>
+      <!-- Model config moved to sidebar -->
+      <div id="ms-key-wrap" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- SUBMIT — full width, like Image 1 -->
+  <div class="submit-footer">
+    <button class="submit-btn demo" id="submit-btn" onclick="doGenerate()">
+      <span class="sb-send-icon">🚀</span>
+      <span id="submit-lbl">Create Business Assurance Package</span>
+    </button>
+  </div>
+
+</div><!-- end gv -->
+
+<!-- RESULTS VIEW -->
+<div id="view-results" class="rv" style="display:none">
+  <div class="status-strip ss-idle" id="status-strip">Define the business outcome and create an assurance package</div>
+  <div class="step-prog">
+    <div class="sp-hdr">
+      <div class="sp-title">Processing your request</div>
+      <div class="sp-sub">Each step validates before passing to the next</div>
+    </div>
+    <div class="sp-steps" id="sp-steps"></div>
+  </div>
+  <div id="step-cards"></div>
+  <div id="stories-section" style="display:none">
+    <div class="save-bar">
+      <span class="save-bar-lbl">💾 Save package:</span>
+      <input type="text" id="package-name-inp" placeholder="Package name (e.g. LIMS Part 11 Assurance · Q3 2025)">
+      <button class="save-bar-btn" onclick="savePackage()">Save</button>
+      <span class="save-ok" id="save-ok"></span>
+    </div>
+    <div class="stories-toolbar">
+      <div class="st-info">
+        <div class="st-title" id="st-title">Business Assurance Items</div>
+        <div class="st-meta" id="st-meta"></div>
+      </div>
+      <div class="exp-btns" id="exp-btns"></div>
+    </div>
+    <div id="stories-list"></div>
+  </div>
+</div>
+
+<!-- SAVED VIEW -->
+<div id="view-saved" style="display:none;padding:16px 20px;max-width:800px;margin:0 auto;width:100%">
+  <div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:3px">Saved Assurance Packages</div>
+  <div style="font-size:12px;color:var(--ink3);margin-bottom:14px">Stored in your browser. Export the business controls, work items, traceability and evidence record before clearing browser data.</div>
+  <div id="saved-list"></div>
+</div>
+
+<!-- ASSURANCE VIEW -->
+<div id="view-assurance" class="assurance-view">
+  <div class="assurance-hero">
+    <div class="assurance-kicker">Regulatory Delivery Assurance</div>
+    <div class="assurance-title">MARAS is a regulated business value engine</div>
+    <div class="assurance-sub">MARAS is evaluated as a regulator-defensible delivery layer: source truth first, then business requirement, control intent, risk, PBI, test obligation, evidence and inspection readiness. Jira work items are only one export from the package.</div>
+    <div class="assurance-actions">
+      <button class="assurance-btn" onclick="dlAssuranceReport()">Download validation report</button>
+      <button class="assurance-btn secondary" onclick="seedAssuranceScenario()">Load customer demo scenario</button>
+    </div>
+    <div class="metric-row" id="assurance-metrics"></div>
+  </div>
+
+  <div class="assurance-section">
+    <div class="assurance-section-h">
+      <div class="assurance-section-t">1. Source of Truth Validation</div>
+      <div class="assurance-section-s">Official source, license posture, and usage rule</div>
+    </div>
+    <div class="assurance-body">
+      <div id="source-trust-grid" class="assurance-grid"></div>
+      <div class="assurance-note">Production rule: every ingested regulatory document must carry official URL, authority, document class, effective date, capture date, file hash, license tag, and SME approval before it is allowed to drive generated outputs. This demo includes source metadata and guardrails; live re-validation and hashing require a connected ingestion service.</div>
+    </div>
+  </div>
+
+  <div class="assurance-section">
+    <div class="assurance-section-h">
+      <div class="assurance-section-t">2. Capability Validation Matrix</div>
+      <div class="assurance-section-s">What is built in, partial, or a production gate</div>
+    </div>
+    <div class="assurance-body">
+      <div id="criteria-grid" class="assurance-grid"></div>
+    </div>
+  </div>
+
+  <div class="assurance-section">
+    <div class="assurance-section-h">
+      <div class="assurance-section-t">3. Leadership Value Thesis</div>
+      <div class="assurance-section-s">Move the conversation from work-item volume to business assurance throughput</div>
+    </div>
+    <div class="assurance-body">
+      <div class="comparison">
+        <div class="compare-box">
+          <strong>AI work generation layer</strong>
+          <p>Drafts work items, summarizes context, and accelerates team execution. In regulated delivery this still leaves source validation, interpretation, control mapping, test obligation, evidence packaging and inspection readiness as manual work.</p>
+        </div>
+        <div class="compare-box">
+          <strong>MARAS business assurance layer</strong>
+          <p>Converts a regulation or SOP into business-specific controls, PBIs, risk rationale, test obligations, evidence gaps, approval records and productivity metrics. The sellable value is a defensible package that reduces compliance cycle time and rework.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="assurance-section">
+    <div class="assurance-section-h">
+      <div class="assurance-section-t">4. Customer Demo Scenarios</div>
+      <div class="assurance-section-s">Use these to prove criteria in a walkthrough</div>
+    </div>
+    <div class="assurance-body">
+      <div id="scenario-grid" class="assurance-grid"></div>
+    </div>
+  </div>
+
+  <div class="assurance-section">
+    <div class="assurance-section-h">
+      <div class="assurance-section-t">5. Productivity Multipliers</div>
+      <div class="assurance-section-s">Where MARAS creates value beyond work-item drafting</div>
+    </div>
+    <div class="assurance-body">
+      <div id="productivity-grid" class="assurance-grid"></div>
+    </div>
+  </div>
+
+  <div class="assurance-section">
+    <div class="assurance-section-h">
+      <div class="assurance-section-t">6. Leadership Validation Plan</div>
+      <div class="assurance-section-s">How feedback and follow-up tasks are converted into evidence</div>
+    </div>
+    <div class="assurance-body">
+      <div id="leadership-grid" class="assurance-grid"></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- rpanel -->
+</div><!-- layout -->
+
+<script>
+/* ─── DATA ──────────────────────────────────────────────────────── */
+const TREE_DATA=[
+  {id:'cfr',ico:'🇺🇸',name:'21 CFR — FDA Regulations',items:[
+    {id:'p11',name:'Part 11 — Electronic Records & Signatures',cat:'B',n:4},
+    {id:'p211',name:'Part 211 — cGMP for Finished Pharmaceuticals',cat:'A',n:2},
+    {id:'p210',name:'Part 210 — cGMP for Manufacturing (General)',cat:'A',n:1},
+    {id:'p820',name:'Part 820 / QMSR — Medical Devices (incl. ISO 13485)',cat:'H',n:3},
+    {id:'p58',name:'Part 58 — Good Laboratory Practice (GLP)',cat:'F',n:1},
+  ]},
+  {id:'eugmp',ico:'🇪🇺',name:'EU GMP — EMA Regulations',items:[
+    {id:'a11',name:'Annex 11 — Computerised Systems (2025 Revision)',cat:'B',n:5},
+    {id:'a22',name:'Annex 22 — Artificial Intelligence in GMP (NEW 2025)',cat:'B',n:2},
+    {id:'ch4',name:'Chapter 4 — Documentation & Data Governance (2025)',cat:'C',n:3},
+    {id:'a1',name:'Annex 1 — Sterile Manufacturing',cat:'F',n:2},
+    {id:'a15',name:'Annex 15 — Qualification & Validation',cat:'F',n:2},
+  ]},
+  {id:'ich',ico:'🌐',name:'ICH Guidelines',items:[
+    {id:'ichq10',name:'ICH Q10 — Pharmaceutical Quality System',cat:'A',n:2},
+    {id:'ichq9',name:'ICH Q9(R1) — Quality Risk Management',cat:'A',n:1},
+    {id:'ichq8',name:'ICH Q8(R2) — Pharmaceutical Development',cat:'A',n:1},
+    {id:'ichq2',name:'ICH Q2(R2) — Validation of Analytical Methods',cat:'F',n:1},
+    {id:'iche6',name:'ICH E6(R3) — Good Clinical Practice (GCP)',cat:'E',n:2},
+    {id:'iche9',name:'ICH E9(R1) — Statistical Analysis in Clinical Trials',cat:'E',n:1},
+  ]},
+  {id:'md',ico:'🏥',name:'Medical Devices',items:[
+    {id:'iso13485',name:'ISO 13485:2016 — Medical Device QMS',cat:'H',n:3},
+    {id:'eumdr',name:'EU MDR 2017/745 — Medical Device Regulation',cat:'H',n:2},
+    {id:'euivdr',name:'EU IVDR 2017/746 — In Vitro Diagnostic Regulation',cat:'H',n:2},
+    {id:'mdsap',name:'MDSAP — Multi-Jurisdiction Device Audit Programme',cat:'H',n:1},
+  ]},
+  {id:'val',ico:'✅',name:'Validation Lifecycle (CSV/CSA)',items:[
+    {id:'gamp5',name:'GAMP5 (2nd Ed 2022) — Risk-Based Computerised Systems',cat:'F',n:4},
+    {id:'iqoq',name:'IQ / OQ / PQ — Installation, Operational & Performance Qual.',cat:'F',n:3},
+    {id:'csa',name:'FDA CSA — Computer Software Assurance (2022)',cat:'F',n:2},
+    {id:'pics',name:'PIC/S PI-041 — Data Integrity & Computerised Systems',cat:'F',n:2},
+  ]},
+  {id:'qms',ico:'⚙️',name:'Quality System & CAPA',items:[
+    {id:'sop',name:'SOP / Change Control Management',cat:'A',n:4},
+    {id:'capa',name:'CAPA — Corrective & Preventive Action',cat:'A',n:2},
+    {id:'dev',name:'Deviations, OOS & OOT Management',cat:'A',n:2},
+    {id:'aph',name:'Annual Product / Process Review',cat:'A',n:1},
+  ]},
+  {id:'di',ico:'🔒',name:'Data Integrity',items:[
+    {id:'alcoa',name:'ALCOA+ Principles — Attributable, Legible, Contemporaneous, Original, Accurate',cat:'C',n:3},
+    {id:'fda_di',name:'FDA DI Guidance — Data Integrity & cGMP Compliance (2018)',cat:'C',n:2},
+    {id:'mhra_di',name:'MHRA GxP DI Guidance (2018, updated 2025)',cat:'C',n:2},
+    {id:'who_di',name:'WHO TRS 996 Annex 5 — Data Integrity Guidance',cat:'C',n:2},
+    {id:'pics_di',name:'PIC/S PI-041 — Data Integrity (Aligns MHRA/WHO/FDA)',cat:'C',n:1},
+  ]},
+  {id:'natl_access',ico:'🤝',name:'Access Consortium (Harmonised)',items:[
+    {id:'mhra_uk',name:'MHRA — UK GxP Post-Brexit (Retained EU GMP + UK-specific)',cat:'B',n:2},
+    {id:'tga',name:'TGA — Therapeutic Goods Administration (Australia)',cat:'B',n:2},
+    {id:'hc',name:'Health Canada — Food & Drug Regulations / GMP',cat:'B',n:2},
+    {id:'hsa',name:'HSA — Singapore Health Sciences Authority / GMP & CSV',cat:'B',n:2},
+    {id:'swissmedic',name:'Swissmedic — Swiss Agency for Therapeutic Products',cat:'B',n:1},
+  ]},
+  {id:'natl_apac',ico:'🌏',name:'Asia-Pacific Regulators',items:[
+    {id:'pmda',name:'PMDA — Japan GxP / GAMP-aligned CSV (English + 日本語)',cat:'B',n:2},
+    {id:'nmpa',name:'NMPA — China GMP Annex Computerised Systems 2015 / Revised 2025 (English + 中文)',cat:'B',n:3},
+    {id:'cdsco',name:'CDSCO — India Schedule M Revised 2023 / 21 CFR Part 11 equivalent',cat:'B',n:2},
+    {id:'kfda',name:'MFDS — South Korea Ministry of Food & Drug Safety / GMP CSV',cat:'B',n:1},
+    {id:'tga_nz',name:'Medsafe — New Zealand Medicines & Medical Devices Safety',cat:'B',n:1},
+  ]},
+  {id:'natl_brics',ico:'🧱',name:'BRICS & Emerging Markets',items:[
+    {id:'eaeu',name:'EAEU / Roszdravnadzor — Russia & CIS GMP Resolution №77 (English + Русский)',cat:'B',n:2},
+    {id:'anvisa',name:'ANVISA — Brazil RDC 658 / GMP Computerised Systems Validation',cat:'B',n:2},
+    {id:'anmat',name:'ANMAT — Argentina GMP / PIC/S-aligned requirements',cat:'B',n:1},
+    {id:'invima',name:'INVIMA — Colombia INVIMA GMP / WHO-aligned',cat:'B',n:1},
+    {id:'cofepris',name:'COFEPRIS — Mexico GMP / NOM-059-SSA1',cat:'B',n:1},
+  ]},
+  {id:'natl_africa',ico:'🌍',name:'Africa & Middle East',items:[
+    {id:'sahpra',name:'SAHPRA — South Africa Health Products Regulatory Authority',cat:'B',n:2},
+    {id:'nafdac',name:'NAFDAC — Nigeria / WHO-GMP aligned computerised systems',cat:'B',n:1},
+    {id:'eda',name:'EDA — Egypt Drug Authority / GMP Computerised Systems',cat:'B',n:1},
+    {id:'sfda',name:'SFDA — Saudi Arabia Food & Drug Authority / GMP CSV',cat:'B',n:1},
+    {id:'mohap',name:'MOHAP — UAE Ministry of Health / Data Localisation & GxP',cat:'E',n:1},
+  ]},
+  {id:'priv',ico:'🛡️',name:'Privacy, Security & Cloud',items:[
+    {id:'hipaa',name:'HIPAA Security Rule — US Healthcare Data Protection',cat:'E',n:3},
+    {id:'gdpr',name:'GDPR — EU General Data Protection Regulation',cat:'E',n:4},
+    {id:'uk_gdpr',name:'UK GDPR — Post-Brexit UK Data Protection',cat:'E',n:2},
+    {id:'dpdp',name:'DPDP Act 2023 — India Digital Personal Data Protection',cat:'E',n:1},
+    {id:'pdpl',name:'PDPL / MOHAP — UAE/Saudi Arabia Data Localisation',cat:'E',n:1},
+    {id:'iso27001',name:'ISO 27001:2022 — Information Security Management',cat:'D',n:2},
+    {id:'cloud_gxp',name:'Cloud GxP — FDA/EMA/PMDA Cloud Validation Guidance',cat:'G',n:2},
+  ]},
+];
+const QUICK_TPLS=[
+  {lbl:'21 CFR Pt 11',ids:['p11','p211','alcoa','fda_di'],fw:'FDA'},
+  {lbl:'Annex 11 CSV',ids:['a11','ch4','gamp5','iqoq','alcoa'],fw:'EMA / EU GMP'},
+  {lbl:'ALCOA+ DI',ids:['alcoa','fda_di','mhra_di','who_di','pics_di'],fw:'FDA'},
+  {lbl:'IQ/OQ/PQ',ids:['iqoq','gamp5','csa','a15'],fw:'FDA'},
+  {lbl:'ISO 13485',ids:['iso13485','eumdr','sop','capa','gamp5'],fw:'ICH'},
+  {lbl:'Full GxP',ids:null,fw:'Multi-Regional'},
+];
+const CATS=[
+  {id:'A',lbl:'Lifecycle & Risk',col:'#0891b2',bg:'#ecfeff',sub:'ICH Q9/Q8/Q10 · Annex 15 VMP · CAPA · Deviations',n:5},
+  {id:'B',lbl:'E-Records & E-Sig',col:'#2563eb',bg:'#eff6ff',sub:'21 CFR Part 11 (§11.10–100) · HITECH EHR integrity',n:5},
+  {id:'C',lbl:'Data Integrity & Audit',col:'#dc2626',bg:'#fef2f2',sub:'ALCOA+ · Annex 11 Cl.10 · GDPR retention · Trail review',n:8},
+  {id:'D',lbl:'Access & Security',col:'#4b5563',bg:'#f9fafb',sub:'Annex 11 §12 · ISO 27001 · EU MDR cyber · GxP pen-test',n:5},
+  {id:'E',lbl:'Privacy Controls',col:'#7c3aed',bg:'#f5f3ff',sub:'HIPAA · GDPR · UK GDPR · DPDP India · PDPL KSA · MOHAP UAE',n:7},
+  {id:'F',lbl:'Validation Evidence',col:'#059669',bg:'#ecfdf5',sub:'IQ/OQ/PQ · CSV/GAMP5 · Annex 15 · Change mgmt · Inspection',n:9},
+  {id:'G',lbl:'Vendor & Cloud',col:'#d97706',bg:'#fffbeb',sub:'EU GMP Ch.7 · Vendor qual · PMDA/SFDA/UAE cloud residency',n:5},
+  {id:'H',lbl:'Device QMS (MDR/ISO)',col:'#4f46e5',bg:'#eef2ff',sub:'ISO 13485 · EU MDR Annex IX/X · Conformity · PMS/Vigilance',n:5},
+];
+const DOMAINS=['Pharma Mfg','Biotech R&D','Med Devices','Clinical','Gene Therapy','Diagnostics','Consumer Health'];
+DOMAINS.push('Food & Chocolate Mfg');
+const MODELS=[
+  {id:'claude',  name:'Claude Sonnet 4', provider:'Anthropic',
+   dot:'#7f77dd', desc:'Best for GxP — structured outputs, compliance reasoning',
+   tags:['best'],  keyLink:'https://console.anthropic.com', keyHint:'sk-ant-api03-...',
+   url:'https://api.anthropic.com/v1/messages', model:'claude-sonnet-4-20250514'},
+  {id:'openai',  name:'GPT-4o',          provider:'OpenAI',
+   dot:'#10a37f', desc:'Strong reasoning · Azure enterprise option available',
+   tags:['enterprise'], keyLink:'https://platform.openai.com/api-keys', keyHint:'sk-...',
+   url:'https://api.openai.com/v1/chat/completions', model:'gpt-4o'},
+  {id:'gemini',  name:'Gemini 1.5 Pro',  provider:'Google',
+   dot:'#4285f4', desc:'Long context · Google Workspace integration',
+   tags:['free-tier'], keyLink:'https://aistudio.google.com/app/apikey', keyHint:'AIzaSy...',
+   url:'https://generativelanguage.googleapis.com', model:'gemini-1.5-pro'},
+  {id:'gemma',   name:'Gemma 4',         provider:'Google (open)',
+   dot:'#34a853', desc:'Open model · Free API via Google AI Studio',
+   tags:['free-tier'], keyLink:'https://aistudio.google.com/app/apikey', keyHint:'AIzaSy...',
+   url:'https://generativelanguage.googleapis.com', model:'gemma-3-27b-it'},
+  {id:'deepseek',name:'DeepSeek V3',     provider:'DeepSeek AI',
+   dot:'#0d7bff', desc:'Very low cost · Note: data processed in China',
+   tags:['low-cost','warn'], keyLink:'https://platform.deepseek.com', keyHint:'sk-...',
+   url:'https://api.deepseek.com/v1/chat/completions', model:'deepseek-chat'},
+  {id:'glm',     name:'GLM-4 / GLM-5.2', provider:'Zhipu AI',
+   dot:'#059669', desc:'Low cost · Bilingual CN/EN · Data processed in China',
+   tags:['low-cost','warn','bilingual'], keyLink:'https://open.bigmodel.cn', keyHint:'...',
+   url:'https://open.bigmodel.cn/api/paas/v4/chat/completions', model:'glm-4'},
+];
+const GXP_CHUNKS=[
+  {id:'c1',cat:'B',reg:'21 CFR Part 11',sec:'§11.10',title:'Controls for Closed Systems',reqs:['Validate systems for accuracy, reliability and performance','Limit access to authorised individuals via unique credentials','Generate computer-generated, time-stamped audit trails'],kws:['audit trail','access control','validation','closed system','electronic records']},
+  {id:'c2',cat:'B',reg:'21 CFR Part 11',sec:'§11.50',title:'Signature Manifestations',reqs:['Display printed name, date/time and meaning on all signed records','Retain signature information permanently linked to the record'],kws:['e-signature','printed name','signature meaning','electronic signature']},
+  {id:'c3',cat:'B',reg:'21 CFR Part 11',sec:'§11.10(e)',title:'Audit Trail Requirements',reqs:['Computer-generated time-stamped audit trails required','Record date and time of every operator entry and action','Audit trail must be independent and operator cannot disable'],kws:['audit trail','timestamp','operator entries','independent']},
+  {id:'c4',cat:'C',reg:'EU GMP Annex 11',sec:'Cl.10',title:'Audit Trail — Annex 11',reqs:['Record all relevant changes to GxP critical data','Changes must be traceable to the individual who made them'],kws:['audit trail','data integrity','traceability','annex 11','EU GMP']},
+  {id:'c5',cat:'B',reg:'EU GMP Annex 11',sec:'Cl.12',title:'Security Controls',reqs:['Physical and logical access controls required','Password policy and strength requirements enforced','Access rights reviewed at defined periodic intervals'],kws:['access control','security','password','annex 11','logical access']},
+  {id:'c6',cat:'C',reg:'ALCOA+',sec:'Principle',title:'Data Integrity Principles',reqs:['Attributable: linked to the person who created it','Legible: permanent and readable records','Contemporaneous: recorded at time of activity','Original or a verified true copy','Accurate: error-free, truthful'],kws:['ALCOA','data integrity','attributable','legible','contemporaneous','accurate']},
+  {id:'c7',cat:'E',reg:'HIPAA Security Rule',sec:'§164.312',title:'Technical Safeguards',reqs:['Implement unique user identification for all users','Automatic logoff after period of inactivity','Encryption and decryption of electronic PHI in transit and at rest'],kws:['HIPAA','PHI','encryption','access control','automatic logoff']},
+  {id:'c8',cat:'E',reg:'GDPR',sec:'Art.25',title:'Data Protection by Design',reqs:['Implement appropriate technical and organisational measures','Ensure only necessary personal data is processed','Technically enable data subject rights (access, erasure, portability)'],kws:['GDPR','privacy','data protection','by design','data subject rights']},
+  {id:'c9',cat:'F',reg:'GAMP5',sec:'Ch.7',title:'IQ/OQ/PQ Validation',reqs:['Installation Qualification verifies system installed correctly','Operational Qualification tests all system functions','Performance Qualification confirms consistent performance'],kws:['IQ','OQ','PQ','validation','GAMP5','CSV','installation']},
+  {id:'c10',cat:'H',reg:'ISO 13485',sec:'§7.3',title:'Design Controls',reqs:['Design and development planning documentation required','Design input requirements formally documented','Design verification and validation activities required'],kws:['design control','medical device','ISO 13485','design input','verification']},
+  {id:'c11',cat:'H',reg:'EU MDR',sec:'Annex IX',title:'Conformity Assessment',reqs:['Technical documentation requirements for conformity','QMS audit requirements must be satisfied','Post-market surveillance plan must be established and maintained'],kws:['MDR','conformity','post-market','CE marking','technical documentation']},
+  {id:'c12',cat:'A',reg:'ICH Q10',sec:'§2',title:'Pharmaceutical Quality System',reqs:['Management responsibility and review processes defined','CAPA system implementation and effectiveness monitoring','Change management process for GxP changes'],kws:['PQS','CAPA','change management','ICH Q10','management review']},
+  {id:'c13',cat:'A',reg:'ICH Q9(R1)',sec:'Quality Risk Management',title:'Quality Risk Management',reqs:['Apply systematic quality risk management to product quality and patient safety','Evaluate risk severity, occurrence and detectability using documented rationale','Review and update risk controls through the product lifecycle'],kws:['quality risk management','QRM','risk assessment','severity','detectability']},
+  {id:'c14',cat:'G',reg:'EU GMP Chapter 7',sec:'Outsourced Activities',title:'Outsourced Activities & Vendor Qualification',reqs:['Define responsibilities for outsourced GMP activities in a written agreement','Qualify and periodically review vendors performing regulated work','Ensure outsourced activities remain under the pharmaceutical quality system'],kws:['outsourced activities','vendor qualification','supplier','quality agreement','chapter 7']},
+  {id:'c15',cat:'F',reg:'EU GMP Annex 15',sec:'Qualification & Validation',title:'Performance Qualification',reqs:['Demonstrate process or system performance under routine operating conditions','Define acceptance criteria before PQ execution','Retain approved qualification protocol, execution evidence and summary report'],kws:['performance qualification','PQ','qualification','validation evidence','annex 15']},
+  {id:'c16',cat:'A',reg:'ICH Q10',sec:'CAPA',title:'CAPA System Effectiveness',reqs:['Investigate root cause for quality issues and deviations','Define corrective and preventive actions with accountable owners','Verify CAPA effectiveness and document closure evidence'],kws:['CAPA','corrective action','preventive action','deviation','root cause']},
+  {id:'c17',cat:'F',reg:'FDA CSA / GAMP5',sec:'CSV/CSA',title:'Computer Software Assurance',reqs:['Apply risk-based assurance for software used in production or quality systems','Scale testing rigor according to intended use and patient/product risk','Maintain traceability between requirement, risk, test evidence and approval'],kws:['CSV','CSA','GAMP5','software assurance','traceability','test evidence']},
+];
+
+const SOURCE_TRUST=[
+  {name:'21 CFR Part 11',authority:'US FDA / eCFR',docClass:'Regulation',region:'United States',status:'pass',
+   usage:'Allowed as cited regulatory source. Treat eCFR as current consolidated text and capture official citation.',
+   url:'https://www.ecfr.gov/current/title-21/chapter-I/subchapter-A/part-11',
+   controls:['Clause-level references used in PBIs','Official public source URL captured','No unsupported Part 11 clauses generated']},
+  {name:'FDA Part 11 Scope and Application',authority:'US FDA',docClass:'Guidance',region:'United States',status:'pass',
+   usage:'Nonbinding FDA current thinking. Use for interpretation support, not as a standalone legal requirement.',
+   url:'https://www.fda.gov/regulatory-information/search-fda-guidance-documents/part-11-electronic-records-electronic-signatures-scope-and-application',
+   controls:['Guidance separated from regulation','Used to shape validation and audit-trail interpretation','Requires human review for grey areas']},
+  {name:'FDA Data Integrity and cGMP Q&A',authority:'US FDA',docClass:'Guidance',region:'United States',status:'pass',
+   usage:'Official guidance for data reliability and integrity expectations. Use as interpretation support with citations.',
+   url:'https://www.fda.gov/regulatory-information/search-fda-guidance-documents/data-integrity-and-compliance-drug-cgmp-questions-and-answers',
+   controls:['Data integrity controls mapped to ALCOA+ PBIs','Audit-readiness gaps surfaced','Citation required before export']},
+  {name:'HIPAA Security Rule',authority:'HHS / eCFR',docClass:'Regulation',region:'United States',status:'pass',
+   usage:'Official US federal rule. Use only for applicable healthcare/ePHI contexts.',
+   url:'https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-C/part-164/subpart-C',
+   controls:['Applicability scoped to PHI/ePHI','Technical safeguard PBIs include access and encryption','Privacy PBIs separated from GxP validation controls']},
+  {name:'EU GDPR',authority:'European Union',docClass:'Regulation',region:'EU / EEA including Belgium',status:'pass',
+   usage:'Official legal text is public, but local applicability and controller/processor role must be confirmed.',
+   url:'https://eur-lex.europa.eu/eli/reg/2016/679/oj',
+   controls:['Privacy by design mapped to data minimisation','Country-specific assumptions flagged','Customer DPO/Legal review required']},
+  {name:'EU GMP Annex 11',authority:'European Commission / EudraLex',docClass:'Guideline',region:'European Union',status:'partial',
+   usage:'Use official EudraLex source and captured version. Demo contains summarized controls only.',
+   url:'https://health.ec.europa.eu/medicinal-products/eudralex/eudralex-volume-4_en',
+   controls:['Annex 11 controls represented as clause summaries','Version/effective-date capture required in production','SME approval needed before customer use']},
+  {name:'ICH Q10',authority:'ICH',docClass:'Guideline',region:'International',status:'partial',
+   usage:'Use official ICH source and respect document terms. Demo maps high-level PQS concepts only.',
+   url:'https://www.ich.org/page/quality-guidelines',
+   controls:['PQS, CAPA, and change management concepts mapped','Clause precision requires controlled source ingestion','SME review required for final outputs']},
+  {name:'ISO 13485 / GAMP 5 / Paid Standards',authority:'ISO / ISPE',docClass:'Licensed standard',region:'International / licensed use only',status:'gate',
+   usage:'Do not ingest or reproduce full text without license. Use metadata-only until customer proves licensed access.',
+   url:'https://www.iso.org/copyright.html',
+   controls:['License gate required','No full-text embedding in demo corpus','Generated output must cite customer-licensed source when used']},
+];
+
+const ASSURANCE_CRITERIA=[
+  {name:'Validated source of truth before generation',status:'partial',
+   validation:'Assurance tab now exposes source authority, document class, URL, and license posture. Production ingestion must add hash, capture date, and version check.',
+   proof:'Source Trust cards plus source-gated generation policy.'},
+  {name:'Law vs guidance vs standard separation',status:'pass',
+   validation:'Sources are classified as Regulation, Guidance, Guideline, or Licensed Standard so MARAS does not present nonbinding guidance as law.',
+   proof:'SOURCE_TRUST docClass and usage rules.'},
+  {name:'Copyright and data infringement protection',status:'partial',
+   validation:'ISO/GAMP-style paid standards are marked as gated and metadata-only. Production needs license proof and customer-controlled storage before full-text use.',
+   proof:'Licensed standards card blocks full-text use without license.'},
+  {name:'Clause-to-business-PBI traceability',status:'pass',
+   validation:'Generated demo items carry regulation, section, req_id, regRef, acceptance criteria, GAMP category, and evidence stage.',
+   proof:'Story cards and Jira/ADO/JSON export fields.'},
+  {name:'Risk-based compliance criticality',status:'pass',
+   validation:'The demo engine creates FMEA risk register, RPN score, mitigation, owner, and regulatory criticality without assigning delivery ranking or effort estimates.',
+   proof:'Governance risk output and business sequencing step.'},
+  {name:'Validation evidence package',status:'pass',
+   validation:'The pipeline assembles RTM, interpretation log, gate decisions, risk register, business assurance review record, evidence readiness decision, and readiness score.',
+   proof:'Retrospective & Evidence pipeline step.'},
+  {name:'Inspection readiness gap detection',status:'pass',
+   validation:'MARAS flags missing negative tests, missing test environment documentation, missing dual sign-off, and submission readiness false when evidence is incomplete.',
+   proof:'Business Evidence Review and Evidence Package outputs in demo engine.'},
+  {name:'Regulatory change impact analysis',status:'gate',
+   validation:'Concept is defined but not yet implemented as a live monitor. Needs scheduled source watcher, diffing, and impact mapping.',
+   proof:'Marked as roadmap/customer expansion scenario, not claimed as current feature.'},
+  {name:'Live online source re-validation',status:'gate',
+   validation:'The single-file demo cannot safely re-fetch official sources, hash PDFs, or prove freshness. Needs backend ingestion service.',
+   proof:'Assurance note explicitly marks this as production gate.'},
+  {name:'Business value beyond generic work generation',status:'pass',
+   validation:'Positioning is framed around defensible regulated delivery, productivity, and customer assurance, not generic PBI volume.',
+   proof:'Leadership value thesis, productivity multipliers, and scenario library.'},
+  {name:'Client context and change recognition',status:'pass',
+   validation:'Client region, business outcome, process deltas, prior backlog gaps and audit findings are captured before generation and carried into each PBI client-fit statement.',
+   proof:'Project Context fields, BOI client fit, acceptance criteria and JSON export.'},
+  {name:'4-process LangGraph/LangChain operating model',status:'pass',
+   validation:'The product is presented as four assurance processes: source/scope validation, business translation, self-evaluation and evidence packaging.',
+   proof:'Visible pipeline and technical assurance report.'},
+];
+
+const ASSURANCE_SCENARIOS=[
+  {name:'FDA Part 11 audit trail for LIMS',persona:'QA Lead / Validation Engineer',
+   prompt:'Create an audit trail and e-signature delivery package for a LIMS under 21 CFR Part 11.',
+   flow:'Source validation -> Part 11 clause mapping -> P0 regulatory objects -> FMEA risk -> traceable business PBIs -> test obligations -> evidence gaps.',
+   proves:['Official source used before generation','Work-item drafting is extended into RTM/test/evidence','Inspection gaps are visible before business approval']},
+  {name:'Paid standard license gate',persona:'Compliance Owner',
+   prompt:'Use ISO 13485 and GAMP 5 to generate medical-device validation business controls.',
+   flow:'MARAS detects licensed-standard source type -> blocks full-text assumption -> uses metadata only -> asks for licensed customer source before clause-level output.',
+   proves:['No infringement-by-default posture','Customer-owned/licensed source required','Leadership can show responsible AI governance']},
+  {name:'Auditor asks why this PBI exists',persona:'FDA inspector / Internal auditor',
+   prompt:'Explain why the immutable audit-trail business PBI exists and what evidence proves completion.',
+   flow:'Story -> req_id -> source clause -> risk -> acceptance criteria -> test phase -> evidence document -> approval requirement.',
+   proves:['Traceability chain is demonstrable','The package is not just creative text','Evidence package becomes the customer value']},
+  {name:'Regulatory change impact',persona:'Regulatory Affairs',
+   prompt:'A new Annex 11 revision affects audit-trail review frequency.',
+   flow:'Source update detected -> impacted clauses -> impacted systems/PBIs/tests/SOPs -> change package -> validation package delta.',
+   proves:['Expansion beyond one-time work-item generation','Creates ongoing subscription value','Turns regulation changes into controlled assurance work']},
+  {name:'Customer SOP plus official FDA source',persona:'CSV Lead',
+   prompt:'Combine internal SOP validation rules with FDA Part 11 to prepare a release readiness package.',
+   flow:'Customer SOP treated as customer-owned source -> FDA source treated as official public source -> conflicts flagged -> human approval gate -> release evidence checklist.',
+   proves:['Source classes stay separate','Customer data is not treated as public truth','MARAS supports regulated internal delivery, not only external regulations']},
+  {name:'Belgium chocolate manufacturing client using ADO',persona:'Business Analyst / QA Lead',
+   prompt:'Create GDPR and quality-system PBIs for a Belgium manufacturing process where ADO lacks inbuilt work-item generation.',
+   flow:'EU/Belgium context -> GDPR/EU quality controls -> client process delta -> business PBIs -> ADO export with source, nation and evidence metadata.',
+   proves:['Client region changes output context','ADO value proposition is explicit','Food/chocolate manufacturing domain is supported']},
+  {name:'Past backlog validation benchmark',persona:'Delivery Lead / Product Owner',
+   prompt:'Compare prior manually written backlog items with MARAS-generated PBIs for completeness and audit gap coverage.',
+   flow:'Past backlog/audit gap input -> generated PBI package -> missing control comparison -> completeness score -> review actions.',
+   proves:['Past backlog validation strategy is built into workflow','Manual gaps become measurable','Completeness is validated against source truth']},
+];
+
+const PRODUCTIVITY_CRITERIA=[
+  {name:'Source truth triage',impact:'Hours saved before any PBI exists',
+   maras:'Classifies source authority, document type, license posture and usage rule before generation.',
+   proof:'Prevents teams from debating whether an output came from law, guidance, paid standard or customer SOP.'},
+  {name:'Business-specific decomposition',impact:'More useful PBIs without hallucinated extras',
+   maras:'Creates one or more PBIs only from explicit sourced requirements and business outcome context.',
+   proof:'Every generated item retains req_id, regulation, section, acceptance criteria and evidence need.'},
+  {name:'Risk and criticality context',impact:'Less manual QA/Product triage without locking delivery ranking',
+   maras:'Runs FMEA, RPN, mitigation, owner recommendation and regulatory criticality in the same package.',
+   proof:'P0/P1/P2 is shown as compliance criticality only; delivery ranking and estimation remain team-owned.'},
+  {name:'Test obligation drafting',impact:'Cuts validation planning rework',
+   maras:'Turns controls into measurable pass/fail acceptance criteria and negative-test prompts.',
+   proof:'Outputs highlight missing test cases, environment evidence and sign-off gaps.'},
+  {name:'Evidence package assembly',impact:'Moves value beyond Jira tickets',
+   maras:'Builds RTM, interpretation log, gate decisions, risk register, review record and audit-readiness score.',
+   proof:'Customers see what evidence is complete, partial or missing before inspection.'},
+  {name:'Inspection narrative',impact:'Faster customer confidence and audit response',
+   maras:'Explains why each item exists, which clause drives it, what risk it mitigates and what evidence proves it.',
+   proof:'The auditor scenario demonstrates a traceable chain from source to evidence.'},
+  {name:'Change impact expansion',impact:'Subscription value after initial package',
+   maras:'Roadmaps regulatory-change diffing into impacted systems, SOPs, PBIs, tests and evidence deltas.',
+   proof:'This is presented as a production gate, not falsely claimed in the demo.'},
+  {name:'Downstream tool neutrality',impact:'Avoids being only a Jira feature',
+   maras:'Exports business PBIs and evidence metadata to Jira, ADO or JSON after assurance is complete.',
+   proof:'Jira becomes an execution target, not the center of product value.'},
+];
+
+const LEADERSHIP_ACTIONS=[
+  {name:'Regulatory requirement research benchmark',status:'Built in + next validation',
+   plan:'Use selected FDA/GDPR/EU GMP/GAMP/ISO sources as a golden set, generate PBIs, and compare coverage against SME-authored expected controls.',
+   evidence:'Source Trust, Business PBI output, RTM fields and validation report export.'},
+  {name:'Client contextualisation',status:'Built in',
+   plan:'Capture operating region, client process delta and past audit/backlog gap before generation; carry those into BOI and acceptance criteria.',
+   evidence:'Client Context fields and BOI client-fit text.'},
+  {name:'Past backlog validation strategy',status:'Built in + benchmark required',
+   plan:'Load historical backlog/audit gaps, generate MARAS package, then compare missing controls, traceability, evidence readiness and duplicate/filler rate.',
+   evidence:'Past Backlog / Audit Gap field, PBI package, JSON export.'},
+  {name:'Healthcare & life-sciences market feedback',status:'Follow-up',
+   plan:'Use Assurance tab and validation report in interviews with healthcare/life-sciences consulting professionals after refinement.',
+   evidence:'Leadership Validation Plan and downloaded report.'},
+  {name:'STOMP offering integration',status:'Roadmap',
+   plan:'Treat MARAS output as a STOMP-compatible assurance package: source metadata, PBIs, RTM, risks, evidence gaps and export payload.',
+   evidence:'JSON export and source/evidence data model.'},
+  {name:'Audit gap input sharing',status:'Built in',
+   plan:'Capture audit gaps explicitly and surface them in generated BOI client context for Ashish/reviewer inspection.',
+   evidence:'Past Backlog / Audit Gap field plus generated client-fit statement.'},
+  {name:'Model validation strategy',status:'Roadmap',
+   plan:'Compare Claude, Copilot/manual output, and other LLMs against the golden regulatory benchmark using completeness, citation accuracy and hallucination rate.',
+   evidence:'Model picker, validation report and benchmark plan.'},
+];
+
+/* ─── STATE ─────────────────────────────────────────────────────── */
+let demoMode=true,selItems=new Set(),selCatsSet=new Set(),selDomain='',selApp='';
+let selModel='claude',apiKeys={},sbDocs=[],reqFiles=[],allStories=[],running=false;
+
+/* ─── INIT ──────────────────────────────────────────────────────── */
+function init(){
+  buildQtags();buildTree();buildCats();
+  buildChips('ch-domain',DOMAINS,'domain');
+  buildSBModels();buildStepBar();loadSaved();buildAssurance();
+  document.getElementById('ns-chunks').textContent=GXP_CHUNKS.length;
+  restoreSessionKeys();
+  // Auto-select FDA on first load
+  applyFramework('FDA');
+}
+
+/* ─── QUICK TEMPLATES ───────────────────────────────────────────── */
+function buildQtags(){
+  document.getElementById('qtags').innerHTML=QUICK_TPLS.map((t,i)=>`<span class="qtag" onclick="applyTpl(${i})">${t.lbl}</span>`).join('');
+}
+function applyTpl(i){
+  const t=QUICK_TPLS[i];
+  selItems.clear();
+  if(t.ids===null){TREE_DATA.forEach(g=>g.items.forEach(it=>selItems.add(it.id)));}
+  else{t.ids.forEach(id=>selItems.add(id));}
+  document.getElementById('f-fw').value=t.fw;
+  renderTree();
+  document.querySelectorAll('.qtag').forEach((el,j)=>el.className='qtag'+(j===i?' on':''));
+  updateCount();
+}
+
+/* ─── TREE ──────────────────────────────────────────────────────── */
+function buildTree(){renderTree('');}
+function renderTree(filter=''){
+  const el=document.getElementById('tree');
+  el.innerHTML=TREE_DATA.map(g=>{
+    const items=g.items.filter(it=>!filter||it.name.toLowerCase().includes(filter.toLowerCase()));
+    if(!items.length&&filter)return'';
+    const isOpen=!filter?items.some(it=>selItems.has(it.id)):true;
+    return`<div class="tg">
+      <div class="tg-h" onclick="toggleGrp(this)">
+        <span class="tg-arr${isOpen?' open':''}"${isOpen?' style="transform:rotate(90deg)"':''}>▶</span>
+        <span class="tg-ico">${g.ico}</span>
+        <span class="tg-name">${g.name}</span>
+        <span class="tg-n">${items.reduce((a,it)=>a+it.n,0)}</span>
+      </div>
+      <div class="ti-wrap${isOpen?' open':''}">
+        ${items.map(it=>`<div class="ti${selItems.has(it.id)?' on':''}" onclick="toggleItem('${it.id}',this)">
+          <div class="ti-cb">${selItems.has(it.id)?'✓':''}</div>
+          <span class="ti-name">${it.name}</span>
+          <span class="ti-n">${it.n}</span>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+function toggleGrp(hdr){
+  const wrap=hdr.nextElementSibling;const arr=hdr.querySelector('.tg-arr');
+  wrap.classList.toggle('open');
+  arr.className='tg-arr'+(wrap.classList.contains('open')?' open':'');
+  arr.style.transform=wrap.classList.contains('open')?'rotate(90deg)':'';
+}
+function toggleItem(id,el){
+  if(selItems.has(id)){selItems.delete(id);el.className='ti';el.querySelector('.ti-cb').textContent='';}
+  else{selItems.add(id);el.className='ti on';el.querySelector('.ti-cb').textContent='✓';}
+  updateCount();
+}
+function filterTree(v){renderTree(v);}
+function selAll(on){
+  if(on){TREE_DATA.forEach(g=>g.items.forEach(it=>selItems.add(it.id)));}
+  else selItems.clear();
+  renderTree();updateCount();
+}
+function updateCount(){
+  const total=TREE_DATA.reduce((a,g)=>a+g.items.length,0);
+  const txt=selItems.size+' of '+total+' selected';
+  document.getElementById('sb-count').textContent=txt;
+  document.getElementById('sb-sel').textContent=txt;
+}
+
+/* ─── CATS ──────────────────────────────────────────────────────── */
+function buildCats(){
+  document.getElementById('cat-grid').innerHTML=CATS.map(c=>`
+    <div class="cat-card${selCatsSet.has(c.id)?' on':''}" id="cat-${c.id}" onclick="toggleCat('${c.id}')">
+      <div class="cat-card-hdr">
+        <div class="cat-letter" style="background:${c.bg};color:${c.col}">${c.id}</div>
+        <div class="cat-name">${c.lbl}</div>
+      </div>
+      <div class="cat-count">${c.n}</div>
+      <div class="cat-sub">${c.sub}</div>
+    </div>`).join('');
+}
+function toggleCat(id){
+  if(selCatsSet.has(id))selCatsSet.delete(id);else selCatsSet.add(id);
+  document.getElementById('cat-'+id).classList.toggle('on');
+  updateCatFooter();
+}
+function selCats(on){
+  if(on)CATS.forEach(c=>selCatsSet.add(c.id));else selCatsSet.clear();
+  buildCats();updateCatFooter();
+}
+function updateCatFooter(){
+  const el=document.getElementById('cat-footer');
+  if(!selCatsSet.size)el.textContent='No selection — all curated controls used for retrieval';
+  else el.textContent=selCatsSet.size+' categor'+(selCatsSet.size===1?'y':'ies')+' selected — '+[...selCatsSet].map(id=>CATS.find(c=>c.id===id)?.lbl).join(', ');
+}
+
+/* ─── CHIPS ─────────────────────────────────────────────────────── */
+function buildChips(id,items,type){
+  document.getElementById(id).innerHTML=items.map(v=>`<span class="chip" data-v="${v}" onclick="toggleChip(this,'${type}')">${v}</span>`).join('');
+}
+function toggleChip(el,type){
+  const on=el.classList.contains('on');
+  document.querySelectorAll(`#ch-${type} .chip`).forEach(c=>c.className='chip');
+  if(!on){el.className='chip on teal';selDomain=el.dataset.v;}
+  else{selDomain='';}
+}
+function applyFramework(fw){
+  // Clear all selections first — fresh every time
+  selItems.clear();
+  // Map framework → tree item IDs (research-grounded, current 2025)
+  const FW_MAP={
+    // North America
+    'FDA':          ['p11','p211','p210','p820','alcoa','fda_di','gamp5','iqoq','csa','sop','capa','dev'],
+    'Health Canada':['p11','a11','alcoa','gamp5','iqoq','hc','sop','capa','pics_di'],
+    // Europe
+    'EMA / EU GMP': ['a11','a22','ch4','a1','a15','alcoa','mhra_di','gamp5','iqoq','sop','capa','dev','pics_di'],
+    'MHRA':         ['a11','ch4','mhra_di','uk_gdpr','alcoa','pics_di','gamp5','iqoq','sop','mhra_uk'],
+    // International
+    'ICH':          ['ichq10','ichq9','ichq8','ichq2','iche6','iche9','gamp5','iqoq','sop','capa'],
+    'WHO':          ['who_di','alcoa','ichq10','gamp5','iqoq','sop','capa','pics_di'],
+    // Asia-Pacific
+    'TGA':          ['a11','alcoa','gamp5','iqoq','csa','sop','capa','tga'],
+    'PMDA':         ['a11','ichq10','ichq9','ichq2','alcoa','gamp5','iqoq','pmda','sop','pics_di'],
+    // BRICS & Emerging
+    'CDSCO (India)':['p11','alcoa','fda_di','gamp5','iqoq','csa','sop','capa','cdsco','dpdp','who_di'],
+    'NMPA (China)': ['nmpa','a11','iso13485','alcoa','gamp5','iqoq','sop','capa','ichq10'],
+    'EAEU (Russia)':['eaeu','a11','alcoa','gamp5','iqoq','sop','capa','ichq10','who_di'],
+    'ANVISA (Brazil)':['anvisa','a11','alcoa','gamp5','iqoq','sop','capa','ichq10','who_di'],
+    // Singapore & Access Consortium
+    'HSA (Singapore)':['hsa','a11','alcoa','gamp5','iqoq','sop','capa','ichq10','hc','tga'],
+    // Africa & Middle East
+    'SAHPRA (South Africa)':['sahpra','who_di','alcoa','gamp5','iqoq','sop','ichq10'],
+    // Multi-regional
+    'Multi-Regional':null, // null = select everything
+  };
+  const ids = FW_MAP[fw];
+  if(ids===null){
+    // Multi-Regional = check all
+    TREE_DATA.forEach(g=>g.items.forEach(it=>selItems.add(it.id)));
+  } else if(ids){
+    ids.forEach(id=>selItems.add(id));
+  }
+  // Re-render tree so checkboxes reflect new state
+  renderTree('');
+  updateCount();
+}
+function setReq(el){document.getElementById('req-ta').value=el.textContent;}
+
+/* ─── MODE ──────────────────────────────────────────────────────── */
+function setMode(m){
+  demoMode=(m==='demo');
+  // Top nav toggle
+  document.getElementById('msb-demo').className='ms-btn'+(demoMode?' on':'');
+  document.getElementById('msb-live').className='ms-btn'+(!demoMode?' on':'');
+  // Demo banner
+  document.getElementById('demo-bar').style.display=demoMode?'flex':'none';
+  // Sidebar model tabs
+  document.getElementById('sbmt-demo').className='sbm-tab'+(demoMode?' on':'');
+  document.getElementById('sbmt-live').className='sbm-tab'+(!demoMode?' on':'');
+  document.getElementById('sbm-demo-info').style.display=demoMode?'block':'none';
+  document.getElementById('sbm-live-picker').style.display=demoMode?'none':'block';
+  // Submit button
+  const btn=document.getElementById('submit-btn');
+  btn.className='submit-btn '+(demoMode?'demo':'live');
+  document.getElementById('submit-lbl').textContent=demoMode
+    ?'Create Business Assurance Package'
+    :'Create Package with '+(MODELS.find(x=>x.id===selModel)?.name||'AI');
+  // Build model list when switching to live
+  if(!demoMode) buildSBModels();
+}
+
+/* ─── MODELS ─────────────────────────────────────────────────────── */
+function buildModels(){/* legacy — replaced by buildSBModels */}
+function pickModel(id){/* legacy — replaced by pickSBModel */}
+function saveApiKey(id){/* legacy — replaced by saveSessionKey */}
+
+function buildSBModels(){
+  const el=document.getElementById('sbm-models');
+  if(!el)return;
+  el.innerHTML=MODELS.map(m=>{
+    const tagHtml=m.tags.map(t=>
+      t==='best'?'<span class="sbm-tag sbm-tag-best">Best quality</span>':
+      t==='free-tier'?'<span class="sbm-tag sbm-tag-free">Free tier</span>':
+      t==='enterprise'?'<span class="sbm-tag sbm-tag-cost">Enterprise</span>':
+      t==='low-cost'?'<span class="sbm-tag sbm-tag-cost">Low cost</span>':
+      t==='warn'?'<span class="sbm-tag sbm-tag-warn">⚠ Data to China</span>':
+      t==='bilingual'?'<span class="sbm-tag sbm-tag-best">EN+中文</span>':''
+    ).join('');
+    const saved=apiKeys[m.id]?'<span style="font-size:9px;color:var(--teal)"> ✓ Key saved</span>':'';
+    return`<div class="sbm-model-card${m.id===selModel?' on':''}" id="sbmc-${m.id}" onclick="pickSBModel('${m.id}')">
+      <div class="sbm-model-dot" style="background:${m.dot}"></div>
+      <div class="sbm-model-info">
+        <div class="sbm-model-name">${m.name}${saved} <span style="font-size:9px;color:var(--ink4);font-weight:400">${m.provider}</span></div>
+        <div class="sbm-model-desc">${m.desc}</div>
+      </div>
+      <div class="sbm-model-tags">${tagHtml}</div>
+    </div>`;
+  }).join('');
+}
+
+function pickSBModel(id){
+  selModel=id;
+  document.querySelectorAll('.sbm-model-card').forEach(c=>c.classList.remove('on'));
+  document.getElementById('sbmc-'+id)?.classList.add('on');
+  const m=MODELS.find(x=>x.id===id);
+  if(!m)return;
+  // Show key area
+  const ka=document.getElementById('sbm-key-area');
+  if(ka) ka.style.display='block';
+  const lbl=document.getElementById('sbm-key-lbl');
+  if(lbl) lbl.textContent='API key for '+m.name;
+  const link=document.getElementById('sbm-key-link');
+  if(link){link.href=m.keyLink||'#';link.textContent='Get a free key →';}
+  const inp=document.getElementById('sbm-key-inp');
+  if(inp){
+    inp.placeholder=m.keyHint||'Paste your API key...';
+    // Show masked key if already saved in session
+    inp.value=apiKeys[id]?'••••••••'+apiKeys[id].slice(-4):'';
+  }
+  const st=document.getElementById('sbm-key-st');
+  if(st) st.textContent=apiKeys[id]?'Key saved for this session ✓':'';
+  if(st) st.style.color=apiKeys[id]?'var(--teal)':'var(--ink4)';
+  // Update submit label
+  document.getElementById('submit-lbl').textContent='Create Package with '+m.name;
+}
+
+function saveSessionKey(){
+  const k=document.getElementById('sbm-key-inp')?.value?.trim();
+  const st=document.getElementById('sbm-key-st');
+  if(!k||k.length<8){
+    if(st){st.style.color='var(--red)';st.textContent='Key too short — please check and try again';}
+    return;
+  }
+  // Session storage only — gone on tab close
+  apiKeys[selModel]=k;
+  sessionStorage.setItem('maras_key_'+selModel, k);
+  if(st){st.style.color='var(--teal)';st.textContent='Key saved for this session ✓';}
+  document.getElementById('sbm-key-inp').value='••••••••'+k.slice(-4);
+  // Refresh model list to show saved indicator
+  buildSBModels();
+  pickSBModel(selModel);
+  document.getElementById('submit-lbl').textContent='Create Package with '+(MODELS.find(x=>x.id===selModel)?.name||'AI');
+}
+
+function restoreSessionKeys(){
+  // Restore any keys saved in this session
+  MODELS.forEach(m=>{
+    const k=sessionStorage.getItem('maras_key_'+m.id);
+    if(k) apiKeys[m.id]=k;
+  });
+}
+
+/* ─── TABS ──────────────────────────────────────────────────────── */
+function goTab(t,btn){
+  ['gen','results','saved','assurance'].forEach(id=>{
+    const el=document.getElementById('view-'+id)||(id==='saved'?document.getElementById('view-saved'):null);
+    const target=document.getElementById('view-'+id);
+    if(target)target.style.display=id===t?'block':'none';
+  });
+  document.querySelectorAll('.nav-tab').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+}
+
+/* ─── FILE UPLOAD ────────────────────────────────────────────────── */
+function handleSBDocs(files){
+  Array.from(files).forEach(f=>{if(!sbDocs.find(d=>d.name===f.name))sbDocs.push({name:f.name,size:f.size});});
+  renderSBDocs();
+}
+function renderSBDocs(){
+  document.getElementById('sb-docs').innerHTML=sbDocs.map((d,i)=>`
+    <div class="sd-row"><span class="sd-name">📄 ${d.name}</span><button class="sd-rm" onclick="sbDocs.splice(${i},1);renderSBDocs()">✕</button></div>`).join('');
+}
+function handleReqFiles(files){
+  reqFiles=Array.from(files);
+  const lbl=document.getElementById('req-upload-lbl');
+  lbl.innerHTML=reqFiles.length?reqFiles.map(f=>f.name).join(', ')+' <span style="color:var(--ink4)">(attached)</span>':'Upload your requirements file';
+}
+
+/* ─── STEP BAR ───────────────────────────────────────────────────── */
+/* ════════════════════════════════════════════════════════════════════
+   MARAS ENGINE v3 — 4-Process LangGraph/LangChain Assurance Graph
+   Architecture: graph controls flow; nodes reason and self-evaluate without context stuffing.
+     Process 1 — Source & Scope Validation
+     Process 2 — Business Translation
+     Process 3 — Self-Evaluation
+     Process 4 — Evidence Package
+   Frameworks applied per PBI type: BOI · ACCEPT · INVEST · 3C
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ─── HARNESS STATE ──────────────────────────────────────────────── */
+const H = {
+  // Shared pipeline state — harness reads and writes, agents never own it
+  ctx:       {},   // project context snapshot
+  req:       '',   // original requirement
+  regObjs:   [],   // Regulatory Objects from Loop 1
+  riskReg:   [],   // FMEA Risk Register from Loop 1
+  gateLog:   [],   // gate decisions [{agent,decision,reason,ts}]
+  stories:   [],   // final business PBIs from Loop 2
+  backlog:   [],   // prioritised backlog from Loop 2
+  analytics: {},   // productivity analytics from Loop 3
+  review:    {},   // business evidence review from Loop 3
+  evidence:  {},   // evidence package from Loop 3
+  blocked:   false,
+  blockReason: '',
+};
+
+/* ─── CHUNK RANKING ──────────────────────────────────────────────── */
+function rankChunks(req) {
+  const qt = (req || '').toLowerCase();
+  const activeCats = selCatsSet.size ? selCatsSet : null;
+  const treeFilter = selItems.size
+    ? new Set(TREE_DATA.flatMap(g => g.items.filter(it => selItems.has(it.id)).map(it => it.cat)))
+    : null;
+  return GXP_CHUNKS.filter(c => {
+    if (activeCats && !activeCats.has(c.cat)) return false;
+    if (treeFilter && !treeFilter.has(c.cat)) return false;
+    return true;
+  }).sort((a, b) => {
+    const sa = (a.kws||[]).filter(k => qt.includes(k)).length + (qt.includes(a.reg.toLowerCase()) ? 3 : 0);
+    const sb = (b.kws||[]).filter(k => qt.includes(k)).length + (qt.includes(b.reg.toLowerCase()) ? 3 : 0);
+    return sb - sa;
+  });
+}
+
+/* ─── AUTO PREFIX ────────────────────────────────────────────────── */
+function autoPrefix() {
+  const sys = document.getElementById('f-system').value;
+  const fw  = document.getElementById('f-fw').value;
+  const sysMap = {
+    'LIMS':'LIMS','MES':'MES','QMS':'QMS','EDMS':'EDMS','CDS':'CDS',
+    'EDC / eCRF':'EDC','ERP / SAP':'ERP','SCADA / DCS':'SCADA',
+    'Serialization':'SER','PV System':'PVS','CTMS':'CTMS',
+    'eTMF':'TMF','Safety Reporting':'SAF','Regulatory Info Mgmt':'RIM',
+    'Supply Chain':'SCM'
+  };
+  if (sys && sysMap[sys]) return sysMap[sys];
+  const fwMap = {
+    'FDA':'CFR','EMA / EU GMP':'GMP','ICH':'ICH','MHRA':'MHRA',
+    'TGA':'TGA','WHO':'WHO','Health Canada':'HC','PMDA':'PMDA','Multi-Regional':'GXP',
+    'CDSCO (India)':'IND','NMPA (China)':'CHN','EAEU (Russia)':'RUS',
+    'ANVISA (Brazil)':'BRA','HSA (Singapore)':'SGP','SAHPRA (South Africa)':'ZAF'
+  };
+  if (fw && fwMap[fw]) return fwMap[fw];
+  if (selItems.size) {
+    const first = [...selItems][0];
+    const item = TREE_DATA.flatMap(g => g.items).find(it => it.id === first);
+    if (item) {
+      if (item.id.includes('p11'))  return 'CFR11';
+      if (item.id.includes('a11'))  return 'A11';
+      if (item.id.includes('alcoa'))return 'DI';
+      if (item.id.includes('csv') || item.id.includes('iqoq')) return 'VAL';
+      if (item.id.includes('iso')  || item.id.includes('mdr')) return 'MDR';
+      if (item.id.includes('hipaa')|| item.id.includes('gdpr'))return 'PRI';
+    }
+  }
+  return 'GXP';
+}
+
+/* ─── BILINGUAL ──────────────────────────────────────────────────── */
+function needsBilingual() {
+  const fw = document.getElementById('f-fw').value;
+  return {
+    japanese: fw === 'PMDA',
+    chinese:  fw === 'NMPA (China)',
+    russian:  fw === 'EAEU (Russia)',
+  };
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   AGENT SYSTEM PROMPTS
+   Each prompt enforces the agent's role, output schema, and guardrails.
+   Harness calls these — never passed to end user.
+   ════════════════════════════════════════════════════════════════════ */
+function buildPrompts(ctx, req) {
+  const bil = needsBilingual();
+  const bilNote = bil.japanese
+    ? 'Generate business PBI titles and text in BOTH English AND Japanese (日本語). English first, then Japanese.'
+    : bil.chinese
+    ? 'Generate business PBI titles and text in BOTH English AND Chinese (中文). English first, then Chinese.'
+    : bil.russian
+    ? 'Generate business PBI titles and text in BOTH English AND Russian (Русский). English first, then Russian.'
+    : '';
+
+  return {
+
+    /* ── Loop 1, Step A: Regulatory Intake ── */
+    intake: `You are the Regulatory Intake Agent in MARAS.
+ROLE: Parse, classify, and validate regulatory requirements from the user's input.
+CONTEXT: ${ctx}
+GUARDRAILS:
+  · Never infer or hallucinate requirements — flag ambiguous items, never guess
+  · Every requirement must trace to a real regulatory source
+  · Flag INCOMPLETE items rather than inventing intent
+OUTPUT (strict JSON in a \`\`\`json\`\`\` block):
+{
+  "regulatory_objects": [
+    {"req_id":"REQ-001","source":"21 CFR Part 11 §11.10(e)","criticality":"P0|P1|P2",
+     "compliance_domain":"audit-trail|data-integrity|access-control|validation|privacy",
+     "description":"...", "acceptance_criteria":["measurable criterion"],
+     "status":"COMPLETE|INCOMPLETE|AMBIGUOUS","flags":[]}
+  ],
+  "intake_summary":{"total":N,"complete":N,"flagged":N,"gate":"PROCEED|BLOCK","block_reason":""}
+}`,
+
+    /* ── Loop 1, Step B: Agile Governance (interpretation + FMEA) ── */
+    governance: `You are the Agile Governance Agent in MARAS.
+ROLE: Score regulatory interpretation alignment (0-100) and run FMEA risk assessment.
+CONTEXT: ${ctx}
+GUARDRAILS:
+  · Alignment score < 60 = ESCALATE (flag, do not block pipeline for this demo)
+  · RPN > 200 (Severity × Occurrence × Detection) = CRITICAL risk
+  · Grey areas must be flagged — never autonomously resolved
+OUTPUT (strict JSON in \`\`\`json\`\`\` block):
+{
+  "interpretations":[{"req_id":"REQ-001","alignment_score":85,"type":"ALIGNED|CONSERVATIVE|MISALIGNED","note":""}],
+  "risk_register":[{"risk_id":"RISK-001","req_id":"REQ-001","description":"...","severity":7,"occurrence":5,"detection":6,"rpn":210,"risk_level":"CRITICAL|HIGH|MEDIUM|LOW","mitigation":"...","owner":"Business Owner|QA Lead"}],
+  "critical_count":N,"gate":"APPROVED|CONDITIONAL|BLOCKED","block_reason":""
+}`,
+
+    /* ── Loop 2, Step A: Agile Decomposition ── */
+    decomposition: `You are the Business Assurance Decomposition Agent in MARAS.
+ROLE: Decompose Regulatory Objects into business-specific PBIs, controls, test obligations and evidence needs.
+FRAMEWORKS (apply selectively by PBI type — harness rule, never ignore):
+  Business control PBIs  → BOI + ACCEPT + INVEST + 3C
+  Compliance PBIs        → ACCEPT + INVEST + 3C
+  Integration PBIs       → INVEST + 3C + constraints block
+  Evidence enablers      → INVEST + ACCEPT only
+BOI  = Business Outcome–Impact (business capability, operating risk reduced, measurable value)
+ACCEPT = Action–Criteria–Expected–Pass/Fail–Traceable (compliance "done" definition)
+INVEST = Independent·Negotiable·Valuable·Estimable·Small·Testable (DoR gate)
+3C = Card·Conversation·Confirmation (Given/When/Then acceptance criteria)
+CONTEXT: ${ctx}
+STORY PREFIX: ${autoPrefix()}
+${bilNote}
+GUARDRAILS:
+  · Generate detailed PBIs only from explicit regulatory/source requirements; never invent filler items
+  · Every PBI must pass all 6 INVEST dimensions
+  · Every PBI must carry req_id + regulatory source traceability
+  · Estimation always marked ESTIMATION_PENDING — never finalised by agent
+  · P0 requirements must produce at least one business PBI, but delivery ranking is left to the team
+OUTPUT (strict JSON in \`\`\`json\`\`\` block):
+[{
+  "id":"${autoPrefix()}-001","num":1,"title":"...",
+  "type":"business-control|compliance-control|integration-control|evidence-enabler",
+  "frameworks_applied":["BOI","ACCEPT","INVEST","3C"],
+  "regulation":"21 CFR Part 11","section":"§11.10(e)",
+  "regRef":"REQ-001 · 21 CFR Part 11 §11.10(e)",
+  "epic":"...",
+  "boi":{"business_area":"...","outcome":"...","impact":"..."},
+  "story":"For [business process/system], the business must [control/action] so that [measurable regulatory or operational outcome].",
+  "invest":{"independent":"yes|no","negotiable":"yes","valuable":"...","estimable":"yes","small":"yes","testable":"yes"},
+  "ac":["Given [...] When [...] Then [...]","Given [...] When [...] Then [...]"],
+  "accept":{"action":"...","criteria":["..."],"expected":"...","pass_fail":"...","traceable":"REQ-001 · 21 CFR Part 11 §11.10(e)"},
+  "constraints":{"security":"...","performance":"...","permissions":"..."},
+  "gamp":"Cat.4 — Configured Software","phase":"Evidence Stage: Operational Qualification",
+  "labels":["audit-trail","cfr-11"]
+}]`,
+
+    /* ── Loop 2, Step B: Business Sequencing ── */
+    backlog: `You are the Business Sequencing Agent in MARAS.
+ROLE: Map dependencies and recommend flexible business sequencing without assigning effort estimates or fixed delivery ranking.
+RULES:
+  Preserve regulatory criticality as context only
+  Do not assign final delivery ranking, effort estimate, calendar phase, validation-event label, go-live label, or delivery-mode fields
+OUTPUT (strict JSON in \`\`\`json\`\`\` block):
+{
+  "backlog":[{"id":"...","regulatory_criticality":"P0|P1|P2","business_sequence":"Foundation|Control Build|Evidence Closure","dependencies":{"blocks":[],"blocked_by":[]},"capacity_fit":true}],
+  "summary":{"total_pbis":N,"evidence_overload":false,"gate":"PROCEED|BLOCK"}
+}`,
+
+    /* ── Loop 2, Step C: Board Recommendation ── */
+    board: `You are the Evidence Workflow Recommendation Agent in MARAS.
+ROLE: Recommend a control-to-evidence workflow grounded in regulatory compliance requirements.
+CONTEXT: ${ctx}
+OUTPUT (JSON in \`\`\`json\`\`\` block):
+{
+  "columns":["Source Validated","Control Defined","PBI Ready","Evidence Needed","QA Review","Business Approved"],
+  "swimlanes":[{"name":"audit-trail","pbis":["${autoPrefix()}-001"]}],
+  "wip_limits":{"QA Review":1},
+  "compliance_gates":[{"column":"QA Review","required_by":"21 CFR Part 11","approver":"QA Lead","auto_transition":false}],
+  "business_outcome":"${document.getElementById('f-outcome')?.value || 'Validated regulated business process'}"
+}`,
+
+    /* ── Loop 3, Step A: Assurance Analytics ── */
+    analytics: `You are the Business Assurance Analytics Agent in MARAS.
+ROLE: Generate productivity impact, P0 coverage, compliance domain analysis, and risk trend.
+CONTEXT: ${ctx}
+OUTPUT (JSON in \`\`\`json\`\`\` block):
+{
+  "productivity":{"effort_baseline":N,"notes":"Baseline package — effort estimate remains pending team confirmation"},
+  "p0_completion_rate":N,
+  "compliance_coverage":[{"domain":"audit-trail","coverage_pct":N,"status":"On Track|At Risk"}],
+  "rpn_trend":"Not yet established — first package",
+  "at_risk_pbis":[],
+  "recommendations":["..."]
+}`,
+
+    /* ── Loop 3, Step B: Business Evidence Review ── */
+    review: `You are the Business Evidence Review Agent in MARAS.
+ROLE: Assess evidence readiness and generate Business Assurance Review Record.
+ABSORBED: Test Readiness checklist runs as part of this gate.
+EVIDENCE READINESS CHECKLIST (all must pass for READY status):
+  □ All P0 PBIs have test cases
+  □ Negative test cases exist for each regulatory control
+  □ Evidence environment documented and approved
+  □ Dual sign-off: Business Owner + QA Lead
+OUTPUT (JSON in \`\`\`json\`\`\` block):
+{
+  "evidence_decision":"READY|NOT_READY|CONDITIONALLY_READY",
+  "p0_coverage_pct":N,
+  "checklist":{"p0_test_cases":true,"negative_tests":false,"env_documented":false,"dual_signoff":false},
+  "blocking_gaps":["..."],
+  "review_record_id":"BAR-${new Date().toISOString().slice(0,10)}-001",
+  "sign_off_required":["Business Owner","QA Lead"]
+}`,
+
+    /* ── Loop 3, Step C: Retrospective + Evidence ── */
+    retrospective: `You are the Retrospective Agent in MARAS.
+ROLE: Facilitate assurance retrospective and assemble GxP-compliant Evidence Package.
+ABSORBED: Evidence Preparation — audit-ready packaging closes the retrospective loop.
+EVIDENCE PACKAGE must include:
+  □ Requirements Traceability Matrix (RTM) — req_id → pbi_id → test_id
+  □ Regulatory Interpretation Log
+  □ Governance Gate Decisions with timestamps
+  □ Risk Register with RPN + mitigation status
+  □ Business Assurance Review Record + Evidence Readiness Decision
+GUARDRAILS:
+  · submission_ready = false if any document MISSING or upstream gate BLOCKED
+  · GxP format: version, author, date, approval fields mandatory
+OUTPUT (JSON in \`\`\`json\`\`\` block):
+{
+  "retrospective":{"went_well":["..."],"improve":["..."],"actions":[{"action":"...","owner":"QA Lead","due":"Next assurance package"}]},
+  "evidence_package":{
+    "package_id":"EP-${new Date().toISOString().slice(0,10)}-001",
+    "audit_readiness_score":N,
+    "documents":[{"title":"RTM","status":"COMPLETE|PARTIAL|MISSING"},{"title":"Interpretation Log","status":"COMPLETE"},{"title":"Gate Decisions","status":"COMPLETE"},{"title":"Risk Register","status":"COMPLETE"},{"title":"Business Assurance Review Record","status":"COMPLETE"}],
+    "submission_ready":false,
+    "sign_off_required":["Business Owner","QA Lead"]
+  }
+}`
+  };
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   DEMO ENGINE — 4-process assurance graph in memory, sub-100ms, no network
+   ════════════════════════════════════════════════════════════════════ */
+function runDemoEngine(req, ctx) {
+  const pfx   = autoPrefix();
+  const sys   = document.getElementById('f-system').value || 'GxP system';
+  const fw    = document.getElementById('f-fw').value;
+  const businessOutcome = document.getElementById('f-outcome').value || `defensible ${sys} regulated operations`;
+  const clientRegion = document.getElementById('f-client-region').value || fw || 'selected operating region';
+  const clientDelta = document.getElementById('f-client-delta').value || 'standard client process';
+  const auditGap = document.getElementById('f-gap-input').value || 'no prior audit gap supplied';
+  const top   = rankChunks(req).slice(0, 12);
+  const ts    = new Date().toISOString().slice(0, 10);
+
+  const BUSINESS_AREAS = ['Batch release','Laboratory operations','Quality event closure','Regulatory submission readiness',
+                          'Manufacturing continuity','Patient/data safety','Supplier oversight','Inspection response'];
+  const GAMP  = {A:'Cat.4 — Configured',B:'Cat.4 — Configured',C:'Cat.4 — Configured',
+                 D:'Cat.3 — Infrastructure',E:'Cat.4 — Configured',F:'Cat.4 — Configured',
+                 G:'Cat.3 — Infrastructure',H:'Cat.5 — Custom'};
+  const EVIDENCE_STAGE = {A:'Lifecycle control evidence',B:'Electronic record evidence',C:'Data integrity evidence',
+                          D:'Access/security evidence',E:'Privacy control evidence',F:'Validation evidence',
+                          G:'Vendor/cloud evidence',H:'Device QMS evidence'};
+  const FW_TYPE = {'business-control':['BOI','ACCEPT','INVEST','3C'],'compliance-control':['ACCEPT','INVEST','3C'],
+                   'integration-control':['INVEST','3C'],'evidence-enabler':['INVEST','ACCEPT']};
+
+  // ── Agent 1: Regulatory Intake ──────────────────────────────────
+  const regObjs = top.map((c, i) => ({
+    req_id: `REQ-${String(i+1).padStart(3,'0')}`,
+    source: `${c.reg} ${c.sec}`,
+    criticality: i < 3 ? 'P0' : i < 6 ? 'P1' : 'P2',
+    compliance_domain: {A:'lifecycle',B:'e-records',C:'data-integrity',D:'access-control',
+                        E:'privacy',F:'validation',G:'vendor-cloud',H:'device-qms'}[c.cat]||'gxp',
+    description: c.title,
+    acceptance_criteria: c.reqs || [],
+    status: 'COMPLETE', flags: [],
+  }));
+  const intakeSummary = {total:regObjs.length,complete:regObjs.length,flagged:0,gate:'PROCEED',block_reason:''};
+
+  // ── Agent 2: Agile Governance (FMEA) ────────────────────────────
+  const riskReg = top.slice(0,6).map((c, i) => {
+    const s = 6+Math.floor(i*0.5), o = 4+i, d = 5+Math.floor(i*0.7);
+    const rpn = s*o*d;
+    return {
+      risk_id: `RISK-${String(i+1).padStart(3,'0')}`,
+      req_id: `REQ-${String(i+1).padStart(3,'0')}`,
+      description: `Gap in ${c.title} implementation`,
+      severity:s, occurrence:o, detection:d, rpn,
+      risk_level: rpn>200?'CRITICAL':rpn>100?'HIGH':rpn>50?'MEDIUM':'LOW',
+      mitigation: `Implement ${c.title} controls per ${c.reg} ${c.sec}`,
+      owner: rpn>150?'Business Owner':'QA Lead',
+    };
+  });
+  const govGate = riskReg.some(r=>r.risk_level==='CRITICAL') ? 'CONDITIONAL' : 'APPROVED';
+
+  // ── Agent 3: Business PBI Decomposition (BOI + ACCEPT + INVEST + 3C) ───
+  let itemNo = 0;
+  const stories = top.flatMap((c, i) => {
+    const sourceReqs = (c.reqs && c.reqs.length ? c.reqs : [c.title]).slice(0, 3);
+    return sourceReqs.map((rq, ri) => {
+      itemNo += 1;
+      const reqId = `REQ-${String(i+1).padStart(3,'0')}.${ri+1}`;
+      const businessArea = BUSINESS_AREAS[(i + ri) % BUSINESS_AREAS.length];
+      const type = ri===0 ? 'business-control' : ri===1 ? 'compliance-control' : (c.cat==='D'||c.cat==='G'?'integration-control':'evidence-enabler');
+      const fwApp = FW_TYPE[type];
+      const regulatoryCriticality = i < 3 ? 'P0' : i < 6 ? 'P1' : 'P2';
+      const conciseReq = rq.length > 86 ? rq.slice(0,83)+'...' : rq;
+      const lowerReq = rq.charAt(0).toLowerCase()+rq.slice(1).replace(/\.$/,'');
+      const pbiId = `${pfx}-${String(itemNo).padStart(3,'0')}`;
+      const srcMeta = sourceMetaFor(c.reg);
+      const clientFit = `Region: ${clientRegion}; Client delta: ${clientDelta}; Past audit/backlog gap: ${auditGap}`;
+      const ac = [
+        `Given ${c.reg} ${c.sec} is the approved source, when ${sys} supports ${businessArea.toLowerCase()}, then it demonstrably implements: ${rq}.`,
+        `Given QA reviews ${pbiId}, when objective evidence is inspected, then pass/fail results link to ${reqId} and cannot rely on unsupported assumptions.`,
+        `Given the client context is "${clientFit}", when the control is approved, then the evidence package shows reduced regulatory and operational risk.`
+      ];
+      return {
+        num: itemNo,
+        id: pbiId,
+        title: `${businessArea}: ${conciseReq}`,
+        type,
+        frameworks_applied: fwApp,
+        regulation: c.reg, section: c.sec,
+        regulatoryCriticality,
+        regRef: `${reqId} · ${c.reg} ${c.sec}`,
+        epic: `${businessArea} Assurance · ${c.reg}`,
+        boi: {
+          business_area: businessArea,
+          outcome: businessOutcome,
+          impact: `Reduces ${c.title.toLowerCase()} exposure for ${sys} while preserving traceability to ${c.reg} ${c.sec}`,
+          client_context: clientFit
+        },
+        story: `For ${businessArea.toLowerCase()} in ${sys}, the business must ${lowerReq} so that ${businessOutcome} is defensible against ${c.reg} ${c.sec}.`,
+        invest: {independent:'yes',negotiable:'yes',valuable:`Protects ${businessArea.toLowerCase()} and proves ${c.reg} ${c.sec} compliance`,estimable:'yes',small:'yes',testable:'yes'},
+        ac,
+        accept: {
+          action: `Business control implements: ${rq}`,
+          criteria: [rq],
+          expected: `${sys} demonstrates ${c.reg} ${c.sec} compliance for ${businessArea.toLowerCase()}`,
+          pass_fail: `QA evidence review + objective test result`,
+          traceable: `${reqId} · ${c.reg} ${c.sec}`
+        },
+        constraints: {security:'Role-based access control enforced where applicable',performance:'Evidence must show control operates within agreed business tolerance',permissions:'Critical compliance evidence is protected from unauthorized alteration'},
+        gamp: GAMP[c.cat]||'Cat.4',
+        phase: EVIDENCE_STAGE[c.cat]||'Control evidence',
+        sourceAuthority: srcMeta.authority,
+        applicableNation: srcMeta.nation,
+        sourceType: srcMeta.sourceType,
+        sourceRequirement: rq,
+        labels: (c.kws||[]).slice(0,3),
+      };
+    });
+  });
+
+  // Process 2 continued: Business sequencing
+  const backlog = stories.map((s, i) => ({
+    id: s.id, regulatory_criticality: s.regulatoryCriticality,
+    business_sequence: i < Math.ceil(stories.length/3) ? 'Foundation' : i < Math.ceil(stories.length*2/3) ? 'Control Build' : 'Evidence Closure',
+    dependencies: {blocks:[], blocked_by:[]}, capacity_fit: true,
+  }));
+  const p0Count  = stories.filter(s=>s.regulatoryCriticality==='P0').length;
+  const p1Count= stories.filter(s=>s.regulatoryCriticality==='P1').length;
+
+  // ── Agent 5: Board Recommendation ───────────────────────────────
+  const board = {
+    columns: ['Source Validated','Control Defined','PBI Ready','Evidence Needed','QA Review','Business Approved'],
+    swimlanes: [...new Set(stories.map(s=>s.accept?.traceable?.split('·')[1]?.trim().split(' ')[0]||'GxP'))].map(d=>({name:d,stories:stories.filter(s=>s.regulation.includes(d)).map(s=>s.id)})),
+    wip_limits: {'QA Review':1,'Evidence Needed':3},
+    compliance_gates: [{column:'QA Review',required_by:fw,approver:'QA Lead',auto_transition:false}],
+  };
+
+  // Process 3 continued: Assurance analytics
+  const analytics = {
+    effort: {planned_effort: null, notes:'Effort is intentionally not pre-populated; delivery team estimates after assurance review'},
+    p0_completion_rate: 0,
+    compliance_coverage: [{domain:'regulatory',coverage_pct:Math.round((p0Count/stories.length)*100),status:'On Track'}],
+    rpn_trend: 'Establishing baseline — no prior assurance package data',
+    at_risk_stories: stories.filter(s=>s.regulatoryCriticality==='P0').slice(-1).map(s=>s.id),
+    recommendations: [
+      `Review ${p0Count} P0 business PBIs before delivery planning`,
+      `Negative test cases required for all ${p0Count} P0 regulatory controls`,
+      `Evidence environment documentation needed before business approval`,
+    ],
+  };
+
+  // Process 4: Business evidence review
+  const review = {
+    evidence_decision: 'CONDITIONALLY_READY',
+    p0_coverage_pct: 0,
+    checklist: {p0_test_cases:false,negative_tests:false,env_documented:false,dual_signoff:false},
+    blocking_gaps: [
+      'Test cases not yet written for P0 business PBIs',
+      'Negative test cases missing for regulatory controls',
+      'Evidence environment not yet documented',
+    ],
+    review_record_id: `BAR-${ts}-001`,
+    sign_off_required: ['Business Owner','QA Lead'],
+  };
+
+  // ── Agent 8 & 9: Retrospective + Evidence Package ───────────────
+  const evidence = {
+    retrospective: {
+      went_well: ['Regulatory requirements clearly identified and classified','Framework selection correctly applied per PBI type','Full regulatory traceability established from REQ through to business PBI'],
+      improve: ['Negative test cases must be written before business approval','Evidence environment documentation required','P0 PBI effort sizing remains team-owned'],
+      actions: [
+        {action:'Write negative test cases for all P0 regulatory controls',owner:'QA Lead',due:'Package Day 3'},
+        {action:'Document evidence environment configuration',owner:'IT Administrator',due:'Package Day 4'},
+        {action:'Confirm PBI effort sizing in planning session',owner:'Business Owner',due:'Package Day 1'},
+      ],
+    },
+    evidence_package: {
+      package_id: `EP-${ts}-001`,
+      audit_readiness_score: 62,
+      documents: [
+        {title:'Requirements Traceability Matrix (RTM)',status:'COMPLETE'},
+        {title:'Regulatory Interpretation Log',status:'COMPLETE'},
+        {title:'Governance Gate Decisions',status:'COMPLETE'},
+        {title:'Risk Register (FMEA)',status:'COMPLETE'},
+        {title:'Business Assurance Review Record',status:'PARTIAL'},
+        {title:'Evidence Readiness Decision',status:'MISSING'},
+        {title:'Outstanding Issues Log',status:'COMPLETE'},
+      ],
+      submission_ready: false,
+      sign_off_required: ['Business Owner','QA Lead'],
+    },
+  };
+
+  return { regObjs, intakeSummary, riskReg, govGate, stories, backlog,
+           p0Count, p1Count, board, analytics, review, evidence };
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   PIPELINE STEPS DEFINITION
+   ════════════════════════════════════════════════════════════════════ */
+const PIPELINE_STEPS = [
+  {id:'intake', loop:1, icon:'📥', name:'Source & Scope Validation', dot:'#4338ca', desc:'Official source, region, license, client context and applicability'},
+  {id:'decomp', loop:2, icon:'🧩', name:'Business Translation', dot:'#92400e', desc:'Regulatory controls converted into business-specific PBIs'},
+  {id:'review', loop:3, icon:'✅', name:'Self-Evaluation', dot:'#065f46', desc:'Completeness, audit gaps, evidence readiness and QA review'},
+  {id:'retro', loop:4, icon:'📁', name:'Evidence Package', dot:'#1e3a5f', desc:'RTM, interpretation log, risk register and assurance report'},
+];
+
+function buildStepBar() {
+  // Progress bar in results view
+  document.getElementById('sp-steps').innerHTML = PIPELINE_STEPS.map((s,i) => `
+    <div class="sp-step" id="sps-${s.id}" onclick="toggleCard('${s.id}')">
+      <div class="sp-ico" id="spico-${s.id}">${s.icon}</div>
+      <div class="sp-name">${s.name}</div>
+      <div class="sp-status" id="spst-${s.id}">Waiting</div>
+    </div>`).join('');
+  // Detail cards
+  const so = document.getElementById('step-cards'); so.innerHTML = '';
+  PIPELINE_STEPS.forEach(s => {
+    const d = document.createElement('div');
+    d.className='step-card'; d.id='sc-'+s.id;
+    d.innerHTML = `<div class="scd-hdr" onclick="toggleCard('${s.id}')">
+      <div class="scd-dot" id="scdot-${s.id}" style="background:var(--border2)"></div>
+      <div class="scd-name">${s.icon} ${s.name}</div>
+      <div style="font-size:10px;color:var(--ink4);flex:1;margin-left:6px">${s.desc}</div>
+      <span class="scd-badge scdb-wait" id="scdb-${s.id}">Waiting</span>
+      <span class="scd-chev" id="scch-${s.id}">›</span>
+    </div><div class="scd-body" id="scbod-${s.id}"></div>`;
+    so.appendChild(d);
+  });
+}
+
+function toggleCard(id) {
+  const b=document.getElementById('scbod-'+id); const ch=document.getElementById('scch-'+id);
+  b.classList.toggle('show');
+  if(ch) ch.style.transform = b.classList.contains('show') ? 'rotate(90deg)' : '';
+}
+
+const DOTCOLS = Object.fromEntries(PIPELINE_STEPS.map(s=>[s.id,s.dot]));
+
+function setStep(id, state, txt) {
+  const sp    = document.getElementById('sps-'+id);
+  const ico   = document.getElementById('spico-'+id);
+  const st    = document.getElementById('spst-'+id);
+  const badge = document.getElementById('scdb-'+id);
+  const dot   = document.getElementById('scdot-'+id);
+  const body  = document.getElementById('scbod-'+id);
+  if (!sp) return;
+  sp.className = 'sp-step' + (state==='run'?' active':state==='done'?' done':state==='blocked'?' blocked':'');
+  if (st) st.textContent = state==='run'?'Running…':state==='done'?'Complete':state==='blocked'?'Blocked':'Waiting';
+  if (ico && state==='done') ico.textContent = '✓';
+  if (ico && state==='blocked') ico.textContent = '✗';
+  const bmap = {run:'scdb-run Running',done:'scdb-done Complete',blocked:'scdb-block Blocked',wait:'scdb-wait Waiting'};
+  const [bc,bl] = (bmap[state]||'scdb-wait Waiting').split(' ');
+  if (badge) { badge.className='scd-badge '+bc; badge.textContent=bl; }
+  if (dot) dot.style.background = state==='done'?'var(--teal)':state==='blocked'?'var(--red)':state==='run'?DOTCOLS[id]||'var(--amber)':'var(--border2)';
+  if (txt && body) { body.textContent=txt; body.classList.add('show'); }
+}
+
+function setStatus(t, msg) {
+  const el = document.getElementById('status-strip');
+  const map = {idle:'ss-idle',run:'ss-run',done:'ss-done',block:'ss-block'};
+  el.className = 'status-strip '+(map[t]||'ss-idle');
+  el.innerHTML = (t==='run'?'<span class="spin"></span>&nbsp;':'')+msg;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   HARNESS ORCHESTRATOR — Controls flow, never stuffs context
+   ════════════════════════════════════════════════════════════════════ */
+async function doGenerate() {
+  if (running) return;
+  const req = document.getElementById('req-ta').value.trim();
+  if (!req) { alert('Please describe your compliance requirement first.'); return; }
+  if (!demoMode) {
+    const sk = sessionStorage.getItem('maras_key_'+selModel);
+    if (sk && !apiKeys[selModel]) apiKeys[selModel] = sk;
+    if (!apiKeys[selModel]) {
+      alert('Please select an AI model and save your API key in the left sidebar first.');
+      document.getElementById('sb-model-section')?.scrollIntoView({behavior:'smooth',block:'center'});
+      return;
+    }
+  }
+
+  running = true;
+  document.getElementById('submit-btn').disabled = true;
+  goTab('results', document.getElementById('ntab-results'));
+  document.getElementById('stories-section').style.display = 'none';
+  allStories = [];
+
+  // Snapshot context once — harness passes to agents, agents never re-read DOM
+  const ctx = [
+    document.getElementById('f-org').value,
+    document.getElementById('f-proj').value,
+    document.getElementById('f-system').value,
+    selDomain,
+    document.getElementById('f-fw').value,
+    document.getElementById('f-outcome').value,
+    document.getElementById('f-client-region').value,
+    document.getElementById('f-client-delta').value,
+    document.getElementById('f-gap-input').value,
+    selItems.size ? `${selItems.size} regulations selected` : 'All regulations',
+  ].filter(Boolean).join(' | ');
+
+  // Reset harness state
+  Object.assign(H, {ctx:{},req,regObjs:[],riskReg:[],gateLog:[],stories:[],backlog:{},analytics:{},review:{},evidence:{},blocked:false,blockReason:''});
+  H.ctx = {req, ctx, fw:document.getElementById('f-fw').value, sys:document.getElementById('f-system').value||'GxP system', outcome:document.getElementById('f-outcome').value, clientRegion:document.getElementById('f-client-region').value, clientDelta:document.getElementById('f-client-delta').value, auditGap:document.getElementById('f-gap-input').value, pfx:autoPrefix()};
+
+  buildStepBar();
+  setStatus('run', 'Orchestrator initialising pipeline…');
+
+  try {
+    if (demoMode) await orchestratorDemo(req, ctx);
+    else          await orchestratorLive(req, ctx);
+  } finally {
+    running = false;
+    document.getElementById('submit-btn').disabled = false;
+  }
+}
+
+/* ─── DEMO ORCHESTRATOR (pure JS, sub-100ms per agent) ──────────── */
+async function orchestratorDemo(req, ctx) {
+  const result = runDemoEngine(req, ctx);
+
+  // ── Gate function — harness decides, not agents ──
+  function gate(agentId, condition, reason) {
+    const pass = condition;
+    H.gateLog.push({agent:agentId, decision:pass?'PROCEED':'BLOCK', reason, ts:new Date().toISOString()});
+    if (!pass) { H.blocked=true; H.blockReason=reason; }
+    return pass;
+  }
+
+  const fmtRisk = r => `  ${r.risk_level} · ${r.risk_id}: ${r.description}\n  RPN ${r.rpn} (S:${r.severity}×O:${r.occurrence}×D:${r.detection}) · Mitigation: ${r.mitigation}`;
+  const fmtStory = s => `  ${s.id} [${s.regulatoryCriticality}] ${s.title}\n  Frameworks: ${s.frameworks_applied.join(' + ')}\n  Business PBI: ${s.story}\n  INVEST: ✓ all 6 dimensions · Effort: left for delivery-team estimation`;
+
+  /* Loop 1 — Regulatory Intelligence */
+  setStep('intake','run');
+  await tick();
+  if (!gate('intake', result.intakeSummary.gate==='PROCEED', 'Intake: '+result.intakeSummary.block_reason||'')) {
+    setStep('intake','blocked','Gate blocked: '+H.blockReason); setStatus('block','Pipeline blocked at intake'); return;
+  }
+  setStep('intake','done',
+    `REGULATORY INTAKE — ${result.regObjs.length} requirements parsed\n\n`+
+    result.regObjs.map(r=>`  ${r.req_id} [${r.criticality}] ${r.source}\n  Domain: ${r.compliance_domain} · Status: ${r.status}\n  Description: ${r.description}`).join('\n\n')+
+    `\n\nGate: PROCEED → Governance Agent`);
+
+  setStep('govern','run');
+  await tick();
+  if (!gate('govern', result.govGate!=='BLOCKED', `Governance: ${result.govGate}`)) {
+    setStep('govern','blocked','Critical risks detected — review required'); setStatus('block','Pipeline blocked at governance'); return;
+  }
+  const criticals = result.riskReg.filter(r=>r.risk_level==='CRITICAL');
+  setStep('govern','done',
+    `GOVERNANCE & RISK — FMEA complete · Gate: ${result.govGate}\n\n`+
+    `Interpretation Scores:\n`+
+    result.regObjs.slice(0,4).map((r,i)=>`  ${r.req_id}: ${85-i*6}/100 — ${85-i*6>=80?'ALIGNED':85-i*6>=60?'CONSERVATIVE':'MISALIGNED'}`).join('\n')+
+    `\n\nRisk Register:\n`+result.riskReg.map(fmtRisk).join('\n\n')+
+    (criticals.length?`\n\n⚠ ${criticals.length} CRITICAL risk(s) — escalation recommended`:`\n\n✓ No critical risks — pipeline proceeds`));
+
+  /* Loop 2 — Business Assurance Delivery */
+  setStep('decomp','run');
+  await tick();
+  H.stories = result.stories;
+  allStories = result.stories;
+  document.getElementById('ns-stories').textContent = result.stories.length;
+  document.getElementById('ns-stories').className = 'nstat-v lit';
+  setStep('decomp','done',
+    `BUSINESS PBI DECOMPOSITION — ${result.stories.length} traceable PBIs generated\n\n`+
+    result.stories.map(fmtStory).join('\n\n')+
+    `\n\nAll PBIs carry full regulatory traceability (req_id + source).\nNo effort estimates or delivery ranking are pre-populated.`);
+
+  setStep('backlog','run');
+  await tick();
+  setStep('backlog','done',
+    `BUSINESS SEQUENCING — flexible delivery handoff\n\n`+
+    `P0 criticality PBIs: ${result.p0Count}\nP1 criticality PBIs: ${result.p1Count}\nDelivery ranking and effort: team-owned\n\n`+
+    result.backlog.map(b=>`  ${b.id} → ${b.regulatory_criticality} · ${b.business_sequence}`).join('\n')+
+    `\n\nGate: PROCEED → Evidence Workflow`);
+
+  setStep('board','run');
+  await tick();
+  setStep('board','done',
+    `EVIDENCE WORKFLOW — ${result.board.columns.length} checkpoints configured\n\n`+
+    `Columns: ${result.board.columns.join(' → ')}\n\n`+
+    `Swimlanes: ${result.board.swimlanes.map(s=>s.name).join(', ')}\n\n`+
+    `WIP Limits: QA Review = 1 (no batching of compliance reviews)\n\n`+
+    `Compliance Gates:\n`+result.board.compliance_gates.map(g=>`  ${g.column} → Required by: ${g.required_by} · Approver: ${g.approver} · Auto-transition: ${g.auto_transition}`).join('\n')+
+    `\n\nGate: PROCEED → Productivity Analytics`);
+
+  /* Loop 3 — Assurance Evidence */
+  setStep('analytics','run');
+  await tick();
+  setStep('analytics','done',
+    `PRODUCTIVITY ANALYTICS — Baseline established\n\n`+
+    `Effort baseline: Team-owned · ${result.analytics.effort.notes}\n\n`+
+    `Compliance Coverage:\n`+result.analytics.compliance_coverage.map(c=>`  ${c.domain}: ${c.coverage_pct}% — ${c.status}`).join('\n')+
+    `\n\nRPN Trend: ${result.analytics.rpn_trend}\n\n`+
+    `Recommendations:\n`+result.analytics.recommendations.map(r=>`  · ${r}`).join('\n'));
+
+  setStep('review','run');
+  await tick();
+  const rv = result.review;
+  setStep('review','done',
+    `BUSINESS EVIDENCE REVIEW — Evidence readiness: ${rv.evidence_decision}\n\n`+
+    `P0 Coverage: ${rv.p0_coverage_pct}% (target: 80%)\n\n`+
+    `Evidence Checklist:\n`+
+    Object.entries(rv.checklist).map(([k,v])=>`  ${v?'✓':'✗'} ${k.replace(/_/g,' ')}`).join('\n')+
+    `\n\nBlocking Gaps:\n`+rv.blocking_gaps.map(g=>`  · ${g}`).join('\n')+
+    `\n\nBusiness Assurance Review Record: ${rv.review_record_id}\nSign-off required: ${rv.sign_off_required.join(', ')}`);
+
+  setStep('retro','run');
+  await tick();
+  const ev = result.evidence;
+  setStep('retro','done',
+    `ASSURANCE RETROSPECTIVE & EVIDENCE PACKAGE\n\n`+
+    `What went well:\n`+ev.retrospective.went_well.map(w=>`  ✓ ${w}`).join('\n')+
+    `\n\nTo improve:\n`+ev.retrospective.improve.map(w=>`  · ${w}`).join('\n')+
+    `\n\nAction items:\n`+ev.retrospective.actions.map(a=>`  → ${a.action} (${a.owner}, ${a.due})`).join('\n')+
+    `\n\nEvidence Package: ${ev.evidence_package.package_id}\nAudit Readiness: ${ev.evidence_package.audit_readiness_score}/100\n`+
+    ev.evidence_package.documents.map(d=>`  ${d.status==='COMPLETE'?'✓':d.status==='PARTIAL'?'◑':'✗'} ${d.title} — ${d.status}`).join('\n')+
+    `\n\nsubmission_ready: ${ev.evidence_package.submission_ready} — ${ev.evidence_package.sign_off_required.join(' + ')} sign-off required`);
+
+  setStatus('done', `✓ 4-process assurance graph complete · ${result.stories.length} business PBIs · evidence package assembled`);
+  renderStories(result.stories, result);
+}
+
+// Non-blocking tick — yields to browser to update UI between agents
+function tick() { return new Promise(r => setTimeout(r, 0)); }
+
+/* ─── LIVE ORCHESTRATOR ─────────────────────────────────────────── */
+async function orchestratorLive(req, ctx) {
+  const m = MODELS.find(x => x.id === selModel);
+  const prompts = buildPrompts(ctx, req);
+  const pfx = autoPrefix();
+  let prevOutput = '';
+
+  async function runAgent(stepId, promptKey, userMsg) {
+    if (H.blocked) { setStep(stepId,'wait','Skipped — upstream gate blocked.'); return null; }
+    setStep(stepId,'run');
+    setStatus('run', PIPELINE_STEPS.find(s=>s.id===stepId)?.name+'…');
+    try {
+      // Harness passes pre-snapshotted context — agents never re-read DOM
+      const hCtx = `Requirement: ${H.ctx.req}\nSystem: ${H.ctx.sys}\nFramework: ${H.ctx.fw}\nBusiness outcome: ${H.ctx.outcome||'Not specified'}\nClient operating region: ${H.ctx.clientRegion||'Not specified'}\nClient process delta: ${H.ctx.clientDelta||'Not specified'}\nPast backlog/audit gap: ${H.ctx.auditGap||'Not specified'}\nPrefix: ${H.ctx.pfx}\nFull context: ${H.ctx.ctx}`;
+      const txt = await callLLM(m, prompts[promptKey],
+        `${hCtx}${prevOutput?'\n\nPrevious agent output:\n'+prevOutput.slice(0,600):''}${userMsg?'\n\n'+userMsg:''}`);
+      setStep(stepId,'done',txt);
+      prevOutput = txt;
+      return txt;
+    } catch(e) {
+      let msg = e.message||'Error';
+      if(msg.includes('fetch')||msg.includes('CORS')) msg='Network error — open via SharePoint https:// not file:///';
+      else if(msg.includes('401')) msg='API key rejected — please re-enter your key in the sidebar';
+      else if(msg.includes('429')) msg='Rate limit reached — switch to Demo mode or wait';
+      setStep(stepId,'blocked',msg);
+      H.blocked=true; H.blockReason=msg;
+      return null;
+    }
+  }
+
+  // Loop 1 — parallel where safe
+  const [intakeTxt, ] = await Promise.all([runAgent('intake','intake',''), tick()]);
+  if(H.blocked){setStatus('block','Pipeline blocked — see details above');return;}
+  await runAgent('govern','governance','');
+  if(H.blocked){setStatus('block','Pipeline blocked — see details above');return;}
+
+  // Loop 2 — decomposition first, then parallel backlog + board
+  const decompTxt = await runAgent('decomp','decomposition','');
+  if(H.blocked){setStatus('block','Pipeline blocked — see details above');return;}
+  // Extract stories from JSON block
+  if(decompTxt){
+    const jm = decompTxt.match(/```json\s*([\s\S]*?)```/);
+    if(jm){try{
+      const p=JSON.parse(jm[1]);
+      if(Array.isArray(p)){
+        allStories=p.map((s,i)=>({...s,num:i+1}));
+        document.getElementById('ns-stories').textContent=allStories.length;
+        document.getElementById('ns-stories').className='nstat-v lit';
+      }
+    }catch{}}
+  }
+  await Promise.all([runAgent('backlog','backlog',''), runAgent('board','board','')]);
+  if(H.blocked){setStatus('block','Pipeline blocked — see details above');return;}
+
+  // Loop 3 — analytics first, then parallel review + retro
+  await runAgent('analytics','analytics','');
+  await Promise.all([runAgent('review','review',''), runAgent('retro','retrospective','')]);
+
+  if(!H.blocked && allStories.length){
+    setStatus('done','✓ '+allStories.length+' business PBIs generated — 4-process assurance graph complete');
+    renderStories(allStories);
+  } else if(!H.blocked){
+    setStatus('done','All agents complete — switch to Demo mode for pre-built business PBI examples');
+  } else {
+    setStatus('block','Pipeline blocked — see agent details above');
+  }
+}
+
+/* ─── LLM CALLER ────────────────────────────────────────────────── */
+async function callLLM(m, sys, userMsg) {
+  if (m.id==='claude') {
+    const r = await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':apiKeys[m.id],
+               'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:2000,system:sys,messages:[{role:'user',content:userMsg}]})});
+    const d=await r.json(); if(d.error)throw new Error(d.error.message);
+    return d.content?.map(b=>b.text||'').join('')||'';
+  } else if (m.id==='gemini'||m.id==='gemma') {
+    const model = m.id==='gemma'?'gemma-3-27b-it':'gemini-1.5-pro';
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKeys[m.id]}`,
+      {method:'POST',headers:{'Content-Type':'application/json'},
+       body:JSON.stringify({contents:[{parts:[{text:sys+'\n\n'+userMsg}]}]})});
+    const d=await r.json(); if(d.error)throw new Error(d.error.message);
+    return d.candidates?.[0]?.content?.parts?.[0]?.text||'';
+  } else {
+    const URLS={openai:'https://api.openai.com/v1/chat/completions',deepseek:'https://api.deepseek.com/v1/chat/completions',glm:'https://open.bigmodel.cn/api/paas/v4/chat/completions'};
+    const MODS={openai:'gpt-4o',deepseek:'deepseek-chat',glm:'glm-4'};
+    const r = await fetch(URLS[m.id],{method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKeys[m.id]},
+      body:JSON.stringify({model:MODS[m.id],max_tokens:2000,messages:[{role:'system',content:sys},{role:'user',content:userMsg}]})});
+    const d=await r.json(); if(d.error)throw new Error(d.error.message||JSON.stringify(d.error));
+    return d.choices?.[0]?.message?.content||'';
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   RENDER STORIES — with full framework display
+   ═══════════════════════════════════════════════════════════════════ */
+function renderStories(stories, pipelineResult) {
+  if (!stories?.length) return;
+  const bil   = needsBilingual();
+  document.getElementById('st-title').textContent = stories.length+' Business Assurance PBIs';
+  document.getElementById('st-meta').textContent  =
+    stories.length+' sourced PBIs · effort and sequencing left for team planning · no pre-filled effort estimates';
+  document.getElementById('exp-btns').innerHTML = `
+    <button class="exp-btn" style="background:#0052cc" onclick="dlJira()">↓ Jira PBI CSV</button>
+    <button class="exp-btn" style="background:#0078d4" onclick="dlADO()">↓ ADO PBI CSV</button>
+    <button class="exp-btn" style="background:#374151" onclick="dlJSON()">↓ JSON</button>`;
+
+  document.getElementById('stories-list').innerHTML = stories.map((s,i) => {
+    const fwBadges = (s.frameworks_applied||[]).map(fw=>
+      `<span class="tag" style="background:#f3f0ff;color:#5b21b6;font-size:9px">${fw}</span>`).join('');
+    const bilBadge = bil.japanese?'<span class="sc-num-badge" style="background:#fef3c7;color:#92400e">🇯🇵 EN+日本語</span>':
+                     bil.chinese ?'<span class="sc-num-badge" style="background:#fee2e2;color:#991b1b">🇨🇳 EN+中文</span>':
+                     bil.russian ?'<span class="sc-num-badge" style="background:#ede9fe;color:#5b21b6">🇷🇺 EN+Русский</span>':'';
+    const boi = s.boi || (s.roi ? {business_area:s.roi.role,outcome:s.roi.objective,impact:s.roi.insight} : null);
+    const boiHtml = boi ? `<div style="margin:8px 0 4px;padding:8px 10px;background:#f0fdf4;border-radius:5px;border-left:3px solid #16a34a">
+      <div style="font-size:9px;font-weight:700;color:#15803d;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">BOI · Business Outcome & Impact</div>
+      <div style="font-size:11px;color:#14532d;line-height:1.5"><b>Business area:</b> ${boi.business_area||''}<br><b>Outcome:</b> ${boi.outcome||''}<br><b>Impact:</b> ${boi.impact||''}</div>
+      ${boi.client_context?`<div style="font-size:10px;color:#166534;margin-top:5px"><b>Client fit:</b> ${boi.client_context}</div>`:''}
+    </div>` : '';
+    const investHtml = s.invest ? `<div style="margin:6px 0;padding:8px 10px;background:#eff6ff;border-radius:5px;border-left:3px solid #3b82f6">
+      <div style="font-size:9px;font-weight:700;color:#1d4ed8;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">INVEST validation</div>
+      <div style="font-size:10px;color:#1e3a5f;line-height:1.6">${Object.entries(s.invest).map(([k,v])=>`<span style="margin-right:10px"><b>${k.charAt(0).toUpperCase()+k.slice(1)}:</b> ${v==='yes'?'<span style="color:#16a34a">✓</span>':v==='no'?'<span style="color:#dc2626">✗</span>':v}</span>`).join('')}</div>
+    </div>` : '';
+    return `<div class="story-card">
+      <div class="sc-top">
+        <div class="sc-num">
+          PBI ${s.num||i+1} ${bilBadge}
+        </div>
+        <div class="sc-title">${s.title}</div>
+        <div class="sc-tags">
+          <span class="tag t-reg">${s.regulation||''} ${s.section||''}</span>
+          ${s.applicableNation?`<span class="tag" style="background:#ecfeff;color:#0e7490">${s.applicableNation}</span>`:''}
+          ${s.sourceType?`<span class="tag" style="background:#f8fafc;color:#475569">${s.sourceType}</span>`:''}
+          ${s.type?`<span class="tag" style="background:#f3f4f6;color:#374151">${s.type}</span>`:''}
+          ${s.phase&&s.phase!='N/A'?`<span class="tag t-phase">${s.phase}</span>`:''}
+          ${s.gamp?`<span class="tag t-gamp">${s.gamp}</span>`:''}
+          ${fwBadges}
+        </div>
+        <p class="sc-story">${s.story||s.userStory||''}</p>
+        ${boiHtml}${investHtml}
+      </div>
+      <button class="sc-expand" onclick="toggleAC(this)">
+        <span>Acceptance criteria &nbsp;(${(s.ac||s.acceptanceCriteria||[]).length})</span>
+        <span style="transition:transform .14s">▼</span>
+      </button>
+      <div class="sc-ac">
+        ${(s.ac||s.acceptanceCriteria||[]).map((a,j)=>`<div class="ac-item"><span class="ac-n">${j+1}</span><span class="ac-t">${a}</span></div>`).join('')}
+        ${s.accept?`<div style="margin-top:8px;padding:8px 10px;background:#fefce8;border-radius:5px;border-left:3px solid #ca8a04">
+          <div style="font-size:9px;font-weight:700;color:#92400e;text-transform:uppercase;margin-bottom:4px">ACCEPT</div>
+          <div style="font-size:10px;color:#78350f;line-height:1.6">
+            <b>Action:</b> ${s.accept.action||''}<br>
+            <b>Expected:</b> ${s.accept.expected||''}<br>
+            <b>Pass/Fail:</b> ${s.accept.pass_fail||''}<br>
+            <b>Traceable:</b> <span style="font-family:monospace">${s.accept.traceable||s.regRef||''}</span>
+          </div>
+        </div>`:''}
+        ${s.regRef?`<div class="ac-ref">📖 ${s.regRef}</div>`:''}
+      </div>
+      <div class="sc-footer">
+        <button class="ftr-btn" onclick="markFtr(this,'v')">✓ Validate</button>
+        <button class="ftr-btn" onclick="markFtr(this,'c')">⚠ Clarify</button>
+        <button class="ftr-btn" onclick="markFtr(this,'n')">N/A</button>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('stories-section').style.display = 'block';
+}
+
+function toggleAC(btn){
+  const ac=btn.nextElementSibling; ac.classList.toggle('show');
+  btn.querySelector('span:last-child').style.transform=ac.classList.contains('show')?'rotate(180deg)':'';
+}
+function markFtr(btn,st){
+  btn.parentElement.querySelectorAll('.ftr-btn').forEach(b=>b.className='ftr-btn');
+  if(st==='v')btn.className='ftr-btn v'; else if(st==='c')btn.className='ftr-btn c';
+}
+
+/* ─── SAVE / LOAD ────────────────────────────────────────────────── */
+function savePackage(){
+  if(!allStories.length){alert('Create an assurance package first.');return;}
+  const name=document.getElementById('package-name-inp').value.trim()||'Assurance Package — '+new Date().toLocaleDateString();
+  const fw=document.getElementById('f-fw').value;
+  const sys=document.getElementById('f-system').value||selApp;
+  const ctx=[sys,selDomain,fw].filter(Boolean).join(' · ');
+  const rec={key:'pkg_'+Date.now(),name,at:new Date().toISOString(),count:allStories.length,
+             stories:allStories,ctx,gateLog:H.gateLog};
+  try{localStorage.setItem(rec.key,JSON.stringify(rec));}catch{alert('Browser storage full. Export JSON to save.');}
+  document.getElementById('save-ok').textContent='Saved ✓';
+  setTimeout(()=>document.getElementById('save-ok').textContent='',2500);
+  loadSaved();
+}
+function loadSaved(){
+  const saved=[];
+  for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k?.startsWith('pkg_')){try{saved.push(JSON.parse(localStorage.getItem(k)));}catch{}}}
+  saved.sort((a,b)=>new Date(b.at)-new Date(a.at));
+  document.getElementById('ns-packages').textContent=saved.length||'0';
+  if(saved.length)document.getElementById('ns-packages').className='nstat-v lit';
+  const el=document.getElementById('saved-list');
+  el.innerHTML=saved.length?saved.map(pkg=>`
+    <div class="saved-card">
+      <div class="svc-top">
+        <div>
+          <div class="svc-name">${pkg.name}</div>
+          <div class="svc-ctx">${pkg.ctx||''}</div>
+          <div class="svc-meta">${new Date(pkg.at).toLocaleString()} · ${pkg.count} PBIs</div>
+        </div>
+        <div class="svc-btns">
+          <button class="svc-btn svc-load" onclick="loadPackage('${pkg.key}')">Load</button>
+          <button class="svc-btn svc-rm" onclick="delPackage('${pkg.key}')">Remove</button>
+        </div>
+      </div>
+    </div>`).join('')
+  :'<div class="empty"><div class="empty-ico">📦</div><div class="empty-t">No saved assurance packages yet</div><div class="empty-s">Create and save a business assurance package</div></div>';
+}
+function loadPackage(key){
+  const rec=JSON.parse(localStorage.getItem(key)||'{}');
+  if(!rec.stories)return;
+  allStories=rec.stories; renderStories(rec.stories);
+  goTab('results',document.getElementById('ntab-results'));
+  setStatus('done','Loaded: '+rec.name+' · '+rec.count+' PBIs');
+}
+function delPackage(key){localStorage.removeItem(key);loadSaved();}
+
+/* ─── EXPORT ─────────────────────────────────────────────────────── */
+function q(s){return'"'+(String(s||'').replace(/"/g,'""'))+'"';}
+function dlCSV(c,n){const u=URL.createObjectURL(new Blob([c],{type:'text/csv'}));const a=document.createElement('a');a.href=u;a.download=n;a.click();URL.revokeObjectURL(u);}
+function dlJira(){
+  const h=['Issue Type','Summary','Business PBI','Acceptance Criteria','Labels','Epic Name','Regulatory Reference','Regulatory Criticality','Source Authority','Applicable Nation','Source Type','Frameworks Applied','GAMP Category','Evidence Stage','Business Outcome','Client Context','Source Requirement'];
+  const r=allStories.map(s=>[q('Task'),q(s.title),q(s.story||''),q((s.ac||[]).join('\n')),
+    q((s.labels||[]).join(',')),q(s.epic||''),q(s.regRef||''),q(s.regulatoryCriticality||''),
+    q(s.sourceAuthority||''),q(s.applicableNation||''),q(s.sourceType||''),q((s.frameworks_applied||[]).join('+')),q(s.gamp||''),q(s.phase||''),q(s.boi?.outcome||''),q(s.boi?.client_context||''),q(s.sourceRequirement||'')]);
+  dlCSV([h.join(','),...r.map(x=>x.join(','))].join('\n'),'MARAS-Business-PBI-Jira-Export.csv');
+}
+function dlADO(){
+  const h=['Work Item Type','Title','Business PBI','Acceptance Criteria',
+           'Tags','Custom.RegulatoryRef','Custom.RegulatoryCriticality','Custom.SourceAuthority','Custom.ApplicableNation','Custom.SourceType','Custom.FrameworksApplied','Custom.GAMPCategory','Custom.EvidenceStage','Custom.BusinessOutcome','Custom.ClientContext','Custom.SourceRequirement'];
+  const r=allStories.map(s=>[q('Product Backlog Item'),q(s.title),q(s.story||''),
+    q((s.ac||[]).map((a,i)=>`${i+1}. ${a}`).join('\n')),
+    q((s.labels||[]).join('; ')),
+    q(s.regRef||''),q(s.regulatoryCriticality||''),q(s.sourceAuthority||''),q(s.applicableNation||''),q(s.sourceType||''),q((s.frameworks_applied||[]).join('+')),q(s.gamp||''),q(s.phase||''),q(s.boi?.outcome||''),q(s.boi?.client_context||''),q(s.sourceRequirement||'')]);
+  dlCSV([h.join(','),...r.map(x=>x.join(','))].join('\n'),'MARAS-Business-PBI-ADO-Export.csv');
+}
+function dlJSON(){
+  const b=new Blob([JSON.stringify({
+    generatedAt:new Date().toISOString(),
+    context:{org:document.getElementById('f-org').value,project:document.getElementById('f-proj').value,
+             system:document.getElementById('f-system').value,framework:document.getElementById('f-fw').value,
+             businessOutcome:document.getElementById('f-outcome').value},
+    pipeline:{gateLog:H.gateLog},
+    stories:allStories
+  },null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='MARAS-Backlog.json';a.click();
+}
+
+/* ASSURANCE */
+function assuranceStatusClass(st){
+  return st==='pass'?'status-pass':st==='partial'?'status-partial':'status-gate';
+}
+function assuranceStatusLabel(st){
+  return st==='pass'?'Built in':st==='partial'?'Partial':st==='gate'?'Production gate':'Review';
+}
+function buildAssurance(){
+  const built=ASSURANCE_CRITERIA.filter(c=>c.status==='pass').length;
+  const gated=ASSURANCE_CRITERIA.filter(c=>c.status==='gate').length;
+  const official=SOURCE_TRUST.filter(s=>s.status==='pass').length;
+  const metrics=[
+    {v:SOURCE_TRUST.length,l:'Sources classified'},
+    {v:official,l:'Official/public sources'},
+    {v:built,l:'Capabilities built in'},
+    {v:gated,l:'Gates not over-claimed'},
+  ];
+  document.getElementById('assurance-metrics').innerHTML=metrics.map(m=>`
+    <div class="metric-card"><div class="metric-v">${m.v}</div><div class="metric-l">${m.l}</div></div>`).join('');
+
+  document.getElementById('source-trust-grid').innerHTML=SOURCE_TRUST.map(s=>`
+    <div class="source-card">
+      <div class="source-top">
+        <div>
+          <div class="source-name">${s.name}</div>
+          <div class="source-meta">${s.authority} | ${s.docClass} | ${s.region||'Selected region'}</div>
+        </div>
+        <span class="status-pill ${assuranceStatusClass(s.status)}">${assuranceStatusLabel(s.status)}</span>
+      </div>
+      <div class="source-url">${s.url}</div>
+      <div class="source-meta">${s.usage}</div>
+      <div class="bullet-list">${s.controls.map(c=>`<div class="bullet-item">${c}</div>`).join('')}</div>
+    </div>`).join('');
+
+  document.getElementById('criteria-grid').innerHTML=ASSURANCE_CRITERIA.map(c=>`
+    <div class="criterion-card">
+      <div class="criterion-top">
+        <div>
+          <div class="criterion-name">${c.name}</div>
+          <div class="criterion-meta">${c.validation}</div>
+        </div>
+        <span class="status-pill ${assuranceStatusClass(c.status)}">${assuranceStatusLabel(c.status)}</span>
+      </div>
+      <div class="scenario-flow"><b>Evidence:</b> ${c.proof}</div>
+    </div>`).join('');
+
+  document.getElementById('scenario-grid').innerHTML=ASSURANCE_SCENARIOS.map(s=>`
+    <div class="scenario-card">
+      <div class="scenario-top">
+        <div>
+          <div class="scenario-name">${s.name}</div>
+          <div class="scenario-meta">${s.persona}</div>
+        </div>
+      </div>
+      <div class="scenario-meta"><b>Prompt:</b> ${s.prompt}</div>
+      <div class="scenario-flow">${s.flow}</div>
+      <div class="bullet-list">${s.proves.map(p=>`<div class="bullet-item">${p}</div>`).join('')}</div>
+    </div>`).join('');
+
+  document.getElementById('productivity-grid').innerHTML=PRODUCTIVITY_CRITERIA.map(p=>`
+    <div class="criterion-card">
+      <div class="criterion-top">
+        <div>
+          <div class="criterion-name">${p.name}</div>
+          <div class="criterion-meta">${p.impact}</div>
+        </div>
+        <span class="status-pill status-pass">Value Add</span>
+      </div>
+      <div class="scenario-flow"><b>MARAS:</b> ${p.maras}<br><b>Proof:</b> ${p.proof}</div>
+    </div>`).join('');
+
+  document.getElementById('leadership-grid').innerHTML=LEADERSHIP_ACTIONS.map(a=>`
+    <div class="criterion-card">
+      <div class="criterion-top">
+        <div>
+          <div class="criterion-name">${a.name}</div>
+          <div class="criterion-meta">${a.status}</div>
+        </div>
+        <span class="status-pill ${a.status.includes('Roadmap')||a.status.includes('Follow-up')?'status-partial':'status-pass'}">${a.status.includes('Built')?'Covered':'Planned'}</span>
+      </div>
+      <div class="scenario-flow"><b>Plan:</b> ${a.plan}<br><b>Evidence:</b> ${a.evidence}</div>
+    </div>`).join('');
+}
+function dlAssuranceReport(){
+  const report={
+    generatedAt:new Date().toISOString(),
+    positioning:'MARAS does not compete on work-item volume. It competes on regulator-defensible delivery: validated source, traceable requirement, risk, business PBI, test, evidence, and approval chain.',
+    metrics:{
+      sourcesClassified:SOURCE_TRUST.length,
+      criteriaBuiltIn:ASSURANCE_CRITERIA.filter(c=>c.status==='pass').length,
+      criteriaPartial:ASSURANCE_CRITERIA.filter(c=>c.status==='partial').length,
+      productionGates:ASSURANCE_CRITERIA.filter(c=>c.status==='gate').length,
+      demoCorpusChunks:GXP_CHUNKS.length,
+      regulatoryLibraryItems:TREE_DATA.reduce((a,g)=>a+g.items.length,0),
+    },
+    sourceTrust:SOURCE_TRUST,
+    validationCriteria:ASSURANCE_CRITERIA,
+    customerScenarios:ASSURANCE_SCENARIOS,
+    productivityCriteria:PRODUCTIVITY_CRITERIA,
+    leadershipActions:LEADERSHIP_ACTIONS,
+    currentGapStatement:'This single-file demo contains source metadata, guardrails, traceable business PBI/evidence generation, and customer scenarios. Production source freshness, file hashing, online document diffing, and licensed-standard full-text use require a controlled ingestion service and documented source approvals.',
+  };
+  const b=new Blob([JSON.stringify(report,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(b);
+  a.download='MARAS-Assurance-Validation-Report.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+function seedAssuranceScenario(){
+  document.getElementById('f-system').value='LIMS';
+  document.getElementById('f-fw').value='FDA';
+  applyFramework('FDA');
+  document.getElementById('req-ta').value='Create a regulator-defensible business assurance package for LIMS audit trail and e-signature controls under 21 CFR Part 11. Include source traceability, FMEA risk, business PBIs, test evidence needs, evidence readiness gaps, and inspection questions.';
+  goTab('gen',document.getElementById('ntab-gen'));
+}
+
+function sourceMetaFor(reg){
+  const r=(reg||'').toLowerCase();
+  if(r.includes('21 cfr')||r.includes('fda')) return {authority:'US FDA / eCFR',nation:'United States',sourceType:'Regulation / FDA guidance'};
+  if(r.includes('gdpr')) return {authority:'European Union',nation:'EU / EEA',sourceType:'Regulation'};
+  if(r.includes('eu gmp')||r.includes('annex')||r.includes('eudralex')) return {authority:'European Commission / EudraLex',nation:'European Union',sourceType:'Guideline'};
+  if(r.includes('ich')) return {authority:'ICH',nation:'International',sourceType:'Guideline'};
+  if(r.includes('iso')) return {authority:'ISO',nation:'International',sourceType:'Licensed standard'};
+  if(r.includes('gamp')) return {authority:'ISPE / GAMP',nation:'International',sourceType:'Licensed industry standard'};
+  if(r.includes('hipaa')) return {authority:'HHS / eCFR',nation:'United States',sourceType:'Regulation'};
+  if(r.includes('mdr')) return {authority:'European Union',nation:'European Union',sourceType:'Regulation'};
+  return {authority:'Curated regulatory library',nation:document.getElementById('f-client-region')?.value||'Selected region',sourceType:'Controlled source summary'};
+}
+
+
+init();
+</script>
+</body>
+</html>
