@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>MARAS v6.3 — Regulatory Business Assurance</title>
+<title>MARAS v6.3.1 — Regulatory Business Assurance</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -1102,15 +1102,15 @@ const ASSURANCE_CRITERIA=[
   {name:'Scored validation rubric per output',status:'pass',
    validation:'Each PBI receives a 100-point rubric across traceability, citation, ACCEPT, INVEST, Given/When/Then AC quality, and scope/jurisdiction fit.',
    proof:'scoreValidationRubric rendered on every story card.'},
-  {name:'Healthcare data standardization schema',status:'pass',
-   validation:'Packages export to maras.healthcare.regulatory-assurance.v1 with meta, qualityControl, controls[], source, traceability, evidence and validationRubric.',
-   proof:'HC Schema JSON export + HC_DATA_STANDARD_SCHEMA.'},
+  {name:'FDA clinical data standardization schema',status:'pass',
+   validation:'Packages export to maras.fda.clinical-regulatory-assurance.v1 with meta, qualityControl, controls[], source, traceability, evidence and validationRubric.',
+   proof:'FDA Clinical Schema JSON export + FDA_CLINICAL_DATA_SCHEMA.'},
 ];
 
 const ASSURANCE_SCENARIOS=[
   {name:'FDA Part 11 audit trail for LIMS',persona:'QA Lead / Validation Engineer',
    prompt:'Create an audit trail and e-signature delivery package for a LIMS under 21 CFR Part 11.',
-   flow:'Scope + jurisdiction filter -> relevance ranking -> Part 11 mapping -> duplicate suppression -> normalized PBIs with scored rubric -> healthcare schema export.',
+   flow:'Scope + jurisdiction filter -> relevance ranking -> Part 11 mapping -> duplicate suppression -> normalized PBIs with scored rubric -> FDA clinical schema export.',
    proves:['Official source used before generation','QC controls bound the package','Inspection gaps are visible before business approval']},
   {name:'Paid standard license gate',persona:'Compliance Owner',
    prompt:'Use ISO 13485 and GAMP 5 to generate medical-device validation business controls.',
@@ -1508,18 +1508,24 @@ const H = {
 };
 
 /* ════════════════════════════════════════════════════════════════════
-   QUALITY CONTROL LAYER v6.3
+   QUALITY CONTROL LAYER v6.3.1
    1) Scope control  2) Source relevance ranking  3) Duplicate suppression
    4) Jurisdiction filtering  5) Output normalization
-   6) Scored validation rubric  7) Healthcare standardization schema
-   Additive — does not remove existing pipeline behaviour.
+   6) Scored validation rubric  7) FDA clinical data standardization schema
+   Additive / non-breaking:
+   - rankChunks keeps main category/tree scope + returns the full ranked list
+   - demo engine still slices to maxScopedChunks (same as main's slice(0,12))
+   - jurisdiction/relevance demote first; hard-drop only when safer alternatives exist
+   - exports keep legacy fields; FDA clinical schema is an additive package
    ════════════════════════════════════════════════════════════════════ */
 const QC_CONFIG = {
-  maxScopedChunks: 12,
-  maxOutputItems: 24,
+  maxScopedChunks: 12,          // matches main demo engine slice(0,12)
+  maxOutputItems: 36,           // 12 chunks × ≤3 reqs — do not shrink prior demo max
   duplicateJaccard: 0.72,
-  minRelevanceScore: 1,
+  minRelevanceScore: 1,         // soft floor for ranking report; not a hard empty-out
   rubricPassThreshold: 70,
+  hardFilterJurisdiction: true, // drop OOJ only when in-jurisdiction alternatives remain
+  hardFilterLowRelevance: false // ranking-only by default — preserves main corpus coverage
 };
 
 const JURISDICTION_BY_FRAMEWORK = {
@@ -1558,11 +1564,11 @@ const SYSTEM_AFFINITY = {
   'Supply Chain': ['vendor','outsourced','traceability','quality agreement'],
 };
 
-const HC_DATA_STANDARD_SCHEMA = {
+const FDA_CLINICAL_DATA_SCHEMA = {
   schemaVersion: '1.0.0',
-  schemaId: 'maras.healthcare.regulatory-assurance.v1',
-  description: 'Target output schema for healthcare / life-sciences regulatory data standardization',
-  resourceType: 'RegulatoryAssurancePackage',
+  schemaId: 'maras.fda.clinical-regulatory-assurance.v1',
+  description: 'Target output schema for FDA clinical / life-sciences regulatory data standardization',
+  resourceType: 'FdaClinicalRegulatoryAssurancePackage',
   requiredFields: [
     'meta.packageId','meta.generatedAt','meta.jurisdiction','meta.systemType',
     'controls[].id','controls[].source.authority','controls[].source.citation',
@@ -1574,8 +1580,43 @@ const HC_DATA_STANDARD_SCHEMA = {
     evidenceDecision: ['READY','CONDITIONALLY_READY','NOT_READY'],
     sourceClass: ['Regulation','Guidance','Guideline','Licensed standard','Controlled source summary'],
     controlType: ['business-control','compliance-control','integration-control','evidence-enabler']
-  }
+  },
+  clinicalDomains: ['electronic-records','audit-trail','e-signature','data-integrity','validation','privacy','clinical-operations']
 };
+// Backward-compatible alias used by earlier QC export paths / saved packages
+const HC_DATA_STANDARD_SCHEMA = FDA_CLINICAL_DATA_SCHEMA;
+
+function normalizeJurisdictionNation(nation) {
+  const n = String(nation || '').trim();
+  if (!n) return 'International';
+  const lower = n.toLowerCase();
+  if (lower.includes('united states') || lower === 'us' || lower === 'usa' || lower.includes('america')) return 'United States';
+  if (lower.includes('eu / eea') || lower.includes('european union') || lower === 'eu' || lower.includes('eea') || lower.includes('europe')) return 'European Union';
+  if (lower.includes('united kingdom') || lower === 'uk' || lower.includes('britain') || lower.includes('england')) return 'United Kingdom';
+  if (lower.includes('canada')) return 'Canada';
+  if (lower.includes('japan')) return 'Japan';
+  if (lower.includes('australia')) return 'Australia';
+  if (lower.includes('china')) return 'China';
+  if (lower.includes('india')) return 'India';
+  if (lower.includes('brazil')) return 'Brazil';
+  if (lower.includes('singapore')) return 'Singapore';
+  if (lower.includes('south africa')) return 'South Africa';
+  if (lower.includes('russia') || lower.includes('eaeu')) return 'Russia';
+  if (lower.includes('international') || lower.includes('ich') || lower.includes('who') || lower.includes('multi')) return 'International';
+  // Free-text client regions (e.g. "United States / Belgium dual-market") stay International-compatible
+  if (lower.includes('/') || lower.includes('dual') || lower.includes('selected region')) return 'International';
+  return n;
+}
+
+function attachRankMeta(list, meta) {
+  const arr = Array.isArray(list) ? list.slice() : [];
+  Object.defineProperties(arr, {
+    _jurisdictionSuppressed: { value: meta.jurisdictionSuppressed || [], writable: true, configurable: true },
+    _scope: { value: meta.scope || null, writable: true, configurable: true },
+    _qcMeta: { value: meta, writable: true, configurable: true }
+  });
+  return arr;
+}
 
 function qcNormText(s) {
   return String(s || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
@@ -1604,9 +1645,11 @@ function resolveScopeControls() {
   const treeCats = selectedRegs.length
     ? new Set(selectedRegs.map(it => it.cat))
     : null;
-  const allowedNations = JURISDICTION_BY_FRAMEWORK[fw] === null
+  const allowedNations = (!fw || fw === 'Multi-Regional' || JURISDICTION_BY_FRAMEWORK[fw] === null)
     ? null
-    : new Set(JURISDICTION_BY_FRAMEWORK[fw] || ['International']);
+    : (JURISDICTION_BY_FRAMEWORK[fw]
+        ? new Set(JURISDICTION_BY_FRAMEWORK[fw])
+        : null); // unknown/empty framework → no jurisdiction filter (main-compatible)
   if (region) {
     const r = region.toLowerCase();
     if (r.includes('us') || r.includes('united states') || r.includes('america')) allowedNations?.add('United States');
@@ -1645,6 +1688,7 @@ function resolveScopeControls() {
 function scoreSourceRelevance(chunk, req, scope) {
   const qt = (req || '').toLowerCase();
   const meta = sourceMetaFor(chunk.reg);
+  const nation = normalizeJurisdictionNation(meta.nation);
   let score = 0;
   const matchedKws = (chunk.kws || []).filter(k => qt.includes(k.toLowerCase()));
   score += matchedKws.length * 4;
@@ -1662,8 +1706,9 @@ function scoreSourceRelevance(chunk, req, scope) {
     const blob = ((chunk.kws || []).join(' ') + ' ' + chunk.title + ' ' + (chunk.reqs || []).join(' ')).toLowerCase();
     aff.forEach(a => { if (blob.includes(a.toLowerCase())) score += 2; });
   }
+  const inJurisdiction = !scope.allowedNations || scope.allowedNations.has(nation) || nation === 'International';
   if (scope.allowedNations) {
-    if (scope.allowedNations.has(meta.nation) || meta.nation === 'International') score += 4;
+    if (inJurisdiction) score += 4;
     else score -= 8;
   }
   if (scope.selectedRegNames?.length) {
@@ -1676,10 +1721,10 @@ function scoreSourceRelevance(chunk, req, scope) {
   return {
     relevanceScore: score,
     matchedKeywords: matchedKws,
-    jurisdiction: meta.nation,
+    jurisdiction: nation,
     authority: meta.authority,
     sourceType: meta.sourceType,
-    inJurisdiction: !scope.allowedNations || scope.allowedNations.has(meta.nation) || meta.nation === 'International',
+    inJurisdiction,
     inScopeCategory: (!scope.activeCats || scope.activeCats.has(chunk.cat)) &&
                      (!scope.treeCats || scope.treeCats.has(chunk.cat))
   };
@@ -1692,7 +1737,14 @@ function applyJurisdictionFilter(ranked, scope) {
     if (c._qc?.inJurisdiction) kept.push(c);
     else suppressed.push({ id: c.id, reg: c.reg, nation: c._qc?.jurisdiction, reason: 'Outside selected jurisdiction/framework' });
   });
-  return { kept: kept.length ? kept : ranked, suppressed };
+  // Non-breaking: never empty the corpus — fall back to demoted full list
+  if (!kept.length) return { kept: ranked, suppressed, demotedOnly: true };
+  if (!QC_CONFIG.hardFilterJurisdiction) {
+    // Demote OOJ to the end but keep them available for callers that need full coverage
+    const demoted = [...kept, ...ranked.filter(c => !c._qc?.inJurisdiction)];
+    return { kept: demoted, suppressed, demotedOnly: true };
+  }
+  return { kept, suppressed, demotedOnly: false };
 }
 
 function suppressDuplicateStories(stories) {
@@ -1742,7 +1794,7 @@ function normalizeStoryOutput(s, idx, pfx, qcMeta) {
     labels: Array.isArray(s.labels) ? s.labels.map(l => String(l).toLowerCase().replace(/\s+/g,'-')) : [],
     sourceRequirement: String(s.sourceRequirement || (s.accept && s.accept.action) || s.title || '').trim(),
     normalizedAt: new Date().toISOString(),
-    schemaVersion: HC_DATA_STANDARD_SCHEMA.schemaVersion,
+    schemaVersion: FDA_CLINICAL_DATA_SCHEMA.schemaVersion,
     qc: qcMeta || s.qc || {}
   };
 }
@@ -1778,12 +1830,12 @@ function scoreValidationRubric(story, scope) {
   };
 }
 
-function toHealthcareStandardPackage(stories, pipelineResult, scope, qcReport) {
+function toFdaClinicalStandardPackage(stories, pipelineResult, scope, qcReport) {
   const ts = new Date().toISOString();
   return {
-    resourceType: HC_DATA_STANDARD_SCHEMA.resourceType,
-    schemaId: HC_DATA_STANDARD_SCHEMA.schemaId,
-    schemaVersion: HC_DATA_STANDARD_SCHEMA.schemaVersion,
+    resourceType: FDA_CLINICAL_DATA_SCHEMA.resourceType,
+    schemaId: FDA_CLINICAL_DATA_SCHEMA.schemaId,
+    schemaVersion: FDA_CLINICAL_DATA_SCHEMA.schemaVersion,
     meta: {
       packageId: pipelineResult?.evidence?.evidence_package?.package_id || `EP-${ts.slice(0,10)}-001`,
       generatedAt: ts,
@@ -1795,7 +1847,8 @@ function toHealthcareStandardPackage(stories, pipelineResult, scope, qcReport) {
       businessOutcome: document.getElementById('f-outcome')?.value || '',
       clientRegion: scope.clientRegion || '',
       scope: scope.scopeLabel,
-      mode: demoMode ? 'demo' : 'live-ai'
+      mode: demoMode ? 'demo' : 'live-ai',
+      standard: 'FDA clinical / GxP regulatory assurance'
     },
     qualityControl: {
       scopeControl: true,
@@ -1821,7 +1874,7 @@ function toHealthcareStandardPackage(stories, pipelineResult, scope, qcReport) {
       narrative: s.story,
       source: {
         authority: s.sourceAuthority || '',
-        nation: s.applicableNation || '',
+        nation: normalizeJurisdictionNation(s.applicableNation || ''),
         class: s.sourceType || '',
         citation: `${s.regulation} ${s.section}`.trim(),
         regulation: s.regulation,
@@ -1835,6 +1888,13 @@ function toHealthcareStandardPackage(stories, pipelineResult, scope, qcReport) {
       evidence: { stage: s.phase || '', gamp: s.gamp || '' },
       relevance: s.qc?.relevanceScore ?? null,
       validationRubric: s.validationRubric || null,
+      clinicalCoding: {
+        domain: s.labels?.[0] || s.type,
+        systemAffinity: scope.systemType || '',
+        complianceDomain: (pipelineResult?.regObjs || []).find(r => (s.regRef||'').includes(r.req_id))?.compliance_domain || '',
+        fdaClinicalDomains: FDA_CLINICAL_DATA_SCHEMA.clinicalDomains
+      },
+      // legacy alias retained for earlier HC export consumers
       healthcareCoding: {
         domain: s.labels?.[0] || s.type,
         systemAffinity: scope.systemType || '',
@@ -1843,28 +1903,31 @@ function toHealthcareStandardPackage(stories, pipelineResult, scope, qcReport) {
     }))
   };
 }
+// Alias — prior QC paths called the healthcare-named builder
+const toHealthcareStandardPackage = toFdaClinicalStandardPackage;
 
 function applyQualityControls(rawStories, rankedChunks, req, pipelineExtras) {
   const scope = resolveScopeControls();
   const pfx = autoPrefix();
+  const rankedList = Array.isArray(rankedChunks) ? rankedChunks : [];
 
   // 1+2+4 already applied during ranking; capture report
-  const jurisdictionSuppressed = rankedChunks._jurisdictionSuppressed || [];
-  const rankingMeta = rankedChunks.map(c => ({
+  const jurisdictionSuppressed = rankedList._jurisdictionSuppressed || [];
+  const rankingMeta = rankedList.map(c => ({
     id: c.id, reg: c.reg, score: c._qc?.relevanceScore ?? 0,
     jurisdiction: c._qc?.jurisdiction, matchedKeywords: c._qc?.matchedKeywords || []
   }));
 
-  // 3. Duplicate suppression
+  // 3. Duplicate suppression (true near-dupes only — does not invent/drop unique controls)
   const { kept: deduped, suppressed: dupSuppressed } = suppressDuplicateStories(rawStories);
 
-  // Cap to scope max items
+  // Soft scope cap — set high enough (36) to match historical demo max; report any trim
   const scoped = deduped.slice(0, scope.maxItems);
   const scopeTrimmed = deduped.slice(scope.maxItems).map(s => ({ id: s.id, reason: 'Exceeded scope max output items' }));
 
   // 5. Output normalization + 6. Rubric per output
   const stories = scoped.map((s, i) => {
-    const chunk = rankedChunks.find(c => c.reg === s.regulation && c.sec === s.section);
+    const chunk = rankedList.find(c => c.reg === s.regulation && c.sec === s.section);
     const qcMeta = {
       relevanceScore: chunk?._qc?.relevanceScore ?? s.qc?.relevanceScore ?? 0,
       matchedKeywords: chunk?._qc?.matchedKeywords || [],
@@ -1873,6 +1936,7 @@ function applyQualityControls(rawStories, rankedChunks, req, pipelineExtras) {
       scopeLabel: scope.scopeLabel
     };
     const normalized = normalizeStoryOutput(s, i, pfx, qcMeta);
+    // Preserve original story shape fields used by render/export
     normalized.validationRubric = scoreValidationRubric(normalized, scope);
     return normalized;
   });
@@ -1895,42 +1959,48 @@ function applyQualityControls(rawStories, rankedChunks, req, pipelineExtras) {
     sourceRelevanceRanking: rankingMeta.slice(0, 12),
     jurisdictionFilter: { suppressed: jurisdictionSuppressed },
     duplicateSuppression: { removed: dupSuppressed.length + scopeTrimmed.length, details: [...dupSuppressed, ...scopeTrimmed] },
-    outputNormalization: { schemaVersion: HC_DATA_STANDARD_SCHEMA.schemaVersion, schemaId: HC_DATA_STANDARD_SCHEMA.schemaId, itemsNormalized: stories.length },
+    outputNormalization: { schemaVersion: FDA_CLINICAL_DATA_SCHEMA.schemaVersion, schemaId: FDA_CLINICAL_DATA_SCHEMA.schemaId, itemsNormalized: stories.length },
     validationRubric: {
       averageScore: rubricAvg,
       passCount: rubricPass,
       failCount: stories.length - rubricPass,
       threshold: QC_CONFIG.rubricPassThreshold,
       byItem: stories.map(s => ({ id: s.id, score: s.validationRubric.totalScore, grade: s.validationRubric.grade, pass: s.validationRubric.pass }))
+    },
+    compatibility: {
+      preservesLegacyStoryFields: true,
+      preservesCategoryScopeFilter: true,
+      rankChunksReturnsFullList: true,
+      demoSliceUnchanged: QC_CONFIG.maxScopedChunks
     }
   };
 
-  const healthcarePackage = toHealthcareStandardPackage(stories, pipelineExtras, scope, qcReport);
-  return { stories, qcReport, healthcarePackage, scope };
+  const healthcarePackage = toFdaClinicalStandardPackage(stories, pipelineExtras, scope, qcReport);
+  return { stories, qcReport, healthcarePackage, fdaClinicalPackage: healthcarePackage, scope };
 }
 
 /* ─── CHUNK RANKING (+ scope, relevance, jurisdiction) ───────────── */
 function rankChunks(req) {
   const scope = resolveScopeControls();
-  const scored = GXP_CHUNKS.map(c => {
+  // 1. Scope control — identical category/tree filter semantics to main
+  const scoped = GXP_CHUNKS.map(c => {
     const _qc = scoreSourceRelevance(c, req, scope);
     return { ...c, _qc };
-  }).filter(c => {
-    // 1. Scope control — category / tree selection
-    if (!c._qc.inScopeCategory) return false;
-    return true;
-  });
+  }).filter(c => c._qc.inScopeCategory);
 
-  // 2. Source relevance ranking
-  scored.sort((a, b) => (b._qc.relevanceScore - a._qc.relevanceScore) || a.id.localeCompare(b.id));
+  // 2. Source relevance ranking (additive sort — main only used keyword counts)
+  scoped.sort((a, b) => (b._qc.relevanceScore - a._qc.relevanceScore) || a.id.localeCompare(b.id));
 
-  // 4. Jurisdiction filtering (soft — demote then filter if alternatives exist)
-  const { kept, suppressed } = applyJurisdictionFilter(scored, scope);
-  const filtered = kept.filter(c => c._qc.relevanceScore >= QC_CONFIG.minRelevanceScore || kept.length <= 3);
-  const final = (filtered.length ? filtered : kept).slice(0, scope.maxChunks);
-  final._jurisdictionSuppressed = suppressed;
-  final._scope = scope;
-  return final;
+  // 4. Jurisdiction filtering (soft demote / hard-drop only when alternatives exist)
+  const { kept, suppressed } = applyJurisdictionFilter(scoped, scope);
+
+  let final = kept;
+  if (QC_CONFIG.hardFilterLowRelevance) {
+    const filtered = kept.filter(c => c._qc.relevanceScore >= QC_CONFIG.minRelevanceScore || kept.length <= 3);
+    final = filtered.length ? filtered : kept;
+  }
+  // Non-breaking vs main: return the FULL ranked/scoped list (demo still slices to 12)
+  return attachRankMeta(final, { jurisdictionSuppressed: suppressed, scope, rankedCount: final.length });
 }
 
 /* ─── AUTO PREFIX ────────────────────────────────────────────────── */
@@ -2350,7 +2420,7 @@ function runDemoEngine(req, ctx) {
         {title:'Evidence Readiness Decision',status:'MISSING'},
         {title:'Outstanding Issues Log',status:'COMPLETE'},
         {title:'Scored Validation Rubric',status:'COMPLETE'},
-        {title:'Healthcare Standardization Package',status:'COMPLETE'},
+        {title:'FDA Clinical Standardization Package',status:'COMPLETE'},
       ],
       submission_ready: false,
       sign_off_required: ['Business Owner','QA Lead'],
@@ -2540,7 +2610,7 @@ async function orchestratorDemo(req, ctx) {
   document.getElementById('ns-stories').className = 'nstat-v lit';
   setStep('decomp','done',
     `BUSINESS PBI DECOMPOSITION — ${result.stories.length} traceable PBIs generated\n`+
-    `Duplicates suppressed: ${result.qcReport?.duplicateSuppression?.removed||0} · Normalized to ${HC_DATA_STANDARD_SCHEMA.schemaId}\n`+
+    `Duplicates suppressed: ${result.qcReport?.duplicateSuppression?.removed||0} · Normalized to ${FDA_CLINICAL_DATA_SCHEMA.schemaId}\n`+
     `Rubric: avg ${result.qcReport?.validationRubric?.averageScore||0}/100 · ${result.qcReport?.validationRubric?.passCount||0} passed threshold\n\n`+
     result.stories.map(fmtStory).join('\n\n')+
     `\n\nAll PBIs carry full regulatory traceability (req_id + source).\nNo effort estimates or delivery ranking are pre-populated.`);
@@ -2723,7 +2793,7 @@ function renderStories(stories, pipelineResult) {
   document.getElementById('exp-btns').innerHTML = `
     <button class="exp-btn" style="background:#0052cc" onclick="dlJira()">↓ Jira PBI CSV</button>
     <button class="exp-btn" style="background:#0078d4" onclick="dlADO()">↓ ADO PBI CSV</button>
-    <button class="exp-btn" style="background:#0e7a62" onclick="dlHealthcareSchema()">↓ HC Schema JSON</button>
+    <button class="exp-btn" style="background:#0e7a62" onclick="dlFdaClinicalSchema()">↓ FDA Clinical Schema</button>
     <button class="exp-btn" style="background:#374151" onclick="dlJSON()">↓ JSON</button>`;
 
   const qcBanner = qc ? `<div class="qc-banner" id="qc-banner">
@@ -2733,7 +2803,7 @@ function renderStories(stories, pipelineResult) {
       <div class="qc-chip"><b>Relevance</b>${(qc.sourceRelevanceRanking||[]).length} ranked sources</div>
       <div class="qc-chip"><b>Jurisdiction</b>${(qc.jurisdictionFilter?.suppressed||[]).length} filtered out</div>
       <div class="qc-chip"><b>Duplicates</b>${qc.duplicateSuppression?.removed||0} suppressed</div>
-      <div class="qc-chip"><b>Normalized</b>${qc.outputNormalization?.itemsNormalized||stories.length} → ${qc.outputNormalization?.schemaVersion||'1.0.0'}</div>
+      <div class="qc-chip"><b>Normalized</b>${qc.outputNormalization?.itemsNormalized||stories.length} → schema ${qc.outputNormalization?.schemaVersion||'1.0.0'}</div>
       <div class="qc-chip"><b>Rubric</b>avg ${qc.validationRubric?.averageScore||0}/100 · ${qc.validationRubric?.passCount||0} pass</div>
     </div>
   </div>` : '';
@@ -2886,33 +2956,37 @@ function dlADO(){
   dlCSV([h.join(','),...r.map(x=>x.join(','))].join('\n'),'MARAS-Business-PBI-ADO-Export.csv');
 }
 function dlJSON(){
+  // Legacy-compatible payload (main fields first) + additive QC / schema metadata
   const b=new Blob([JSON.stringify({
     generatedAt:new Date().toISOString(),
-    schemaId:HC_DATA_STANDARD_SCHEMA.schemaId,
-    schemaVersion:HC_DATA_STANDARD_SCHEMA.schemaVersion,
     context:{org:document.getElementById('f-org').value,project:document.getElementById('f-proj').value,
              system:document.getElementById('f-system').value,framework:document.getElementById('f-fw').value,
              businessOutcome:document.getElementById('f-outcome').value},
     pipeline:{gateLog:H.gateLog},
-    qualityControl:H.qcReport,
-    stories:allStories
+    stories:allStories,
+    // Additive — does not remove legacy consumers' fields above
+    schemaId:FDA_CLINICAL_DATA_SCHEMA.schemaId,
+    schemaVersion:FDA_CLINICAL_DATA_SCHEMA.schemaVersion,
+    qualityControl:H.qcReport
   },null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='MARAS-Backlog.json';a.click();
 }
-function dlHealthcareSchema(){
-  const pkg = H.healthcarePackage || toHealthcareStandardPackage(allStories, {
+function dlFdaClinicalSchema(){
+  const pkg = H.healthcarePackage || toFdaClinicalStandardPackage(allStories, {
     regObjs:H.regObjs, riskReg:H.riskReg, review:H.review, evidence:H.evidence
   }, resolveScopeControls(), H.qcReport || {
     scope: resolveScopeControls(),
     sourceRelevanceRanking: [],
     jurisdictionFilter: {suppressed:[]},
     duplicateSuppression: {removed:0, details:[]},
-    outputNormalization: {schemaVersion:HC_DATA_STANDARD_SCHEMA.schemaVersion, schemaId:HC_DATA_STANDARD_SCHEMA.schemaId, itemsNormalized:allStories.length},
+    outputNormalization: {schemaVersion:FDA_CLINICAL_DATA_SCHEMA.schemaVersion, schemaId:FDA_CLINICAL_DATA_SCHEMA.schemaId, itemsNormalized:allStories.length},
     validationRubric: {averageScore:0, passCount:0, failCount:0, threshold:QC_CONFIG.rubricPassThreshold, byItem:[]}
   });
-  const b=new Blob([JSON.stringify({schema:HC_DATA_STANDARD_SCHEMA, package:pkg},null,2)],{type:'application/json'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='MARAS-Healthcare-Standard-Package.json';a.click();
+  const b=new Blob([JSON.stringify({schema:FDA_CLINICAL_DATA_SCHEMA, package:pkg},null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='MARAS-FDA-Clinical-Standard-Package.json';a.click();
 }
+// Alias for earlier QC button / saved HTML references
+function dlHealthcareSchema(){ return dlFdaClinicalSchema(); }
 
 /* ASSURANCE */
 function assuranceStatusClass(st){
@@ -3048,7 +3122,7 @@ function loadProductGradeSample(){
   selDomain = 'Pharma Mfg';
   document.getElementById('req-ta').value =
     'Produce a regulator-defensible business assurance package for LIMS batch-release audit trail and electronic signature controls under 21 CFR Part 11 §§11.10 and 11.50, reinforced by ALCOA+ data integrity and risk-based CSV/CSA evidence. ' +
-    'Apply scope control to electronic records / data integrity / validation only; rank sources by relevance to batch release; suppress duplicate controls; filter to FDA/US-applicable jurisdiction; normalize every PBI to the healthcare regulatory assurance schema; and attach a scored validation rubric to each output. ' +
+    'Apply scope control to electronic records / data integrity / validation only; rank sources by relevance to batch release; suppress duplicate controls; filter to FDA/US-applicable jurisdiction; normalize every PBI to the FDA clinical regulatory assurance schema; and attach a scored validation rubric to each output. ' +
     'Include source traceability, FMEA risk, business PBIs, test obligations, evidence readiness gaps, and inspection questions. Do not invent filler work items.';
   goTab('gen', document.getElementById('ntab-gen'));
   setStatus('idle', 'Product-grade LIMS Part 11 sample loaded — create the assurance package to run QC controls');
@@ -3057,14 +3131,14 @@ function loadProductGradeSample(){
 function sourceMetaFor(reg){
   const r=(reg||'').toLowerCase();
   if(r.includes('21 cfr')||r.includes('fda')) return {authority:'US FDA / eCFR',nation:'United States',sourceType:'Regulation / FDA guidance'};
-  if(r.includes('gdpr')) return {authority:'European Union',nation:'EU / EEA',sourceType:'Regulation'};
+  if(r.includes('gdpr')) return {authority:'European Union',nation:'European Union',sourceType:'Regulation'};
   if(r.includes('eu gmp')||r.includes('annex')||r.includes('eudralex')) return {authority:'European Commission / EudraLex',nation:'European Union',sourceType:'Guideline'};
   if(r.includes('ich')) return {authority:'ICH',nation:'International',sourceType:'Guideline'};
   if(r.includes('iso')) return {authority:'ISO',nation:'International',sourceType:'Licensed standard'};
   if(r.includes('gamp')) return {authority:'ISPE / GAMP',nation:'International',sourceType:'Licensed industry standard'};
   if(r.includes('hipaa')) return {authority:'HHS / eCFR',nation:'United States',sourceType:'Regulation'};
   if(r.includes('mdr')) return {authority:'European Union',nation:'European Union',sourceType:'Regulation'};
-  return {authority:'Curated regulatory library',nation:document.getElementById('f-client-region')?.value||'Selected region',sourceType:'Controlled source summary'};
+  return {authority:'Curated regulatory library',nation:normalizeJurisdictionNation(document.getElementById('f-client-region')?.value)||'International',sourceType:'Controlled source summary'};
 }
 
 
