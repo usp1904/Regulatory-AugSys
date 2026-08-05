@@ -2733,7 +2733,7 @@ function renderStories(stories, pipelineResult) {
       <div class="qc-chip"><b>Relevance</b>${(qc.sourceRelevanceRanking||[]).length} ranked sources</div>
       <div class="qc-chip"><b>Jurisdiction</b>${(qc.jurisdictionFilter?.suppressed||[]).length} filtered out</div>
       <div class="qc-chip"><b>Duplicates</b>${qc.duplicateSuppression?.removed||0} suppressed</div>
-      <div class="qc-chip"><b>Normalized</b>${qc.outputNormalization?.itemsNormalized||stories.length} → ${qc.outputNormalization?.schemaVersion||'1.0.0'}</div>
+      <div class="qc-chip"><b>Normalized</b>${qc.outputNormalization?.itemsNormalized||stories.length} items · schema v${qc.outputNormalization?.schemaVersion||'1.0.0'}</div>
       <div class="qc-chip"><b>Rubric</b>avg ${qc.validationRubric?.averageScore||0}/100 · ${qc.validationRubric?.passCount||0} pass</div>
     </div>
   </div>` : '';
