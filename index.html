@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>MARAS v6.2 — Regulatory Business Assurance</title>
+<title>MARAS v6.3.1 — Regulatory Business Assurance</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -284,6 +284,22 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .ac-t{font-size:11px;color:var(--ink2);line-height:1.55}
 .ac-ref{font-size:10px;font-family:monospace;color:var(--ink4);border-top:1px solid var(--bg3);margin-top:6px;padding-top:6px}
 .sc-footer{padding:6px 14px;border-top:1px solid var(--bg2);display:flex;gap:5px;background:var(--bg)}
+.qc-banner{background:#fff;border:1px solid var(--border);border-radius:var(--r2);padding:12px 14px;margin-bottom:12px;box-shadow:var(--shadow)}
+.qc-banner-title{font-size:11px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px}
+.qc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:6px}
+.qc-chip{font-size:10px;color:var(--ink2);background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:7px 8px;line-height:1.35}
+.qc-chip b{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.35px;color:var(--ink3);margin-bottom:2px}
+.rubric-box{margin:8px 0 2px;padding:8px 10px;background:#f8fafc;border-radius:5px;border-left:3px solid #0e7a62}
+.rubric-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px}
+.rubric-label{font-size:9px;font-weight:700;color:#0e7a62;text-transform:uppercase;letter-spacing:.4px}
+.rubric-score{font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px}
+.rubric-score.pass{background:#ecfdf5;color:#166534}
+.rubric-score.fail{background:#fffbeb;color:#92400e}
+.rubric-rel{font-size:10px;color:var(--ink3)}
+.rubric-checks{display:flex;flex-wrap:wrap;gap:4px}
+.rubric-check{font-size:9px;padding:2px 6px;border-radius:4px;background:#fff;border:1px solid var(--border);color:var(--ink3)}
+.rubric-check.ok{border-color:rgba(14,122,98,.35);color:#0e7a62;background:#ecfdf5}
+.rubric-check.no{opacity:.75}
 .ftr-btn{padding:3px 10px;border-radius:20px;border:1px solid var(--border);background:#fff;color:var(--ink3);font-size:10px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .12s}
 .ftr-btn:hover{color:var(--ink);border-color:var(--border2)}
 .ftr-btn.v{background:var(--green-t);color:var(--green);border-color:rgba(22,101,52,.2)}
@@ -696,6 +712,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
         <span class="try-chip" onclick="setReq(this)">ALCOA+ data integrity controls for business-critical records</span>
         <span class="try-chip" onclick="setReq(this)">Annex 11 evidence package for QMS change control</span>
         <span class="try-chip" onclick="setReq(this)">Validation evidence package for regulated laboratory operations</span>
+        <span class="try-chip" onclick="loadProductGradeSample()">Product-grade LIMS Part 11 package</span>
       </div>
       <div class="upload-row" id="req-upload-row">
         <input type="file" multiple accept=".pdf,.docx,.xlsx,.txt,.csv" onchange="handleReqFiles(this.files)">
@@ -1067,13 +1084,34 @@ const ASSURANCE_CRITERIA=[
   {name:'4-process LangGraph/LangChain operating model',status:'pass',
    validation:'The product is presented as four assurance processes: source/scope validation, business translation, self-evaluation and evidence packaging.',
    proof:'Visible pipeline and technical assurance report.'},
+  {name:'Scope control',status:'pass',
+   validation:'Generation is bounded by selected library regulations, control categories, system type affinity, and max chunk/item caps before PBIs are emitted.',
+   proof:'resolveScopeControls + rankChunks scope filter + QC banner.'},
+  {name:'Source relevance ranking',status:'pass',
+   validation:'Curated controls are scored by keyword overlap, regulation/section hit, system affinity, selection boost and jurisdiction fit, then sorted before intake.',
+   proof:'scoreSourceRelevance + QC sourceRelevanceRanking report.'},
+  {name:'Duplicate suppression',status:'pass',
+   validation:'Near-duplicate PBIs sharing the same clause fingerprint or high Jaccard similarity on source requirements are suppressed before render/export.',
+   proof:'suppressDuplicateStories + duplicate count in results meta.'},
+  {name:'Jurisdiction filtering',status:'pass',
+   validation:'Framework and client region map to allowed nations; out-of-jurisdiction sources are filtered when in-jurisdiction alternatives exist.',
+   proof:'JURISDICTION_BY_FRAMEWORK + applyJurisdictionFilter.'},
+  {name:'Output normalization',status:'pass',
+   validation:'Every PBI is normalized to stable IDs, criticality enums, trimmed fields, label slugs, schemaVersion and acceptanceCriteria aliases.',
+   proof:'normalizeStoryOutput + schemaVersion on each item.'},
+  {name:'Scored validation rubric per output',status:'pass',
+   validation:'Each PBI receives a 100-point rubric across traceability, citation, ACCEPT, INVEST, Given/When/Then AC quality, and scope/jurisdiction fit.',
+   proof:'scoreValidationRubric rendered on every story card.'},
+  {name:'FDA clinical data standardization schema',status:'pass',
+   validation:'Packages export to maras.fda.clinical-regulatory-assurance.v1 with meta, qualityControl, controls[], source, traceability, evidence and validationRubric.',
+   proof:'FDA Clinical Schema JSON export + FDA_CLINICAL_DATA_SCHEMA.'},
 ];
 
 const ASSURANCE_SCENARIOS=[
   {name:'FDA Part 11 audit trail for LIMS',persona:'QA Lead / Validation Engineer',
    prompt:'Create an audit trail and e-signature delivery package for a LIMS under 21 CFR Part 11.',
-   flow:'Source validation -> Part 11 clause mapping -> P0 regulatory objects -> FMEA risk -> traceable business PBIs -> test obligations -> evidence gaps.',
-   proves:['Official source used before generation','Work-item drafting is extended into RTM/test/evidence','Inspection gaps are visible before business approval']},
+   flow:'Scope + jurisdiction filter -> relevance ranking -> Part 11 mapping -> duplicate suppression -> normalized PBIs with scored rubric -> FDA clinical schema export.',
+   proves:['Official source used before generation','QC controls bound the package','Inspection gaps are visible before business approval']},
   {name:'Paid standard license gate',persona:'Compliance Owner',
    prompt:'Use ISO 13485 and GAMP 5 to generate medical-device validation business controls.',
    flow:'MARAS detects licensed-standard source type -> blocks full-text assumption -> uses metadata only -> asks for licensed customer source before clause-level output.',
@@ -1463,26 +1501,506 @@ const H = {
   analytics: {},   // productivity analytics from Loop 3
   review:    {},   // business evidence review from Loop 3
   evidence:  {},   // evidence package from Loop 3
+  qcReport:  null, // quality-control report (scope/rank/dedupe/jurisdiction/rubric)
+  healthcarePackage: null, // standardized healthcare output schema package
   blocked:   false,
   blockReason: '',
 };
 
-/* ─── CHUNK RANKING ──────────────────────────────────────────────── */
-function rankChunks(req) {
-  const qt = (req || '').toLowerCase();
-  const activeCats = selCatsSet.size ? selCatsSet : null;
-  const treeFilter = selItems.size
-    ? new Set(TREE_DATA.flatMap(g => g.items.filter(it => selItems.has(it.id)).map(it => it.cat)))
-    : null;
-  return GXP_CHUNKS.filter(c => {
-    if (activeCats && !activeCats.has(c.cat)) return false;
-    if (treeFilter && !treeFilter.has(c.cat)) return false;
-    return true;
-  }).sort((a, b) => {
-    const sa = (a.kws||[]).filter(k => qt.includes(k)).length + (qt.includes(a.reg.toLowerCase()) ? 3 : 0);
-    const sb = (b.kws||[]).filter(k => qt.includes(k)).length + (qt.includes(b.reg.toLowerCase()) ? 3 : 0);
-    return sb - sa;
+/* ════════════════════════════════════════════════════════════════════
+   QUALITY CONTROL LAYER v6.3.1
+   1) Scope control  2) Source relevance ranking  3) Duplicate suppression
+   4) Jurisdiction filtering  5) Output normalization
+   6) Scored validation rubric  7) FDA clinical data standardization schema
+   Additive / non-breaking:
+   - rankChunks keeps main category/tree scope + returns the full ranked list
+   - demo engine still slices to maxScopedChunks (same as main's slice(0,12))
+   - jurisdiction/relevance demote first; hard-drop only when safer alternatives exist
+   - exports keep legacy fields; FDA clinical schema is an additive package
+   ════════════════════════════════════════════════════════════════════ */
+const QC_CONFIG = {
+  maxScopedChunks: 12,          // matches main demo engine slice(0,12)
+  maxOutputItems: 36,           // 12 chunks × ≤3 reqs — do not shrink prior demo max
+  duplicateJaccard: 0.72,
+  minRelevanceScore: 1,         // soft floor for ranking report; not a hard empty-out
+  rubricPassThreshold: 70,
+  hardFilterJurisdiction: true, // drop OOJ only when in-jurisdiction alternatives remain
+  hardFilterLowRelevance: false // ranking-only by default — preserves main corpus coverage
+};
+
+const JURISDICTION_BY_FRAMEWORK = {
+  'FDA': ['United States', 'International'],
+  'Health Canada': ['Canada', 'United States', 'International'],
+  'EMA / EU GMP': ['European Union', 'United Kingdom', 'International'],
+  'MHRA': ['United Kingdom', 'European Union', 'International'],
+  'ICH': ['International', 'United States', 'European Union', 'Japan', 'Canada'],
+  'WHO': ['International'],
+  'PMDA': ['Japan', 'International'],
+  'TGA': ['Australia', 'International'],
+  'HSA (Singapore)': ['Singapore', 'International', 'Australia', 'Canada'],
+  'CDSCO (India)': ['India', 'International'],
+  'NMPA (China)': ['China', 'International'],
+  'EAEU (Russia)': ['Russia', 'International'],
+  'ANVISA (Brazil)': ['Brazil', 'International'],
+  'SAHPRA (South Africa)': ['South Africa', 'International'],
+  'Multi-Regional': null,
+};
+
+const SYSTEM_AFFINITY = {
+  'LIMS': ['audit trail','data integrity','validation','electronic records','ALCOA','laboratory'],
+  'MES': ['audit trail','access control','change management','validation','batch'],
+  'QMS': ['CAPA','change management','deviation','quality','validation'],
+  'EDMS': ['audit trail','access control','electronic records','signature'],
+  'CDS': ['audit trail','data integrity','ALCOA','validation','laboratory'],
+  'PV System': ['privacy','GDPR','HIPAA','safety','reporting'],
+  'EDC / eCRF': ['audit trail','data integrity','privacy','HIPAA','GDPR','signature'],
+  'CTMS': ['privacy','audit trail','change management','validation'],
+  'eTMF': ['audit trail','access control','electronic records','ALCOA'],
+  'Safety Reporting': ['privacy','HIPAA','GDPR','CAPA','reporting'],
+  'RIM': ['change management','regulatory','submission','validation'],
+  'ERP / SAP': ['access control','audit trail','outsourced','vendor'],
+  'SCADA / DCS': ['access control','validation','security','infrastructure'],
+  'Serialization': ['traceability','access control','audit trail','data integrity'],
+  'Supply Chain': ['vendor','outsourced','traceability','quality agreement'],
+};
+
+const FDA_CLINICAL_DATA_SCHEMA = {
+  schemaVersion: '1.0.0',
+  schemaId: 'maras.fda.clinical-regulatory-assurance.v1',
+  description: 'Target output schema for FDA clinical / life-sciences regulatory data standardization',
+  resourceType: 'FdaClinicalRegulatoryAssurancePackage',
+  requiredFields: [
+    'meta.packageId','meta.generatedAt','meta.jurisdiction','meta.systemType',
+    'controls[].id','controls[].source.authority','controls[].source.citation',
+    'controls[].requirement.text','controls[].traceability.reqId',
+    'controls[].validationRubric.totalScore','controls[].evidence.stage'
+  ],
+  enums: {
+    criticality: ['P0','P1','P2'],
+    evidenceDecision: ['READY','CONDITIONALLY_READY','NOT_READY'],
+    sourceClass: ['Regulation','Guidance','Guideline','Licensed standard','Controlled source summary'],
+    controlType: ['business-control','compliance-control','integration-control','evidence-enabler']
+  },
+  clinicalDomains: ['electronic-records','audit-trail','e-signature','data-integrity','validation','privacy','clinical-operations']
+};
+// Backward-compatible alias used by earlier QC export paths / saved packages
+const HC_DATA_STANDARD_SCHEMA = FDA_CLINICAL_DATA_SCHEMA;
+
+function normalizeJurisdictionNation(nation) {
+  const n = String(nation || '').trim();
+  if (!n) return 'International';
+  const lower = n.toLowerCase();
+  if (lower.includes('united states') || lower === 'us' || lower === 'usa' || lower.includes('america')) return 'United States';
+  if (lower.includes('eu / eea') || lower.includes('european union') || lower === 'eu' || lower.includes('eea') || lower.includes('europe')) return 'European Union';
+  if (lower.includes('united kingdom') || lower === 'uk' || lower.includes('britain') || lower.includes('england')) return 'United Kingdom';
+  if (lower.includes('canada')) return 'Canada';
+  if (lower.includes('japan')) return 'Japan';
+  if (lower.includes('australia')) return 'Australia';
+  if (lower.includes('china')) return 'China';
+  if (lower.includes('india')) return 'India';
+  if (lower.includes('brazil')) return 'Brazil';
+  if (lower.includes('singapore')) return 'Singapore';
+  if (lower.includes('south africa')) return 'South Africa';
+  if (lower.includes('russia') || lower.includes('eaeu')) return 'Russia';
+  if (lower.includes('international') || lower.includes('ich') || lower.includes('who') || lower.includes('multi')) return 'International';
+  // Free-text client regions (e.g. "United States / Belgium dual-market") stay International-compatible
+  if (lower.includes('/') || lower.includes('dual') || lower.includes('selected region')) return 'International';
+  return n;
+}
+
+function attachRankMeta(list, meta) {
+  const arr = Array.isArray(list) ? list.slice() : [];
+  Object.defineProperties(arr, {
+    _jurisdictionSuppressed: { value: meta.jurisdictionSuppressed || [], writable: true, configurable: true },
+    _scope: { value: meta.scope || null, writable: true, configurable: true },
+    _qcMeta: { value: meta, writable: true, configurable: true }
   });
+  return arr;
+}
+
+function qcNormText(s) {
+  return String(s || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function qcTokenSet(s) {
+  return new Set(qcNormText(s).split(' ').filter(t => t.length > 2));
+}
+
+function qcJaccard(a, b) {
+  const A = qcTokenSet(a), B = qcTokenSet(b);
+  if (!A.size || !B.size) return 0;
+  let inter = 0;
+  A.forEach(t => { if (B.has(t)) inter++; });
+  return inter / (A.size + B.size - inter);
+}
+
+function resolveScopeControls() {
+  const fw = document.getElementById('f-fw')?.value || '';
+  const sys = document.getElementById('f-system')?.value || '';
+  const region = document.getElementById('f-client-region')?.value || '';
+  const activeCats = selCatsSet.size ? new Set(selCatsSet) : null;
+  const selectedRegs = selItems.size
+    ? TREE_DATA.flatMap(g => g.items.filter(it => selItems.has(it.id)))
+    : [];
+  const treeCats = selectedRegs.length
+    ? new Set(selectedRegs.map(it => it.cat))
+    : null;
+  const allowedNations = (!fw || fw === 'Multi-Regional' || JURISDICTION_BY_FRAMEWORK[fw] === null)
+    ? null
+    : (JURISDICTION_BY_FRAMEWORK[fw]
+        ? new Set(JURISDICTION_BY_FRAMEWORK[fw])
+        : null); // unknown/empty framework → no jurisdiction filter (main-compatible)
+  if (region) {
+    const r = region.toLowerCase();
+    if (r.includes('us') || r.includes('united states') || r.includes('america')) allowedNations?.add('United States');
+    if (r.includes('eu') || r.includes('europe') || r.includes('belgium') || r.includes('germany')) allowedNations?.add('European Union');
+    if (r.includes('uk') || r.includes('britain') || r.includes('england')) allowedNations?.add('United Kingdom');
+    if (r.includes('japan')) allowedNations?.add('Japan');
+    if (r.includes('canada')) allowedNations?.add('Canada');
+    if (r.includes('china')) allowedNations?.add('China');
+    if (r.includes('india')) allowedNations?.add('India');
+    if (r.includes('australia')) allowedNations?.add('Australia');
+    if (r.includes('brazil')) allowedNations?.add('Brazil');
+    if (r.includes('singapore')) allowedNations?.add('Singapore');
+    if (r.includes('south africa')) allowedNations?.add('South Africa');
+    if (r.includes('russia') || r.includes('eaeu')) allowedNations?.add('Russia');
+  }
+  return {
+    framework: fw,
+    systemType: sys,
+    clientRegion: region,
+    activeCats,
+    treeCats,
+    selectedRegIds: [...selItems],
+    selectedRegNames: selectedRegs.map(it => it.name),
+    allowedNations,
+    maxChunks: QC_CONFIG.maxScopedChunks,
+    maxItems: QC_CONFIG.maxOutputItems,
+    scopeLabel: [
+      fw || 'All frameworks',
+      sys || 'Any system',
+      activeCats ? `${activeCats.size} control categories` : 'All categories',
+      selItems.size ? `${selItems.size} library selections` : 'Full curated library'
+    ].join(' · ')
+  };
+}
+
+function scoreSourceRelevance(chunk, req, scope) {
+  const qt = (req || '').toLowerCase();
+  const meta = sourceMetaFor(chunk.reg);
+  const nation = normalizeJurisdictionNation(meta.nation);
+  let score = 0;
+  const matchedKws = (chunk.kws || []).filter(k => qt.includes(k.toLowerCase()));
+  score += matchedKws.length * 4;
+  if (qt.includes((chunk.reg || '').toLowerCase())) score += 8;
+  if (qt.includes((chunk.sec || '').toLowerCase())) score += 3;
+  if (qt.includes((chunk.title || '').toLowerCase())) score += 5;
+  (chunk.reqs || []).forEach(r => {
+    const overlap = qcJaccard(r, req);
+    if (overlap > 0.15) score += Math.round(overlap * 10);
+  });
+  if (scope.activeCats && scope.activeCats.has(chunk.cat)) score += 3;
+  if (scope.treeCats && scope.treeCats.has(chunk.cat)) score += 2;
+  if (scope.systemType && SYSTEM_AFFINITY[scope.systemType]) {
+    const aff = SYSTEM_AFFINITY[scope.systemType];
+    const blob = ((chunk.kws || []).join(' ') + ' ' + chunk.title + ' ' + (chunk.reqs || []).join(' ')).toLowerCase();
+    aff.forEach(a => { if (blob.includes(a.toLowerCase())) score += 2; });
+  }
+  const inJurisdiction = !scope.allowedNations || scope.allowedNations.has(nation) || nation === 'International';
+  if (scope.allowedNations) {
+    if (inJurisdiction) score += 4;
+    else score -= 8;
+  }
+  if (scope.selectedRegNames?.length) {
+    const hit = scope.selectedRegNames.some(n =>
+      n.toLowerCase().includes((chunk.reg || '').toLowerCase().split('—')[0].trim().slice(0, 12)) ||
+      (chunk.reg || '').toLowerCase().includes(n.toLowerCase().slice(0, 10))
+    );
+    if (hit) score += 6;
+  }
+  return {
+    relevanceScore: score,
+    matchedKeywords: matchedKws,
+    jurisdiction: nation,
+    authority: meta.authority,
+    sourceType: meta.sourceType,
+    inJurisdiction,
+    inScopeCategory: (!scope.activeCats || scope.activeCats.has(chunk.cat)) &&
+                     (!scope.treeCats || scope.treeCats.has(chunk.cat))
+  };
+}
+
+function applyJurisdictionFilter(ranked, scope) {
+  if (!scope.allowedNations) return { kept: ranked, suppressed: [] };
+  const kept = [], suppressed = [];
+  ranked.forEach(c => {
+    if (c._qc?.inJurisdiction) kept.push(c);
+    else suppressed.push({ id: c.id, reg: c.reg, nation: c._qc?.jurisdiction, reason: 'Outside selected jurisdiction/framework' });
+  });
+  // Non-breaking: never empty the corpus — fall back to demoted full list
+  if (!kept.length) return { kept: ranked, suppressed, demotedOnly: true };
+  if (!QC_CONFIG.hardFilterJurisdiction) {
+    // Demote OOJ to the end but keep them available for callers that need full coverage
+    const demoted = [...kept, ...ranked.filter(c => !c._qc?.inJurisdiction)];
+    return { kept: demoted, suppressed, demotedOnly: true };
+  }
+  return { kept, suppressed, demotedOnly: false };
+}
+
+function suppressDuplicateStories(stories) {
+  const kept = [], suppressed = [];
+  stories.forEach(s => {
+    const fingerprint = `${s.regulation||''}|${s.section||''}|${qcNormText(s.sourceRequirement||s.title||'')}`;
+    const dup = kept.find(k => {
+      const sameClause = (k.regulation === s.regulation && k.section === s.section);
+      const similarText = qcJaccard(k.sourceRequirement || k.title, s.sourceRequirement || s.title) >= QC_CONFIG.duplicateJaccard;
+      const sameTitle = qcNormText(k.title) === qcNormText(s.title);
+      return sameTitle || (sameClause && similarText);
+    });
+    if (dup) {
+      suppressed.push({ id: s.id, duplicateOf: dup.id, reason: 'Near-duplicate control/requirement suppressed' });
+    } else {
+      kept.push(s);
+    }
+  });
+  return { kept, suppressed };
+}
+
+function normalizeStoryOutput(s, idx, pfx, qcMeta) {
+  const criticality = ['P0','P1','P2'].includes(s.regulatoryCriticality) ? s.regulatoryCriticality : (idx < 3 ? 'P0' : idx < 6 ? 'P1' : 'P2');
+  const type = ['business-control','compliance-control','integration-control','evidence-enabler'].includes(s.type)
+    ? s.type : 'business-control';
+  const id = s.id || `${pfx}-${String(idx+1).padStart(3,'0')}`;
+  const ac = (s.ac || s.acceptanceCriteria || []).map(a => String(a).trim()).filter(Boolean);
+  const invest = s.invest || {independent:'yes',negotiable:'yes',valuable:'yes',estimable:'yes',small:'yes',testable:'yes'};
+  Object.keys(invest).forEach(k => {
+    if (typeof invest[k] === 'string') invest[k] = invest[k].trim();
+  });
+  return {
+    ...s,
+    num: idx + 1,
+    id,
+    title: String(s.title || 'Untitled control').trim(),
+    type,
+    regulatoryCriticality: criticality,
+    regulation: String(s.regulation || '').trim(),
+    section: String(s.section || '').trim(),
+    regRef: String(s.regRef || `${id} · ${s.regulation||''} ${s.section||''}`).trim(),
+    story: String(s.story || s.userStory || '').trim(),
+    ac,
+    acceptanceCriteria: ac,
+    invest,
+    frameworks_applied: Array.isArray(s.frameworks_applied) ? s.frameworks_applied : [],
+    labels: Array.isArray(s.labels) ? s.labels.map(l => String(l).toLowerCase().replace(/\s+/g,'-')) : [],
+    sourceRequirement: String(s.sourceRequirement || (s.accept && s.accept.action) || s.title || '').trim(),
+    normalizedAt: new Date().toISOString(),
+    schemaVersion: FDA_CLINICAL_DATA_SCHEMA.schemaVersion,
+    qc: qcMeta || s.qc || {}
+  };
+}
+
+function scoreValidationRubric(story, scope) {
+  const checks = [];
+  const hasTrace = !!(story.regRef && (story.regRef.includes('REQ') || story.regulation));
+  checks.push({ id:'traceability', label:'Source traceability (reg + section / req_id)', weight:20, pass:hasTrace, score:hasTrace?20:0 });
+  const hasCitation = !!(story.regulation && story.section && story.sourceAuthority);
+  checks.push({ id:'citation', label:'Official source citation fields', weight:15, pass:hasCitation, score:hasCitation?15:4 });
+  const accept = story.accept || {};
+  const acceptOk = !!(accept.action && accept.expected && accept.pass_fail && accept.traceable);
+  checks.push({ id:'accept', label:'ACCEPT completeness', weight:20, pass:acceptOk, score:acceptOk?20: Math.round(20*((!!accept.action)+(!!accept.expected)+(!!accept.pass_fail)+(!!accept.traceable))/4) });
+  const inv = story.invest || {};
+  const invKeys = ['independent','negotiable','valuable','estimable','small','testable'];
+  const invPass = invKeys.filter(k => inv[k] && String(inv[k]).toLowerCase() !== 'no').length;
+  checks.push({ id:'invest', label:'INVEST dimensions', weight:15, pass:invPass===6, score:Math.round(15*invPass/6) });
+  const ac = story.ac || [];
+  const gwt = ac.filter(a => /given/i.test(a) && /when/i.test(a) && /then/i.test(a)).length;
+  checks.push({ id:'ac_quality', label:'Given/When/Then acceptance criteria', weight:15, pass:gwt>=1 && ac.length>=2, score: ac.length>=2 ? (gwt>=1?15:8) : 3 });
+  const scopeOk = !scope.activeCats || !story.qc || story.qc.inScopeCategory !== false;
+  const jurOk = !story.qc || story.qc.inJurisdiction !== false;
+  checks.push({ id:'scope_jurisdiction', label:'Scope & jurisdiction fit', weight:15, pass:scopeOk && jurOk, score:(scopeOk&&jurOk)?15: (scopeOk||jurOk)?8:0 });
+  const total = checks.reduce((a,c)=>a+c.score,0);
+  const grade = total >= 90 ? 'A' : total >= QC_CONFIG.rubricPassThreshold ? 'B' : total >= 55 ? 'C' : 'D';
+  return {
+    totalScore: total,
+    maxScore: 100,
+    grade,
+    pass: total >= QC_CONFIG.rubricPassThreshold,
+    checks,
+    scoredAt: new Date().toISOString()
+  };
+}
+
+function toFdaClinicalStandardPackage(stories, pipelineResult, scope, qcReport) {
+  const ts = new Date().toISOString();
+  return {
+    resourceType: FDA_CLINICAL_DATA_SCHEMA.resourceType,
+    schemaId: FDA_CLINICAL_DATA_SCHEMA.schemaId,
+    schemaVersion: FDA_CLINICAL_DATA_SCHEMA.schemaVersion,
+    meta: {
+      packageId: pipelineResult?.evidence?.evidence_package?.package_id || `EP-${ts.slice(0,10)}-001`,
+      generatedAt: ts,
+      jurisdiction: scope.allowedNations ? [...scope.allowedNations] : ['Multi-Regional'],
+      framework: scope.framework,
+      systemType: scope.systemType || 'GxP system',
+      organisation: document.getElementById('f-org')?.value || '',
+      project: document.getElementById('f-proj')?.value || '',
+      businessOutcome: document.getElementById('f-outcome')?.value || '',
+      clientRegion: scope.clientRegion || '',
+      scope: scope.scopeLabel,
+      mode: demoMode ? 'demo' : 'live-ai',
+      standard: 'FDA clinical / GxP regulatory assurance'
+    },
+    qualityControl: {
+      scopeControl: true,
+      sourceRelevanceRanking: true,
+      duplicateSuppression: true,
+      jurisdictionFiltering: true,
+      outputNormalization: true,
+      scoredValidationRubric: true,
+      report: qcReport
+    },
+    intake: {
+      regulatoryObjects: pipelineResult?.regObjs || [],
+      gate: pipelineResult?.intakeSummary?.gate || 'PROCEED'
+    },
+    riskRegister: pipelineResult?.riskReg || [],
+    evidence: pipelineResult?.evidence?.evidence_package || {},
+    review: pipelineResult?.review || {},
+    controls: stories.map(s => ({
+      id: s.id,
+      type: s.type,
+      criticality: s.regulatoryCriticality,
+      title: s.title,
+      narrative: s.story,
+      source: {
+        authority: s.sourceAuthority || '',
+        nation: normalizeJurisdictionNation(s.applicableNation || ''),
+        class: s.sourceType || '',
+        citation: `${s.regulation} ${s.section}`.trim(),
+        regulation: s.regulation,
+        section: s.section
+      },
+      requirement: { text: s.sourceRequirement || '', acceptanceCriteria: s.ac || [] },
+      traceability: { reqId: (s.regRef||'').split('·')[0].trim(), regRef: s.regRef || '' },
+      boi: s.boi || null,
+      invest: s.invest || null,
+      accept: s.accept || null,
+      evidence: { stage: s.phase || '', gamp: s.gamp || '' },
+      relevance: s.qc?.relevanceScore ?? null,
+      validationRubric: s.validationRubric || null,
+      clinicalCoding: {
+        domain: s.labels?.[0] || s.type,
+        systemAffinity: scope.systemType || '',
+        complianceDomain: (pipelineResult?.regObjs || []).find(r => (s.regRef||'').includes(r.req_id))?.compliance_domain || '',
+        fdaClinicalDomains: FDA_CLINICAL_DATA_SCHEMA.clinicalDomains
+      },
+      // legacy alias retained for earlier HC export consumers
+      healthcareCoding: {
+        domain: s.labels?.[0] || s.type,
+        systemAffinity: scope.systemType || '',
+        complianceDomain: (pipelineResult?.regObjs || []).find(r => (s.regRef||'').includes(r.req_id))?.compliance_domain || ''
+      }
+    }))
+  };
+}
+// Alias — prior QC paths called the healthcare-named builder
+const toHealthcareStandardPackage = toFdaClinicalStandardPackage;
+
+function applyQualityControls(rawStories, rankedChunks, req, pipelineExtras) {
+  const scope = resolveScopeControls();
+  const pfx = autoPrefix();
+  const rankedList = Array.isArray(rankedChunks) ? rankedChunks : [];
+
+  // 1+2+4 already applied during ranking; capture report
+  const jurisdictionSuppressed = rankedList._jurisdictionSuppressed || [];
+  const rankingMeta = rankedList.map(c => ({
+    id: c.id, reg: c.reg, score: c._qc?.relevanceScore ?? 0,
+    jurisdiction: c._qc?.jurisdiction, matchedKeywords: c._qc?.matchedKeywords || []
+  }));
+
+  // 3. Duplicate suppression (true near-dupes only — does not invent/drop unique controls)
+  const { kept: deduped, suppressed: dupSuppressed } = suppressDuplicateStories(rawStories);
+
+  // Soft scope cap — set high enough (36) to match historical demo max; report any trim
+  const scoped = deduped.slice(0, scope.maxItems);
+  const scopeTrimmed = deduped.slice(scope.maxItems).map(s => ({ id: s.id, reason: 'Exceeded scope max output items' }));
+
+  // 5. Output normalization + 6. Rubric per output
+  const stories = scoped.map((s, i) => {
+    const chunk = rankedList.find(c => c.reg === s.regulation && c.sec === s.section);
+    const qcMeta = {
+      relevanceScore: chunk?._qc?.relevanceScore ?? s.qc?.relevanceScore ?? 0,
+      matchedKeywords: chunk?._qc?.matchedKeywords || [],
+      inJurisdiction: chunk?._qc?.inJurisdiction !== false,
+      inScopeCategory: chunk?._qc?.inScopeCategory !== false,
+      scopeLabel: scope.scopeLabel
+    };
+    const normalized = normalizeStoryOutput(s, i, pfx, qcMeta);
+    // Preserve original story shape fields used by render/export
+    normalized.validationRubric = scoreValidationRubric(normalized, scope);
+    return normalized;
+  });
+
+  const rubricAvg = stories.length
+    ? Math.round(stories.reduce((a,s)=>a+(s.validationRubric?.totalScore||0),0)/stories.length)
+    : 0;
+  const rubricPass = stories.filter(s => s.validationRubric?.pass).length;
+
+  const qcReport = {
+    scope: {
+      label: scope.scopeLabel,
+      framework: scope.framework,
+      systemType: scope.systemType,
+      allowedNations: scope.allowedNations ? [...scope.allowedNations] : ['Multi-Regional'],
+      maxChunks: scope.maxChunks,
+      maxItems: scope.maxItems,
+      selectedRegulations: scope.selectedRegNames.slice(0, 12)
+    },
+    sourceRelevanceRanking: rankingMeta.slice(0, 12),
+    jurisdictionFilter: { suppressed: jurisdictionSuppressed },
+    duplicateSuppression: { removed: dupSuppressed.length + scopeTrimmed.length, details: [...dupSuppressed, ...scopeTrimmed] },
+    outputNormalization: { schemaVersion: FDA_CLINICAL_DATA_SCHEMA.schemaVersion, schemaId: FDA_CLINICAL_DATA_SCHEMA.schemaId, itemsNormalized: stories.length },
+    validationRubric: {
+      averageScore: rubricAvg,
+      passCount: rubricPass,
+      failCount: stories.length - rubricPass,
+      threshold: QC_CONFIG.rubricPassThreshold,
+      byItem: stories.map(s => ({ id: s.id, score: s.validationRubric.totalScore, grade: s.validationRubric.grade, pass: s.validationRubric.pass }))
+    },
+    compatibility: {
+      preservesLegacyStoryFields: true,
+      preservesCategoryScopeFilter: true,
+      rankChunksReturnsFullList: true,
+      demoSliceUnchanged: QC_CONFIG.maxScopedChunks
+    }
+  };
+
+  const healthcarePackage = toFdaClinicalStandardPackage(stories, pipelineExtras, scope, qcReport);
+  return { stories, qcReport, healthcarePackage, fdaClinicalPackage: healthcarePackage, scope };
+}
+
+/* ─── CHUNK RANKING (+ scope, relevance, jurisdiction) ───────────── */
+function rankChunks(req) {
+  const scope = resolveScopeControls();
+  // 1. Scope control — identical category/tree filter semantics to main
+  const scoped = GXP_CHUNKS.map(c => {
+    const _qc = scoreSourceRelevance(c, req, scope);
+    return { ...c, _qc };
+  }).filter(c => c._qc.inScopeCategory);
+
+  // 2. Source relevance ranking (additive sort — main only used keyword counts)
+  scoped.sort((a, b) => (b._qc.relevanceScore - a._qc.relevanceScore) || a.id.localeCompare(b.id));
+
+  // 4. Jurisdiction filtering (soft demote / hard-drop only when alternatives exist)
+  const { kept, suppressed } = applyJurisdictionFilter(scoped, scope);
+
+  let final = kept;
+  if (QC_CONFIG.hardFilterLowRelevance) {
+    const filtered = kept.filter(c => c._qc.relevanceScore >= QC_CONFIG.minRelevanceScore || kept.length <= 3);
+    final = filtered.length ? filtered : kept;
+  }
+  // Non-breaking vs main: return the FULL ranked/scoped list (demo still slices to 12)
+  return attachRankMeta(final, { jurisdictionSuppressed: suppressed, scope, rankedCount: final.length });
 }
 
 /* ─── AUTO PREFIX ────────────────────────────────────────────────── */
@@ -1715,7 +2233,10 @@ function runDemoEngine(req, ctx) {
   const clientRegion = document.getElementById('f-client-region').value || fw || 'selected operating region';
   const clientDelta = document.getElementById('f-client-delta').value || 'standard client process';
   const auditGap = document.getElementById('f-gap-input').value || 'no prior audit gap supplied';
-  const top   = rankChunks(req).slice(0, 12);
+  const ranked = rankChunks(req);
+  const top   = ranked.slice(0, QC_CONFIG.maxScopedChunks);
+  top._jurisdictionSuppressed = ranked._jurisdictionSuppressed || [];
+  top._scope = ranked._scope;
   const ts    = new Date().toISOString().slice(0, 10);
 
   const BUSINESS_AREAS = ['Batch release','Laboratory operations','Quality event closure','Regulatory submission readiness',
@@ -1817,19 +2338,26 @@ function runDemoEngine(req, ctx) {
     });
   });
 
+  // ── Quality Control Layer (scope · relevance · dedupe · jurisdiction · normalize · rubric · HC schema) ──
+  const preQcStories = stories;
+  const qcResult = applyQualityControls(preQcStories, top, req, {
+    regObjs, intakeSummary, riskReg, review: null, evidence: null
+  });
+  const qcStories = qcResult.stories;
+
   // Process 2 continued: Business sequencing
-  const backlog = stories.map((s, i) => ({
+  const backlog = qcStories.map((s, i) => ({
     id: s.id, regulatory_criticality: s.regulatoryCriticality,
-    business_sequence: i < Math.ceil(stories.length/3) ? 'Foundation' : i < Math.ceil(stories.length*2/3) ? 'Control Build' : 'Evidence Closure',
+    business_sequence: i < Math.ceil(qcStories.length/3) ? 'Foundation' : i < Math.ceil(qcStories.length*2/3) ? 'Control Build' : 'Evidence Closure',
     dependencies: {blocks:[], blocked_by:[]}, capacity_fit: true,
   }));
-  const p0Count  = stories.filter(s=>s.regulatoryCriticality==='P0').length;
-  const p1Count= stories.filter(s=>s.regulatoryCriticality==='P1').length;
+  const p0Count  = qcStories.filter(s=>s.regulatoryCriticality==='P0').length;
+  const p1Count= qcStories.filter(s=>s.regulatoryCriticality==='P1').length;
 
   // ── Agent 5: Board Recommendation ───────────────────────────────
   const board = {
     columns: ['Source Validated','Control Defined','PBI Ready','Evidence Needed','QA Review','Business Approved'],
-    swimlanes: [...new Set(stories.map(s=>s.accept?.traceable?.split('·')[1]?.trim().split(' ')[0]||'GxP'))].map(d=>({name:d,stories:stories.filter(s=>s.regulation.includes(d)).map(s=>s.id)})),
+    swimlanes: [...new Set(qcStories.map(s=>s.accept?.traceable?.split('·')[1]?.trim().split(' ')[0]||'GxP'))].map(d=>({name:d,stories:qcStories.filter(s=>s.regulation.includes(d)).map(s=>s.id)})),
     wip_limits: {'QA Review':1,'Evidence Needed':3},
     compliance_gates: [{column:'QA Review',required_by:fw,approver:'QA Lead',auto_transition:false}],
   };
@@ -1838,13 +2366,14 @@ function runDemoEngine(req, ctx) {
   const analytics = {
     effort: {planned_effort: null, notes:'Effort is intentionally not pre-populated; delivery team estimates after assurance review'},
     p0_completion_rate: 0,
-    compliance_coverage: [{domain:'regulatory',coverage_pct:Math.round((p0Count/stories.length)*100),status:'On Track'}],
+    compliance_coverage: [{domain:'regulatory',coverage_pct:qcStories.length?Math.round((p0Count/qcStories.length)*100):0,status:'On Track'}],
     rpn_trend: 'Establishing baseline — no prior assurance package data',
-    at_risk_stories: stories.filter(s=>s.regulatoryCriticality==='P0').slice(-1).map(s=>s.id),
+    at_risk_stories: qcStories.filter(s=>s.regulatoryCriticality==='P0').slice(-1).map(s=>s.id),
     recommendations: [
       `Review ${p0Count} P0 business PBIs before delivery planning`,
       `Negative test cases required for all ${p0Count} P0 regulatory controls`,
       `Evidence environment documentation needed before business approval`,
+      `Validation rubric average ${qcResult.qcReport.validationRubric.averageScore}/100 — ${qcResult.qcReport.validationRubric.passCount}/${qcStories.length} items at or above threshold`,
     ],
   };
 
@@ -1863,9 +2392,15 @@ function runDemoEngine(req, ctx) {
   };
 
   // ── Agent 8 & 9: Retrospective + Evidence Package ───────────────
+  const avgRubric = qcResult.qcReport.validationRubric.averageScore;
   const evidence = {
     retrospective: {
-      went_well: ['Regulatory requirements clearly identified and classified','Framework selection correctly applied per PBI type','Full regulatory traceability established from REQ through to business PBI'],
+      went_well: [
+        'Regulatory requirements clearly identified and classified',
+        'Framework selection correctly applied per PBI type',
+        'Full regulatory traceability established from REQ through to business PBI',
+        `Quality controls applied: scope, relevance ranking, jurisdiction filter, duplicate suppression, normalization, scored rubric (avg ${avgRubric}/100)`
+      ],
       improve: ['Negative test cases must be written before business approval','Evidence environment documentation required','P0 PBI effort sizing remains team-owned'],
       actions: [
         {action:'Write negative test cases for all P0 regulatory controls',owner:'QA Lead',due:'Package Day 3'},
@@ -1875,7 +2410,7 @@ function runDemoEngine(req, ctx) {
     },
     evidence_package: {
       package_id: `EP-${ts}-001`,
-      audit_readiness_score: 62,
+      audit_readiness_score: Math.min(92, Math.round(52 + avgRubric * 0.35)),
       documents: [
         {title:'Requirements Traceability Matrix (RTM)',status:'COMPLETE'},
         {title:'Regulatory Interpretation Log',status:'COMPLETE'},
@@ -1884,14 +2419,22 @@ function runDemoEngine(req, ctx) {
         {title:'Business Assurance Review Record',status:'PARTIAL'},
         {title:'Evidence Readiness Decision',status:'MISSING'},
         {title:'Outstanding Issues Log',status:'COMPLETE'},
+        {title:'Scored Validation Rubric',status:'COMPLETE'},
+        {title:'FDA Clinical Standardization Package',status:'COMPLETE'},
       ],
       submission_ready: false,
       sign_off_required: ['Business Owner','QA Lead'],
     },
   };
 
-  return { regObjs, intakeSummary, riskReg, govGate, stories, backlog,
-           p0Count, p1Count, board, analytics, review, evidence };
+  // Finalize HC schema with full pipeline extras
+  const healthcarePackage = toHealthcareStandardPackage(qcStories, {
+    regObjs, intakeSummary, riskReg, review, evidence
+  }, qcResult.scope, qcResult.qcReport);
+
+  return { regObjs, intakeSummary, riskReg, govGate, stories: qcStories, backlog,
+           p0Count, p1Count, board, analytics, review, evidence,
+           qcReport: qcResult.qcReport, healthcarePackage, scope: qcResult.scope };
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -2000,7 +2543,7 @@ async function doGenerate() {
   ].filter(Boolean).join(' | ');
 
   // Reset harness state
-  Object.assign(H, {ctx:{},req,regObjs:[],riskReg:[],gateLog:[],stories:[],backlog:{},analytics:{},review:{},evidence:{},blocked:false,blockReason:''});
+  Object.assign(H, {ctx:{},req,regObjs:[],riskReg:[],gateLog:[],stories:[],backlog:{},analytics:{},review:{},evidence:{},qcReport:null,healthcarePackage:null,blocked:false,blockReason:''});
   H.ctx = {req, ctx, fw:document.getElementById('f-fw').value, sys:document.getElementById('f-system').value||'GxP system', outcome:document.getElementById('f-outcome').value, clientRegion:document.getElementById('f-client-region').value, clientDelta:document.getElementById('f-client-delta').value, auditGap:document.getElementById('f-gap-input').value, pfx:autoPrefix()};
 
   buildStepBar();
@@ -2037,7 +2580,9 @@ async function orchestratorDemo(req, ctx) {
     setStep('intake','blocked','Gate blocked: '+H.blockReason); setStatus('block','Pipeline blocked at intake'); return;
   }
   setStep('intake','done',
-    `REGULATORY INTAKE — ${result.regObjs.length} requirements parsed\n\n`+
+    `REGULATORY INTAKE — ${result.regObjs.length} requirements parsed\n`+
+    `SCOPE: ${result.scope?.scopeLabel||'default'}\n`+
+    `Jurisdiction suppressed: ${(result.qcReport?.jurisdictionFilter?.suppressed||[]).length} · Relevance-ranked sources: ${(result.qcReport?.sourceRelevanceRanking||[]).length}\n\n`+
     result.regObjs.map(r=>`  ${r.req_id} [${r.criticality}] ${r.source}\n  Domain: ${r.compliance_domain} · Status: ${r.status}\n  Description: ${r.description}`).join('\n\n')+
     `\n\nGate: PROCEED → Governance Agent`);
 
@@ -2059,10 +2604,14 @@ async function orchestratorDemo(req, ctx) {
   await tick();
   H.stories = result.stories;
   allStories = result.stories;
+  H.qcReport = result.qcReport;
+  H.healthcarePackage = result.healthcarePackage;
   document.getElementById('ns-stories').textContent = result.stories.length;
   document.getElementById('ns-stories').className = 'nstat-v lit';
   setStep('decomp','done',
-    `BUSINESS PBI DECOMPOSITION — ${result.stories.length} traceable PBIs generated\n\n`+
+    `BUSINESS PBI DECOMPOSITION — ${result.stories.length} traceable PBIs generated\n`+
+    `Duplicates suppressed: ${result.qcReport?.duplicateSuppression?.removed||0} · Normalized to ${FDA_CLINICAL_DATA_SCHEMA.schemaId}\n`+
+    `Rubric: avg ${result.qcReport?.validationRubric?.averageScore||0}/100 · ${result.qcReport?.validationRubric?.passCount||0} passed threshold\n\n`+
     result.stories.map(fmtStory).join('\n\n')+
     `\n\nAll PBIs carry full regulatory traceability (req_id + source).\nNo effort estimates or delivery ranking are pre-populated.`);
 
@@ -2163,13 +2712,18 @@ async function orchestratorLive(req, ctx) {
   // Loop 2 — decomposition first, then parallel backlog + board
   const decompTxt = await runAgent('decomp','decomposition','');
   if(H.blocked){setStatus('block','Pipeline blocked — see details above');return;}
-  // Extract stories from JSON block
+  // Extract stories from JSON block, then apply QC layer (same as demo — non-breaking)
   if(decompTxt){
     const jm = decompTxt.match(/```json\s*([\s\S]*?)```/);
     if(jm){try{
       const p=JSON.parse(jm[1]);
       if(Array.isArray(p)){
-        allStories=p.map((s,i)=>({...s,num:i+1}));
+        const ranked = rankChunks(req);
+        const qcResult = applyQualityControls(p.map((s,i)=>({...s,num:i+1})), ranked, req, {regObjs:H.regObjs, riskReg:H.riskReg});
+        allStories = qcResult.stories;
+        H.stories = allStories;
+        H.qcReport = qcResult.qcReport;
+        H.healthcarePackage = qcResult.healthcarePackage;
         document.getElementById('ns-stories').textContent=allStories.length;
         document.getElementById('ns-stories').className='nstat-v lit';
       }
@@ -2183,8 +2737,12 @@ async function orchestratorLive(req, ctx) {
   await Promise.all([runAgent('review','review',''), runAgent('retro','retrospective','')]);
 
   if(!H.blocked && allStories.length){
-    setStatus('done','✓ '+allStories.length+' business PBIs generated — 4-process assurance graph complete');
-    renderStories(allStories);
+    // Refresh HC package with latest harness state
+    H.healthcarePackage = toHealthcareStandardPackage(allStories, {
+      regObjs:H.regObjs, riskReg:H.riskReg, review:H.review, evidence:H.evidence
+    }, resolveScopeControls(), H.qcReport);
+    setStatus('done','✓ '+allStories.length+' business PBIs generated — QC + 4-process assurance graph complete');
+    renderStories(allStories, {qcReport:H.qcReport, healthcarePackage:H.healthcarePackage});
   } else if(!H.blocked){
     setStatus('done','All agents complete — switch to Demo mode for pre-built business PBI examples');
   } else {
@@ -2225,15 +2783,32 @@ async function callLLM(m, sys, userMsg) {
 function renderStories(stories, pipelineResult) {
   if (!stories?.length) return;
   const bil   = needsBilingual();
+  const qc = pipelineResult?.qcReport || H.qcReport;
+  const avg = qc?.validationRubric?.averageScore;
   document.getElementById('st-title').textContent = stories.length+' Business Assurance PBIs';
   document.getElementById('st-meta').textContent  =
-    stories.length+' sourced PBIs · effort and sequencing left for team planning · no pre-filled effort estimates';
+    stories.length+' sourced PBIs · effort and sequencing left for team planning' +
+    (avg!=null ? ` · rubric avg ${avg}/100` : '') +
+    (qc?.duplicateSuppression?.removed ? ` · ${qc.duplicateSuppression.removed} duplicates suppressed` : '');
   document.getElementById('exp-btns').innerHTML = `
     <button class="exp-btn" style="background:#0052cc" onclick="dlJira()">↓ Jira PBI CSV</button>
     <button class="exp-btn" style="background:#0078d4" onclick="dlADO()">↓ ADO PBI CSV</button>
+    <button class="exp-btn" style="background:#0e7a62" onclick="dlFdaClinicalSchema()">↓ FDA Clinical Schema</button>
     <button class="exp-btn" style="background:#374151" onclick="dlJSON()">↓ JSON</button>`;
 
-  document.getElementById('stories-list').innerHTML = stories.map((s,i) => {
+  const qcBanner = qc ? `<div class="qc-banner" id="qc-banner">
+    <div class="qc-banner-title">Quality Control Summary</div>
+    <div class="qc-grid">
+      <div class="qc-chip"><b>Scope</b>${qc.scope?.label||'—'}</div>
+      <div class="qc-chip"><b>Relevance</b>${(qc.sourceRelevanceRanking||[]).length} ranked sources</div>
+      <div class="qc-chip"><b>Jurisdiction</b>${(qc.jurisdictionFilter?.suppressed||[]).length} filtered out</div>
+      <div class="qc-chip"><b>Duplicates</b>${qc.duplicateSuppression?.removed||0} suppressed</div>
+      <div class="qc-chip"><b>Normalized</b>${qc.outputNormalization?.itemsNormalized||stories.length} → schema ${qc.outputNormalization?.schemaVersion||'1.0.0'}</div>
+      <div class="qc-chip"><b>Rubric</b>avg ${qc.validationRubric?.averageScore||0}/100 · ${qc.validationRubric?.passCount||0} pass</div>
+    </div>
+  </div>` : '';
+
+  document.getElementById('stories-list').innerHTML = qcBanner + stories.map((s,i) => {
     const fwBadges = (s.frameworks_applied||[]).map(fw=>
       `<span class="tag" style="background:#f3f0ff;color:#5b21b6;font-size:9px">${fw}</span>`).join('');
     const bilBadge = bil.japanese?'<span class="sc-num-badge" style="background:#fef3c7;color:#92400e">🇯🇵 EN+日本語</span>':
@@ -2249,10 +2824,20 @@ function renderStories(stories, pipelineResult) {
       <div style="font-size:9px;font-weight:700;color:#1d4ed8;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">INVEST validation</div>
       <div style="font-size:10px;color:#1e3a5f;line-height:1.6">${Object.entries(s.invest).map(([k,v])=>`<span style="margin-right:10px"><b>${k.charAt(0).toUpperCase()+k.slice(1)}:</b> ${v==='yes'?'<span style="color:#16a34a">✓</span>':v==='no'?'<span style="color:#dc2626">✗</span>':v}</span>`).join('')}</div>
     </div>` : '';
+    const rub = s.validationRubric;
+    const rubHtml = rub ? `<div class="rubric-box">
+      <div class="rubric-top">
+        <span class="rubric-label">Validation rubric</span>
+        <span class="rubric-score ${rub.pass?'pass':'fail'}">${rub.totalScore}/100 · Grade ${rub.grade}</span>
+        ${s.qc?.relevanceScore!=null?`<span class="rubric-rel">Relevance ${s.qc.relevanceScore}</span>`:''}
+      </div>
+      <div class="rubric-checks">${(rub.checks||[]).map(c=>`<span class="rubric-check ${c.pass?'ok':'no'}">${c.pass?'✓':'·'} ${c.label} (${c.score}/${c.weight})</span>`).join('')}</div>
+    </div>` : '';
     return `<div class="story-card">
       <div class="sc-top">
         <div class="sc-num">
           PBI ${s.num||i+1} ${bilBadge}
+          ${rub?`<span class="sc-num-badge" style="background:${rub.pass?'#ecfdf5':'#fffbeb'};color:${rub.pass?'#166534':'#92400e'}">${rub.totalScore}/100</span>`:''}
         </div>
         <div class="sc-title">${s.title}</div>
         <div class="sc-tags">
@@ -2265,7 +2850,7 @@ function renderStories(stories, pipelineResult) {
           ${fwBadges}
         </div>
         <p class="sc-story">${s.story||s.userStory||''}</p>
-        ${boiHtml}${investHtml}
+        ${boiHtml}${investHtml}${rubHtml}
       </div>
       <button class="sc-expand" onclick="toggleAC(this)">
         <span>Acceptance criteria &nbsp;(${(s.ac||s.acceptanceCriteria||[]).length})</span>
@@ -2353,32 +2938,55 @@ function delPackage(key){localStorage.removeItem(key);loadSaved();}
 function q(s){return'"'+(String(s||'').replace(/"/g,'""'))+'"';}
 function dlCSV(c,n){const u=URL.createObjectURL(new Blob([c],{type:'text/csv'}));const a=document.createElement('a');a.href=u;a.download=n;a.click();URL.revokeObjectURL(u);}
 function dlJira(){
-  const h=['Issue Type','Summary','Business PBI','Acceptance Criteria','Labels','Epic Name','Regulatory Reference','Regulatory Criticality','Source Authority','Applicable Nation','Source Type','Frameworks Applied','GAMP Category','Evidence Stage','Business Outcome','Client Context','Source Requirement'];
+  const h=['Issue Type','Summary','Business PBI','Acceptance Criteria','Labels','Epic Name','Regulatory Reference','Regulatory Criticality','Source Authority','Applicable Nation','Source Type','Frameworks Applied','GAMP Category','Evidence Stage','Business Outcome','Client Context','Source Requirement','Relevance Score','Rubric Score','Rubric Grade'];
   const r=allStories.map(s=>[q('Task'),q(s.title),q(s.story||''),q((s.ac||[]).join('\n')),
     q((s.labels||[]).join(',')),q(s.epic||''),q(s.regRef||''),q(s.regulatoryCriticality||''),
-    q(s.sourceAuthority||''),q(s.applicableNation||''),q(s.sourceType||''),q((s.frameworks_applied||[]).join('+')),q(s.gamp||''),q(s.phase||''),q(s.boi?.outcome||''),q(s.boi?.client_context||''),q(s.sourceRequirement||'')]);
+    q(s.sourceAuthority||''),q(s.applicableNation||''),q(s.sourceType||''),q((s.frameworks_applied||[]).join('+')),q(s.gamp||''),q(s.phase||''),q(s.boi?.outcome||''),q(s.boi?.client_context||''),q(s.sourceRequirement||''),
+    q(s.qc?.relevanceScore??''),q(s.validationRubric?.totalScore??''),q(s.validationRubric?.grade??'')]);
   dlCSV([h.join(','),...r.map(x=>x.join(','))].join('\n'),'MARAS-Business-PBI-Jira-Export.csv');
 }
 function dlADO(){
   const h=['Work Item Type','Title','Business PBI','Acceptance Criteria',
-           'Tags','Custom.RegulatoryRef','Custom.RegulatoryCriticality','Custom.SourceAuthority','Custom.ApplicableNation','Custom.SourceType','Custom.FrameworksApplied','Custom.GAMPCategory','Custom.EvidenceStage','Custom.BusinessOutcome','Custom.ClientContext','Custom.SourceRequirement'];
+           'Tags','Custom.RegulatoryRef','Custom.RegulatoryCriticality','Custom.SourceAuthority','Custom.ApplicableNation','Custom.SourceType','Custom.FrameworksApplied','Custom.GAMPCategory','Custom.EvidenceStage','Custom.BusinessOutcome','Custom.ClientContext','Custom.SourceRequirement','Custom.RelevanceScore','Custom.RubricScore','Custom.RubricGrade'];
   const r=allStories.map(s=>[q('Product Backlog Item'),q(s.title),q(s.story||''),
     q((s.ac||[]).map((a,i)=>`${i+1}. ${a}`).join('\n')),
     q((s.labels||[]).join('; ')),
-    q(s.regRef||''),q(s.regulatoryCriticality||''),q(s.sourceAuthority||''),q(s.applicableNation||''),q(s.sourceType||''),q((s.frameworks_applied||[]).join('+')),q(s.gamp||''),q(s.phase||''),q(s.boi?.outcome||''),q(s.boi?.client_context||''),q(s.sourceRequirement||'')]);
+    q(s.regRef||''),q(s.regulatoryCriticality||''),q(s.sourceAuthority||''),q(s.applicableNation||''),q(s.sourceType||''),q((s.frameworks_applied||[]).join('+')),q(s.gamp||''),q(s.phase||''),q(s.boi?.outcome||''),q(s.boi?.client_context||''),q(s.sourceRequirement||''),
+    q(s.qc?.relevanceScore??''),q(s.validationRubric?.totalScore??''),q(s.validationRubric?.grade??'')]);
   dlCSV([h.join(','),...r.map(x=>x.join(','))].join('\n'),'MARAS-Business-PBI-ADO-Export.csv');
 }
 function dlJSON(){
+  // Legacy-compatible payload (main fields first) + additive QC / schema metadata
   const b=new Blob([JSON.stringify({
     generatedAt:new Date().toISOString(),
     context:{org:document.getElementById('f-org').value,project:document.getElementById('f-proj').value,
              system:document.getElementById('f-system').value,framework:document.getElementById('f-fw').value,
              businessOutcome:document.getElementById('f-outcome').value},
     pipeline:{gateLog:H.gateLog},
-    stories:allStories
+    stories:allStories,
+    // Additive — does not remove legacy consumers' fields above
+    schemaId:FDA_CLINICAL_DATA_SCHEMA.schemaId,
+    schemaVersion:FDA_CLINICAL_DATA_SCHEMA.schemaVersion,
+    qualityControl:H.qcReport
   },null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='MARAS-Backlog.json';a.click();
 }
+function dlFdaClinicalSchema(){
+  const pkg = H.healthcarePackage || toFdaClinicalStandardPackage(allStories, {
+    regObjs:H.regObjs, riskReg:H.riskReg, review:H.review, evidence:H.evidence
+  }, resolveScopeControls(), H.qcReport || {
+    scope: resolveScopeControls(),
+    sourceRelevanceRanking: [],
+    jurisdictionFilter: {suppressed:[]},
+    duplicateSuppression: {removed:0, details:[]},
+    outputNormalization: {schemaVersion:FDA_CLINICAL_DATA_SCHEMA.schemaVersion, schemaId:FDA_CLINICAL_DATA_SCHEMA.schemaId, itemsNormalized:allStories.length},
+    validationRubric: {averageScore:0, passCount:0, failCount:0, threshold:QC_CONFIG.rubricPassThreshold, byItem:[]}
+  });
+  const b=new Blob([JSON.stringify({schema:FDA_CLINICAL_DATA_SCHEMA, package:pkg},null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='MARAS-FDA-Clinical-Standard-Package.json';a.click();
+}
+// Alias for earlier QC button / saved HTML references
+function dlHealthcareSchema(){ return dlFdaClinicalSchema(); }
 
 /* ASSURANCE */
 function assuranceStatusClass(st){
@@ -2490,24 +3098,47 @@ function dlAssuranceReport(){
   URL.revokeObjectURL(a.href);
 }
 function seedAssuranceScenario(){
-  document.getElementById('f-system').value='LIMS';
-  document.getElementById('f-fw').value='FDA';
+  loadProductGradeSample();
+}
+function loadProductGradeSample(){
+  // Product-grade customer demo: fully populated context + scoped FDA/LIMS package
+  document.getElementById('f-org').value = 'Northwind Biologics';
+  document.getElementById('f-site').value = 'Ghent QC Laboratory';
+  document.getElementById('f-proj').value = 'LIMS Part 11 Assurance · FY26 Release';
+  document.getElementById('f-system').value = 'LIMS';
+  document.getElementById('f-fw').value = 'FDA';
   applyFramework('FDA');
-  document.getElementById('req-ta').value='Create a regulator-defensible business assurance package for LIMS audit trail and e-signature controls under 21 CFR Part 11. Include source traceability, FMEA risk, business PBIs, test evidence needs, evidence readiness gaps, and inspection questions.';
-  goTab('gen',document.getElementById('ntab-gen'));
+  selCatsSet.clear();
+  ['B','C','F'].forEach(c => selCatsSet.add(c));
+  buildCats();
+  updateCatFooter();
+  document.getElementById('f-outcome').value = 'Defensible batch-release decisions with inspection-ready audit trail and e-signature evidence';
+  document.getElementById('f-client-region').value = 'United States / Belgium dual-market release';
+  document.getElementById('f-client-delta').value = 'Plant SOP still allows shared lab logins for urgent weekend release; CAPA open for audit-trail review lag';
+  document.getElementById('f-gap-input').value = '2025 FDA observation: incomplete contemporaneous audit-trail review for batch-release records; missing dual Business Owner + QA sign-off on e-signature meaning';
+  document.querySelectorAll('#ch-domain .chip').forEach(c => {
+    c.className = c.dataset.v === 'Pharma Mfg' ? 'chip on teal' : 'chip';
+  });
+  selDomain = 'Pharma Mfg';
+  document.getElementById('req-ta').value =
+    'Produce a regulator-defensible business assurance package for LIMS batch-release audit trail and electronic signature controls under 21 CFR Part 11 §§11.10 and 11.50, reinforced by ALCOA+ data integrity and risk-based CSV/CSA evidence. ' +
+    'Apply scope control to electronic records / data integrity / validation only; rank sources by relevance to batch release; suppress duplicate controls; filter to FDA/US-applicable jurisdiction; normalize every PBI to the FDA clinical regulatory assurance schema; and attach a scored validation rubric to each output. ' +
+    'Include source traceability, FMEA risk, business PBIs, test obligations, evidence readiness gaps, and inspection questions. Do not invent filler work items.';
+  goTab('gen', document.getElementById('ntab-gen'));
+  setStatus('idle', 'Product-grade LIMS Part 11 sample loaded — create the assurance package to run QC controls');
 }
 
 function sourceMetaFor(reg){
   const r=(reg||'').toLowerCase();
   if(r.includes('21 cfr')||r.includes('fda')) return {authority:'US FDA / eCFR',nation:'United States',sourceType:'Regulation / FDA guidance'};
-  if(r.includes('gdpr')) return {authority:'European Union',nation:'EU / EEA',sourceType:'Regulation'};
+  if(r.includes('gdpr')) return {authority:'European Union',nation:'European Union',sourceType:'Regulation'};
   if(r.includes('eu gmp')||r.includes('annex')||r.includes('eudralex')) return {authority:'European Commission / EudraLex',nation:'European Union',sourceType:'Guideline'};
   if(r.includes('ich')) return {authority:'ICH',nation:'International',sourceType:'Guideline'};
   if(r.includes('iso')) return {authority:'ISO',nation:'International',sourceType:'Licensed standard'};
   if(r.includes('gamp')) return {authority:'ISPE / GAMP',nation:'International',sourceType:'Licensed industry standard'};
   if(r.includes('hipaa')) return {authority:'HHS / eCFR',nation:'United States',sourceType:'Regulation'};
   if(r.includes('mdr')) return {authority:'European Union',nation:'European Union',sourceType:'Regulation'};
-  return {authority:'Curated regulatory library',nation:document.getElementById('f-client-region')?.value||'Selected region',sourceType:'Controlled source summary'};
+  return {authority:'Curated regulatory library',nation:normalizeJurisdictionNation(document.getElementById('f-client-region')?.value)||'International',sourceType:'Controlled source summary'};
 }
 
 
