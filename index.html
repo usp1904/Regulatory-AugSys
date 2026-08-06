@@ -69,8 +69,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .sb-count{font-size:10px;color:var(--ink4);padding:0 10px 5px;margin-top:4px}
 .sb-qtpl{padding:6px 10px 8px;border-bottom:1px solid var(--bg2)}
 .sb-ql{font-size:9px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
-.sb-qtags{display:flex;flex-wrap:wrap;gap:3px}
-.qtag{font-size:10px;padding:3px 8px;border-radius:10px;border:1px solid var(--border);background:var(--white);color:var(--ink2);cursor:pointer;transition:all .12s;white-space:nowrap}
+.sb-qtags{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+.qtag{font-size:10px;padding:5px 4px;border-radius:8px;border:1px solid var(--border);background:var(--white);color:var(--ink2);cursor:pointer;transition:all .12s;text-align:center;line-height:1.25;white-space:normal;word-break:break-word}
 .qtag:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-t)}
 .qtag.on{background:var(--blue-t);border-color:var(--blue);color:var(--blue)}
 .sb-tree{flex:1;overflow-y:auto;padding:4px 0}
@@ -347,7 +347,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .sbm-info-title{font-weight:600;color:var(--teal);margin-bottom:2px}
 .sbm-info-body{color:rgba(14,122,98,.8);line-height:1.5;font-size:10px}
 .sbm-picker-lbl{font-size:10px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.4px;padding:0 10px;margin-bottom:6px}
-.sbm-models{display:flex;flex-direction:column;gap:3px;padding:0 10px;margin-bottom:8px;max-height:180px;overflow-y:auto}
+.sbm-models{display:flex;flex-direction:column;gap:3px;padding:0 10px;margin-bottom:8px;max-height:130px;overflow-y:auto}
+.sbm-key-prompt{font-size:10px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.4px;padding:0 10px 6px}
 .sbm-models::-webkit-scrollbar{width:3px}
 .sbm-models::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:2px}
 .sbm-model-card{display:flex;align-items:center;gap:8px;padding:7px 9px;border:1px solid var(--border);border-radius:var(--r);cursor:pointer;transition:all .12s;background:#fff}
@@ -364,7 +365,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .sbm-tag-free{background:#ecfdf5;color:#065f46}
 .sbm-tag-warn{background:var(--amber-t);color:var(--amber)}
 .sbm-tag-cost{background:#f0fdf4;color:var(--green)}
-#sbm-key-area{padding:0 10px 10px}
+#sbm-key-area{padding:0 10px 10px;display:block}
 .sbm-key-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
 .sbm-key-lbl{font-size:10px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.4px}
 .sbm-key-link{font-size:10px;color:var(--blue);text-decoration:none}
@@ -542,13 +543,14 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
     <div id="sbm-live-picker" style="display:none">
       <div class="sbm-picker-lbl">Choose your organisation's AI model</div>
       <div class="sbm-models" id="sbm-models"></div>
-      <div id="sbm-key-area" style="display:none">
+      <div class="sbm-key-prompt" id="sbm-key-prompt">API key required for selected model</div>
+      <div id="sbm-key-area">
         <div class="sbm-key-hdr">
           <span class="sbm-key-lbl" id="sbm-key-lbl">API key</span>
-          <a href="#" id="sbm-key-link" class="sbm-key-link" target="_blank">Get a key →</a>
+          <a href="#" id="sbm-key-link" class="sbm-key-link" target="_blank" rel="noopener">Get a key →</a>
         </div>
         <div class="sbm-key-row">
-          <input type="password" id="sbm-key-inp" class="sbm-key-inp" placeholder="Paste your API key here...">
+          <input type="password" id="sbm-key-inp" class="sbm-key-inp" placeholder="Paste your API key here..." autocomplete="off">
           <button class="sbm-key-save" onclick="saveSessionKey()">Save</button>
         </div>
         <div id="sbm-key-st" class="sbm-key-st"></div>
@@ -947,12 +949,12 @@ const TREE_DATA=[
   ]},
 ];
 const QUICK_TPLS=[
-  {lbl:'21 CFR Pt 11',ids:['p11','p211','alcoa','fda_di'],fw:'FDA'},
-  {lbl:'Annex 11 CSV',ids:['a11','ch4','gamp5','iqoq','alcoa'],fw:'EMA / EU GMP'},
-  {lbl:'ALCOA+ DI',ids:['alcoa','fda_di','mhra_di','who_di','pics_di'],fw:'FDA'},
-  {lbl:'IQ/OQ/PQ',ids:['iqoq','gamp5','csa','a15'],fw:'FDA'},
-  {lbl:'ISO 13485',ids:['iso13485','eumdr','sop','capa','gamp5'],fw:'ICH'},
-  {lbl:'Full GxP',ids:null,fw:'Multi-Regional'},
+  {lbl:'E-Records',tip:'21 CFR Part 11 · electronic records & e-signatures',ids:['p11','p211','alcoa','fda_di'],fw:'FDA'},
+  {lbl:'CSV',tip:'Annex 11 · computerised system validation',ids:['a11','ch4','gamp5','iqoq','alcoa'],fw:'EMA / EU GMP'},
+  {lbl:'Data Integrity',tip:'ALCOA+ · data integrity controls',ids:['alcoa','fda_di','mhra_di','who_di','pics_di'],fw:'FDA'},
+  {lbl:'Validation',tip:'IQ/OQ/PQ · GAMP5 · CSA',ids:['iqoq','gamp5','csa','a15'],fw:'FDA'},
+  {lbl:'Med Devices',tip:'ISO 13485 · EU MDR',ids:['iso13485','eumdr','sop','capa','gamp5'],fw:'ICH'},
+  {lbl:'All GxP',tip:'Full multi-regional GxP library',ids:null,fw:'Multi-Regional'},
 ];
 const CATS=[
   {id:'A',lbl:'Lifecycle & Risk',col:'#0891b2',bg:'#ecfeff',sub:'ICH Q9/Q8/Q10 · Annex 15 VMP · CAPA · Deviations',n:5},
@@ -966,32 +968,33 @@ const CATS=[
 ];
 const DOMAINS=['Pharma Mfg','Biotech R&D','Med Devices','Clinical','Gene Therapy','Diagnostics','Consumer Health'];
 DOMAINS.push('Food & Chocolate Mfg');
+/* Commercial LLMs that require an API key — open-source / local-only models excluded */
 const MODELS=[
-  {id:'claude',  name:'Claude Sonnet 4', provider:'Anthropic',
+  {id:'claude',  name:'Claude Sonnet 4', provider:'Anthropic', requiresApiKey:true,
    dot:'#7f77dd', desc:'Best for GxP — structured outputs, compliance reasoning',
    tags:['best'],  keyLink:'https://console.anthropic.com', keyHint:'sk-ant-api03-...',
    url:'https://api.anthropic.com/v1/messages', model:'claude-sonnet-4-20250514'},
-  {id:'openai',  name:'GPT-4o',          provider:'OpenAI',
+  {id:'openai',  name:'GPT-4o',          provider:'OpenAI', requiresApiKey:true,
    dot:'#10a37f', desc:'Strong reasoning · Azure enterprise option available',
    tags:['enterprise'], keyLink:'https://platform.openai.com/api-keys', keyHint:'sk-...',
    url:'https://api.openai.com/v1/chat/completions', model:'gpt-4o'},
-  {id:'gemini',  name:'Gemini 1.5 Pro',  provider:'Google',
-   dot:'#4285f4', desc:'Long context · Google Workspace integration',
-   tags:['free-tier'], keyLink:'https://aistudio.google.com/app/apikey', keyHint:'AIzaSy...',
+  {id:'gemini',  name:'Gemini 1.5 Pro',  provider:'Google', requiresApiKey:true,
+   dot:'#4285f4', desc:'Long context · Google AI Studio API key required',
+   tags:['enterprise'], keyLink:'https://aistudio.google.com/app/apikey', keyHint:'AIzaSy...',
    url:'https://generativelanguage.googleapis.com', model:'gemini-1.5-pro'},
-  {id:'gemma',   name:'Gemma 4',         provider:'Google (open)',
-   dot:'#34a853', desc:'Open model · Free API via Google AI Studio',
-   tags:['free-tier'], keyLink:'https://aistudio.google.com/app/apikey', keyHint:'AIzaSy...',
-   url:'https://generativelanguage.googleapis.com', model:'gemma-3-27b-it'},
-  {id:'deepseek',name:'DeepSeek V3',     provider:'DeepSeek AI',
-   dot:'#0d7bff', desc:'Very low cost · Note: data processed in China',
+  {id:'deepseek',name:'DeepSeek V3',     provider:'DeepSeek AI', requiresApiKey:true,
+   dot:'#0d7bff', desc:'Low cost API · Note: data processed in China',
    tags:['low-cost','warn'], keyLink:'https://platform.deepseek.com', keyHint:'sk-...',
    url:'https://api.deepseek.com/v1/chat/completions', model:'deepseek-chat'},
-  {id:'glm',     name:'GLM-4 / GLM-5.2', provider:'Zhipu AI',
-   dot:'#059669', desc:'Low cost · Bilingual CN/EN · Data processed in China',
+  {id:'glm',     name:'GLM-4 / GLM-5.2', provider:'Zhipu AI', requiresApiKey:true,
+   dot:'#059669', desc:'Bilingual CN/EN API · Data processed in China',
    tags:['low-cost','warn','bilingual'], keyLink:'https://open.bigmodel.cn', keyHint:'...',
    url:'https://open.bigmodel.cn/api/paas/v4/chat/completions', model:'glm-4'},
 ];
+function apiKeyModels(){ return MODELS.filter(m => m.requiresApiKey !== false); }
+function ensureValidModel(){
+  if(!apiKeyModels().some(m=>m.id===selModel)) selModel='claude';
+}
 const GXP_CHUNKS=[
   {id:'c1',cat:'B',reg:'21 CFR Part 11',sec:'§11.10',title:'Controls for Closed Systems',reqs:['Validate systems for accuracy, reliability and performance','Limit access to authorised individuals via unique credentials','Generate computer-generated, time-stamped audit trails'],kws:['audit trail','access control','validation','closed system','electronic records']},
   {id:'c2',cat:'B',reg:'21 CFR Part 11',sec:'§11.50',title:'Signature Manifestations',reqs:['Display printed name, date/time and meaning on all signed records','Retain signature information permanently linked to the record'],kws:['e-signature','printed name','signature meaning','electronic signature']},
@@ -1200,13 +1203,16 @@ function init(){
   buildSBModels();buildStepBar();loadSaved();buildAssurance();
   document.getElementById('ns-chunks').textContent=GXP_CHUNKS.length;
   restoreSessionKeys();
+  ensureValidModel();
   // Auto-select FDA on first load
   applyFramework('FDA');
 }
 
 /* ─── QUICK TEMPLATES ───────────────────────────────────────────── */
 function buildQtags(){
-  document.getElementById('qtags').innerHTML=QUICK_TPLS.map((t,i)=>`<span class="qtag" onclick="applyTpl(${i})">${t.lbl}</span>`).join('');
+  document.getElementById('qtags').innerHTML=QUICK_TPLS.map((t,i)=>
+    `<span class="qtag" title="${t.tip||t.lbl}" onclick="applyTpl(${i})">${t.lbl}</span>`
+  ).join('');
 }
 function applyTpl(i){
   const t=QUICK_TPLS[i];
@@ -1366,8 +1372,12 @@ function setMode(m){
   document.getElementById('submit-lbl').textContent=demoMode
     ?'Create Business Assurance Package'
     :'Create Package with '+(MODELS.find(x=>x.id===selModel)?.name||'AI');
-  // Build model list when switching to live
-  if(!demoMode) buildSBModels();
+  // Build model list when switching to live — auto-select model and show API key field
+  if(!demoMode){
+    ensureValidModel();
+    buildSBModels();
+    pickSBModel(selModel);
+  }
 }
 
 /* ─── MODELS ─────────────────────────────────────────────────────── */
@@ -1378,7 +1388,7 @@ function saveApiKey(id){/* legacy — replaced by saveSessionKey */}
 function buildSBModels(){
   const el=document.getElementById('sbm-models');
   if(!el)return;
-  el.innerHTML=MODELS.map(m=>{
+  el.innerHTML=apiKeyModels().map(m=>{
     const tagHtml=m.tags.map(t=>
       t==='best'?'<span class="sbm-tag sbm-tag-best">Best quality</span>':
       t==='free-tier'?'<span class="sbm-tag sbm-tag-free">Free tier</span>':
@@ -1405,23 +1415,23 @@ function pickSBModel(id){
   document.getElementById('sbmc-'+id)?.classList.add('on');
   const m=MODELS.find(x=>x.id===id);
   if(!m)return;
-  // Show key area
   const ka=document.getElementById('sbm-key-area');
   if(ka) ka.style.display='block';
+  const prompt=document.getElementById('sbm-key-prompt');
+  if(prompt) prompt.textContent='API key required for '+m.name;
   const lbl=document.getElementById('sbm-key-lbl');
   if(lbl) lbl.textContent='API key for '+m.name;
   const link=document.getElementById('sbm-key-link');
-  if(link){link.href=m.keyLink||'#';link.textContent='Get a free key →';}
+  if(link){link.href=m.keyLink||'#';link.textContent='Get a key →';}
   const inp=document.getElementById('sbm-key-inp');
   if(inp){
     inp.placeholder=m.keyHint||'Paste your API key...';
-    // Show masked key if already saved in session
     inp.value=apiKeys[id]?'••••••••'+apiKeys[id].slice(-4):'';
+    if(!apiKeys[id] && !demoMode) setTimeout(()=>inp.focus(), 80);
   }
   const st=document.getElementById('sbm-key-st');
-  if(st) st.textContent=apiKeys[id]?'Key saved for this session ✓':'';
+  if(st) st.textContent=apiKeys[id]?'Key saved for this session ✓':'Enter your API key above, then click Save';
   if(st) st.style.color=apiKeys[id]?'var(--teal)':'var(--ink4)';
-  // Update submit label
   document.getElementById('submit-lbl').textContent='Create Package with '+m.name;
 }
 
@@ -1444,8 +1454,7 @@ function saveSessionKey(){
 }
 
 function restoreSessionKeys(){
-  // Restore any keys saved in this session
-  MODELS.forEach(m=>{
+  apiKeyModels().forEach(m=>{
     const k=sessionStorage.getItem('maras_key_'+m.id);
     if(k) apiKeys[m.id]=k;
   });
@@ -2516,7 +2525,10 @@ async function doGenerate() {
     const sk = sessionStorage.getItem('maras_key_'+selModel);
     if (sk && !apiKeys[selModel]) apiKeys[selModel] = sk;
     if (!apiKeys[selModel]) {
-      alert('Please select an AI model and save your API key in the left sidebar first.');
+      setMode('live');
+      pickSBModel(selModel);
+      alert('Please enter and save your API key in the left sidebar first.');
+      document.getElementById('sbm-key-inp')?.focus();
       document.getElementById('sb-model-section')?.scrollIntoView({behavior:'smooth',block:'center'});
       return;
     }
@@ -2759,9 +2771,8 @@ async function callLLM(m, sys, userMsg) {
       body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:2000,system:sys,messages:[{role:'user',content:userMsg}]})});
     const d=await r.json(); if(d.error)throw new Error(d.error.message);
     return d.content?.map(b=>b.text||'').join('')||'';
-  } else if (m.id==='gemini'||m.id==='gemma') {
-    const model = m.id==='gemma'?'gemma-3-27b-it':'gemini-1.5-pro';
-    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKeys[m.id]}`,
+  } else if (m.id==='gemini') {
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${apiKeys[m.id]}`,
       {method:'POST',headers:{'Content-Type':'application/json'},
        body:JSON.stringify({contents:[{parts:[{text:sys+'\n\n'+userMsg}]}]})});
     const d=await r.json(); if(d.error)throw new Error(d.error.message);
