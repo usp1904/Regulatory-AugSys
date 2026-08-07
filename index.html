@@ -70,23 +70,6 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .sb-search-inner input::placeholder{color:var(--ink4)}
 .sb-si{position:absolute;left:8px;top:50%;transform:translateY(-50%);color:var(--ink4);font-size:11px;pointer-events:none}
 .sb-count{font-size:10px;color:var(--ink4);padding:0 10px 5px;margin-top:4px}
-.sb-lib-check{padding:8px 10px;border-bottom:1px solid var(--bg2);flex-shrink:0;background:#fafbfc}
-.sb-ql-row{display:flex;align-items:center;gap:4px;margin-bottom:4px}
-.sb-ql{font-size:10px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.4px;flex:1}
-.sb-ql-sub{font-size:9px;color:var(--ink4);margin-bottom:6px;line-height:1.35}
-.sb-qcheck-actions{display:flex;gap:3px}
-.sb-qcheck-btn{font-size:9px;padding:2px 7px;border-radius:8px;border:1px solid var(--border);background:#fff;color:var(--ink3);cursor:pointer;font-family:inherit;font-weight:600}
-.sb-qcheck-btn:hover{border-color:var(--blue);color:var(--blue)}
-.sb-qcheck-box{border:1px solid var(--border2);border-radius:var(--r);background:#fff;padding:4px;margin-bottom:4px}
-.sb-qchecks{display:flex;flex-direction:column;gap:2px}
-.qcheck{display:flex;align-items:flex-start;gap:8px;padding:6px 8px;border-radius:var(--r);cursor:pointer;transition:background .12s;border:1px solid transparent}
-.qcheck:hover{background:var(--bg)}
-.qcheck.on{background:var(--blue-t);border-color:rgba(29,111,206,.25)}
-.qcheck-native{width:16px;height:16px;flex-shrink:0;cursor:pointer;accent-color:var(--blue);margin:2px 0 0 0}
-.qcheck-lbl{font-size:11px;color:var(--ink);line-height:1.3;cursor:pointer;user-select:none;flex:1}
-.qcheck.on .qcheck-lbl{color:var(--blue);font-weight:600}
-.qcheck-count{font-size:9px;color:var(--ink4);margin-left:auto;flex-shrink:0;padding-top:2px}
-.qcheck.on .qcheck-count{color:var(--blue)}
 .sb-tree{flex:1;overflow-y:auto;padding:4px 0;min-height:100px}
 .sb-tree::-webkit-scrollbar{width:3px}
 .sb-tree::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:2px}
@@ -521,7 +504,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
     <div class="onboard-title">Welcome to MARAS — Regulatory Business Assurance</div>
     <div class="onboard-sub">MARAS converts validated regulatory sources into business-specific controls, PBIs, risk rationale, test obligations, and evidence packages. Work items are one export — the product is the assurance package.</div>
     <div class="onboard-steps">
-      <div class="onboard-step"><b>1 · Focus</b>Use the Regulatory Library checkboxes to opt in/out sources, or expand the tree for individual clauses.</div>
+      <div class="onboard-step"><b>1 · Focus</b>Expand the Regulatory Library tree to opt in/out sources, or use All/None for bulk selection.</div>
       <div class="onboard-step"><b>2 · Context</b>Optionally set project context, categories, and your business compliance outcome.</div>
       <div class="onboard-step"><b>3 · Assure</b>Click <em>Create Business Assurance Package</em> — Demo mode works offline; Live AI needs an API key.</div>
       <div class="onboard-step"><b>4 · Export</b>Review PBIs on Value Package tab — export to Jira, ADO, JSON, or FDA Clinical Schema.</div>
@@ -547,19 +530,6 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
     </div>
   </div>
   <div class="sb-count" id="sb-count">0 of 64 selected</div>
-  <div class="sb-lib-check">
-    <div class="sb-ql-row">
-      <span class="sb-ql">Regulatory Library</span>
-      <div class="sb-qcheck-actions">
-        <button class="sb-qcheck-btn" type="button" onclick="libraryCheckAll(true)">All</button>
-        <button class="sb-qcheck-btn" type="button" onclick="libraryCheckAll(false)">None</button>
-      </div>
-    </div>
-    <div class="sb-ql-sub">Select one or more sources — check to opt in, uncheck to opt out</div>
-    <div class="sb-qcheck-box">
-      <div class="sb-qchecks" id="lib-checks"></div>
-    </div>
-  </div>
   <div class="sb-tree" id="tree"></div>
   <div class="sb-upload">
     <div class="sb-upl-zone">
@@ -1050,23 +1020,6 @@ const TREE_DATA=[
     {id:'iso22301',name:'ISO 22301 — Business Continuity Management',cat:'A',n:1},
   ]},
 ];
-/* Display labels for regulatory library group checkboxes (maps 1:1 to TREE_DATA groups) */
-const REG_LIBRARY_CHECK_LABELS={
-  cfr:'US 21 CFR — FDA Regulations',
-  eugmp:'EU GMP — EMA Regulations',
-  ich:'ICH Guidelines',
-  md:'Medical Devices',
-  val:'Validation Lifecycle (CSV/CSA)',
-  qms:'Quality System & CAPA',
-  di:'Data Integrity',
-  natl_access:'Access Consortium (Harmonised)',
-  natl_apac:'Asia-Pacific Regulators',
-  natl_brics:'BRICS & Emerging Markets',
-  natl_latam:'LATAM',
-  natl_africa:'Africa & Middle East',
-  priv:'Privacy, Security & Cloud',
-  nongxp:'Non GxP',
-};
 const REQ_EXAMPLES=[
   {text:'LIMS batch-release audit trail and e-signature assurance package', short:'LIMS audit trail'},
   {text:'ALCOA+ data integrity controls for business-critical GxP records', short:'ALCOA+ data integrity'},
@@ -1328,7 +1281,7 @@ let selModel='claude',apiKeys={},sbDocs=[],reqFiles=[],allStories=[],running=fal
 /* ─── INIT ──────────────────────────────────────────────────────── */
 function init(){
   initOnboardGuide();
-  buildLibraryChecklist();buildTree();buildCats();
+  buildTree();buildCats();
   buildReqExamples();
   buildChips('ch-domain',DOMAINS,'domain');
   buildSBModels();buildStepBar();loadSaved();buildAssurance();
@@ -1349,46 +1302,6 @@ function dismissOnboardGuide(){
   localStorage.setItem('maras_guide_dismissed','1');
   const el=document.getElementById('onboard-guide');
   if(el) el.style.display='none';
-}
-
-/* ─── REGULATORY LIBRARY GROUP CHECKBOXES (opt in / opt out) ────── */
-const LIBRARY_GROUP_ORDER=Object.keys(REG_LIBRARY_CHECK_LABELS);
-
-function getGroupItemIds(groupId){
-  const g=TREE_DATA.find(x=>x.id===groupId);
-  return g?g.items.map(it=>it.id):[];
-}
-function isLibraryGroupChecked(groupId){
-  const ids=getGroupItemIds(groupId);
-  return ids.length>0 && ids.every(id=>selItems.has(id));
-}
-function buildLibraryChecklist(){
-  const el=document.getElementById('lib-checks');
-  if(!el)return;
-  el.innerHTML=LIBRARY_GROUP_ORDER.map(groupId=>{
-    const lbl=REG_LIBRARY_CHECK_LABELS[groupId]||groupId;
-    const ids=getGroupItemIds(groupId);
-    const on=isLibraryGroupChecked(groupId);
-    const cnt=ids.filter(id=>selItems.has(id)).length;
-    const countTxt=ids.length?`${cnt}/${ids.length}`:'';
-    return`<label class="qcheck${on?' on':''}">
-      <input type="checkbox" class="qcheck-native" ${on?'checked':''} onchange="toggleLibraryGroup('${groupId}')">
-      <span class="qcheck-lbl">${lbl}</span>
-      <span class="qcheck-count">${countTxt}</span>
-    </label>`;
-  }).join('');
-}
-function toggleLibraryGroup(groupId){
-  const ids=getGroupItemIds(groupId);
-  const turningOn=!isLibraryGroupChecked(groupId);
-  if(turningOn) ids.forEach(id=>selItems.add(id));
-  else ids.forEach(id=>selItems.delete(id));
-  renderTree();updateCount();buildLibraryChecklist();
-}
-function libraryCheckAll(on){
-  if(on) TREE_DATA.forEach(g=>g.items.forEach(it=>selItems.add(it.id)));
-  else selItems.clear();
-  renderTree();updateCount();buildLibraryChecklist();
 }
 
 /* ─── COMPLIANCE OUTCOME EXAMPLES ───────────────────────────────── */
@@ -1496,13 +1409,13 @@ function toggleGrp(hdr){
 function toggleItem(id,el){
   if(selItems.has(id)){selItems.delete(id);el.className='ti';el.querySelector('.ti-cb').textContent='';}
   else{selItems.add(id);el.className='ti on';el.querySelector('.ti-cb').textContent='✓';}
-  updateCount();buildLibraryChecklist();
+  updateCount();
 }
 function filterTree(v){renderTree(v);}
 function selAll(on){
   if(on){TREE_DATA.forEach(g=>g.items.forEach(it=>selItems.add(it.id)));}
   else selItems.clear();
-  renderTree();updateCount();buildLibraryChecklist();
+  renderTree();updateCount();
 }
 function updateCount(){
   const total=TREE_DATA.reduce((a,g)=>a+g.items.length,0);
@@ -1587,7 +1500,6 @@ function applyFramework(fw){
   // Re-render tree so checkboxes reflect new state
   renderTree('');
   updateCount();
-  buildLibraryChecklist();
   const FW_JUR={
     'FDA':'United States','Health Canada':'Canada','EMA / EU GMP':'European Union',
     'MHRA':'United Kingdom','ICH':'International','WHO':'International',
