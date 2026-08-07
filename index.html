@@ -55,7 +55,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .layout{display:flex;flex:1;overflow:hidden}
 
 /* ── SIDEBAR ── */
-.sidebar{width:248px;flex-shrink:0;background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.sidebar{width:248px;flex-shrink:0;background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;min-height:0}
+.sb-scroll{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column}
+.sb-scroll::-webkit-scrollbar{width:4px}
+.sb-scroll::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:2px}
 .sb-hdr{padding:10px 12px 6px;border-bottom:1px solid var(--bg2);display:flex;align-items:center;gap:6px}
 .sb-hdr-title{font-size:12px;font-weight:600;color:var(--ink);flex:1}
 .sb-hdr-btn{font-size:10px;padding:2px 7px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--ink3);cursor:pointer;font-family:inherit;transition:all .12s}
@@ -67,23 +70,22 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .sb-search-inner input::placeholder{color:var(--ink4)}
 .sb-si{position:absolute;left:8px;top:50%;transform:translateY(-50%);color:var(--ink4);font-size:11px;pointer-events:none}
 .sb-count{font-size:10px;color:var(--ink4);padding:0 10px 5px;margin-top:4px}
-.sb-qtpl{padding:6px 10px 8px;border-bottom:1px solid var(--bg2);flex-shrink:0}
+.sb-qtpl{padding:6px 10px 8px;border-bottom:1px solid var(--bg2);flex-shrink:0;background:#fafbfc}
 .sb-ql-row{display:flex;align-items:center;gap:4px;margin-bottom:5px}
-.sb-ql{font-size:9px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;flex:1}
+.sb-ql{font-size:10px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.4px;flex:1}
+.sb-ql-sub{font-size:9px;color:var(--ink4);margin:-2px 0 6px;line-height:1.3}
 .sb-qcheck-actions{display:flex;gap:3px}
-.sb-qcheck-btn{font-size:9px;padding:2px 6px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--ink3);cursor:pointer;font-family:inherit}
+.sb-qcheck-btn{font-size:9px;padding:2px 6px;border-radius:8px;border:1px solid var(--border);background:#fff;color:var(--ink3);cursor:pointer;font-family:inherit;font-weight:600}
 .sb-qcheck-btn:hover{border-color:var(--blue);color:var(--blue)}
-.sb-qchecks{display:flex;flex-direction:column;gap:2px;max-height:118px;overflow-y:auto}
-.sb-qchecks::-webkit-scrollbar{width:3px}
-.sb-qchecks::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:2px}
-.qcheck{display:flex;align-items:center;gap:7px;padding:5px 7px;border-radius:var(--r);cursor:pointer;transition:background .12s;border:1px solid transparent}
+.sb-qcheck-box{border:1px solid var(--border2);border-radius:var(--r);background:#fff;padding:4px}
+.sb-qchecks{display:flex;flex-direction:column;gap:1px}
+.qcheck{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:var(--r);cursor:pointer;transition:background .12s;border:1px solid transparent}
 .qcheck:hover{background:var(--bg)}
-.qcheck.on{background:var(--blue-t);border-color:rgba(29,111,206,.2)}
-.qcheck-cb{width:14px;height:14px;border:1.5px solid var(--border2);border-radius:3px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;background:#fff}
-.qcheck.on .qcheck-cb{background:var(--blue);border-color:var(--blue)}
-.qcheck-lbl{font-size:11px;color:var(--ink2);line-height:1.2}
-.qcheck.on .qcheck-lbl{color:var(--blue);font-weight:500}
-.sb-tree{flex:1;overflow-y:auto;padding:4px 0}
+.qcheck.on{background:var(--blue-t);border-color:rgba(29,111,206,.25)}
+.qcheck-native{width:16px;height:16px;flex-shrink:0;cursor:pointer;accent-color:var(--blue);margin:0}
+.qcheck-lbl{font-size:11px;color:var(--ink);line-height:1.25;cursor:pointer;user-select:none}
+.qcheck.on .qcheck-lbl{color:var(--blue);font-weight:600}
+.sb-tree{flex:1;overflow-y:auto;padding:4px 0;min-height:100px}
 .sb-tree::-webkit-scrollbar{width:3px}
 .sb-tree::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:2px}
 .tg{margin-bottom:1px}
@@ -175,8 +177,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .req-ta:focus{border-color:var(--blue);background:#fff;box-shadow:0 0 0 3px rgba(29,111,206,.07)}
 .req-ta::placeholder{color:var(--ink4);font-size:12px}
 .try-row{display:flex;align-items:flex-start;gap:6px;margin-top:7px;flex-wrap:wrap}
-.try-chips{display:flex;flex-wrap:wrap;gap:5px;flex:1}
-.try-chip{font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:#fff;color:var(--ink3);cursor:pointer;transition:all .12s;line-height:1.35;max-width:100%}
+.try-chips{display:grid;grid-template-columns:repeat(2,1fr);gap:5px;flex:1}
+.try-chip{font-size:11px;padding:6px 10px;border-radius:var(--r);border:1px solid var(--border);background:#fff;color:var(--ink2);cursor:pointer;transition:all .12s;line-height:1.35}
 .try-chip:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-t)}
 .try-chip.hl{border-color:var(--teal);color:var(--teal);background:var(--teal-t)}
 .try-chip.hl:hover{background:#d1fae5}
@@ -343,7 +345,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .empty-s{font-size:11px}
 
 /* ── SIDEBAR MODEL SECTION ── */
-.sb-model{border-top:1px solid var(--border);background:var(--white);flex-shrink:0}
+.sb-model{border-top:2px solid var(--border);background:var(--white);flex-shrink:0;max-height:min(48vh,380px);overflow-y:auto;box-shadow:0 -4px 12px rgba(0,0,0,.06)}
+.sb-model::-webkit-scrollbar{width:4px}
+.sb-model::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:2px}
 .sbm-hdr{padding:8px 10px 0}
 .sbm-mode-tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:0;padding:0 0 8px}
 .sbm-tab{display:flex;flex-direction:column;align-items:center;gap:1px;padding:8px 4px;border:1.5px solid var(--border);border-radius:var(--r);cursor:pointer;transition:all .14s;background:var(--bg);font-family:inherit;text-align:center}
@@ -377,16 +381,16 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .sbm-tag-free{background:#ecfdf5;color:#065f46}
 .sbm-tag-warn{background:var(--amber-t);color:var(--amber)}
 .sbm-tag-cost{background:#f0fdf4;color:var(--green)}
-#sbm-key-area{padding:10px;margin:0 10px 10px;display:block;background:#fffbeb;border:1.5px solid #fbbf24;border-radius:var(--r2);box-shadow:0 1px 3px rgba(251,191,36,.15)}
-.sbm-api-badge{font-size:9px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;display:flex;align-items:center;gap:5px}
-.sbm-api-badge::before{content:'🔑';font-size:11px}
+#sbm-key-area{padding:10px;margin:0 10px 10px;display:block !important;background:#fffbeb;border:2px solid #f59e0b;border-radius:var(--r2);box-shadow:0 2px 8px rgba(245,158,11,.2);position:relative;z-index:2}
+.sbm-api-badge{font-size:10px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.4px;margin:0 10px 6px;padding-top:8px;display:flex;align-items:center;gap:5px}
+.sbm-api-badge::before{content:'🔑';font-size:12px}
+.sbm-key-inp{flex:1;padding:8px 10px;font-size:12px;border:2px solid #fbbf24;border-radius:var(--r);font-family:inherit;outline:none;background:#fff;min-width:0}
+.sbm-key-inp:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(29,111,206,.12)}
 .sbm-key-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
 .sbm-key-lbl{font-size:10px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.4px}
 .sbm-key-link{font-size:10px;color:var(--blue);text-decoration:none}
 .sbm-key-link:hover{text-decoration:underline}
 .sbm-key-row{display:flex;gap:4px}
-.sbm-key-inp{flex:1;padding:6px 8px;font-size:11px;border:1px solid var(--border);border-radius:var(--r);font-family:inherit;outline:none}
-.sbm-key-inp:focus{border-color:var(--blue)}
 .sbm-key-save{padding:6px 10px;font-size:11px;font-weight:600;background:var(--teal);color:#fff;border:none;border-radius:var(--r);cursor:pointer;font-family:inherit;white-space:nowrap}
 #sbm-key-st{font-size:10px;margin-top:3px;min-height:14px}
 .sbm-key-note{font-size:10px;color:var(--ink4);margin-top:4px;line-height:1.4;padding:5px 7px;background:rgba(255,255,255,.7);border-radius:5px}
@@ -528,6 +532,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 
 <!-- SIDEBAR -->
 <div class="sidebar">
+  <div class="sb-scroll">
   <div class="sb-hdr">
     <span class="sb-hdr-title">Regulatory Library</span>
     <button class="sb-hdr-btn" onclick="selAll(true)">All</button>
@@ -542,13 +547,16 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
   <div class="sb-count" id="sb-count">0 of 56 selected</div>
   <div class="sb-qtpl">
     <div class="sb-ql-row">
-      <span class="sb-ql">Regulatory focus checklist</span>
+      <span class="sb-ql">Quick Templates</span>
       <div class="sb-qcheck-actions">
         <button class="sb-qcheck-btn" type="button" onclick="focusCheckAll(true)">All</button>
         <button class="sb-qcheck-btn" type="button" onclick="focusCheckAll(false)">None</button>
       </div>
     </div>
-    <div class="sb-qchecks" id="qchecks"></div>
+    <div class="sb-ql-sub">Check to opt in · uncheck to opt out</div>
+    <div class="sb-qcheck-box">
+      <div class="sb-qchecks" id="qchecks"></div>
+    </div>
   </div>
   <div class="sb-tree" id="tree"></div>
   <div class="sb-upload">
@@ -561,8 +569,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
     <div class="sb-docs" id="sb-docs"></div>
     <div class="sb-sel" id="sb-sel">0 of 56 selected</div>
   </div>
+  </div><!-- end sb-scroll -->
 
-  <!-- AI MODEL SECTION — prominent in sidebar -->
+  <!-- AI MODEL SECTION — pinned at bottom, always visible -->
   <div class="sb-model" id="sb-model-section">
     <div class="sbm-hdr">
       <div class="sbm-mode-tabs">
@@ -706,27 +715,68 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
           <input type="text" id="f-outcome" placeholder="Reduce batch-release risk; prevent audit observations">
         </div>
       </div>
-      <div class="divider"></div>
-      <!-- Domain chips -->
-      <div class="chip-section">
-        <div class="cs-lbl">Industry Domain</div>
-        <div class="chips" id="ch-domain"></div>
-      </div>
-      <div class="divider"></div>
-      <div class="row3">
+      <div class="row3" style="margin-top:8px">
         <div class="fld">
-          <label>Client Operating Region</label>
-          <input type="text" id="f-client-region" placeholder="Belgium / EU · US · Japan · Middle East">
+          <label>Jurisdiction <span style="color:var(--red);font-weight:700">*</span></label>
+          <select id="f-jurisdiction" onchange="syncJurisdictionField()">
+            <option value="">Select jurisdiction...</option>
+            <option value="United States">United States</option>
+            <option value="European Union">European Union</option>
+            <option value="United Kingdom">United Kingdom</option>
+            <option value="Canada">Canada</option>
+            <option value="Japan">Japan</option>
+            <option value="Australia">Australia</option>
+            <option value="China">China</option>
+            <option value="India">India</option>
+            <option value="Brazil">Brazil</option>
+            <option value="Singapore">Singapore</option>
+            <option value="South Africa">South Africa</option>
+            <option value="Russia">Russia</option>
+            <option value="Saudi Arabia">Saudi Arabia / UAE</option>
+            <option value="Multi-Regional">Multi-Regional</option>
+            <option value="International">International</option>
+          </select>
+        </div>
+        <div class="fld">
+          <label>Client Operating Region <span style="color:var(--ink4);font-weight:400;text-transform:none">(detail)</span></label>
+          <input type="text" id="f-client-region" placeholder="e.g. US + Belgium dual-market release" oninput="syncJurisdictionFromRegion()">
         </div>
         <div class="fld">
           <label>Client Process Delta</label>
           <input type="text" id="f-client-delta" placeholder="Local SOP, plant process, tool gap, audit observation">
         </div>
-        <div class="fld">
+      </div>
+      <div class="row3" style="margin-top:8px">
+        <div class="fld" style="grid-column:span 3">
           <label>Past Backlog / Audit Gap</label>
           <input type="text" id="f-gap-input" placeholder="Known missed control, CAPA, deviation, audit finding">
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Domain chips -->
+  <div class="card">
+    <div class="card-body" style="padding-top:10px">
+      <div class="chip-section">
+        <div class="cs-lbl">Industry Domain</div>
+        <div class="chips" id="ch-domain"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Live AI API key — main panel (visible at 100% zoom when sidebar is cramped) -->
+  <div class="card" id="main-api-key-card" style="display:none;border-color:#f59e0b;background:#fffbeb">
+    <div class="card-hdr">
+      <div class="card-ico" style="background:#fef3c7">🔑</div>
+      <span class="card-title">Live AI — API Key <span class="card-opt">(required)</span></span>
+    </div>
+    <div class="card-body" style="padding-top:0">
+      <div class="sbm-key-row">
+        <input type="text" id="main-key-inp" class="sbm-key-inp" placeholder="Paste your API key here..." autocomplete="off" spellcheck="false" oninput="syncMainApiKey()">
+        <button class="sbm-key-save" onclick="saveSessionKeyFromMain()">Save Key</button>
+      </div>
+      <div id="main-key-st" style="font-size:10px;margin-top:4px;color:var(--ink4)">Enter the API key for your selected AI model, then click Save.</div>
     </div>
   </div>
 
@@ -1002,18 +1052,22 @@ const REG_FOCUS_CHECKLIST=[
   {id:'fullgxp', lbl:'Full GxP Library', ids:null, fw:'Multi-Regional', all:true},
 ];
 const REQ_EXAMPLES=[
-  {text:'LIMS batch-release audit trail and e-signature assurance package'},
-  {text:'ALCOA+ data integrity controls for business-critical GxP records'},
-  {text:'Annex 11 evidence package for QMS change control and validation'},
-  {text:'IQ/OQ/PQ validation evidence for regulated laboratory operations'},
-  {text:'CAPA and deviation management controls with root-cause traceability'},
-  {text:'HIPAA technical safeguards for clinical EDC and PHI systems'},
-  {text:'GDPR data protection by design for EU clinical trial operations'},
-  {text:'Computer software assurance (CSA) package for manufacturing MES'},
-  {text:'eTMF inspection readiness with audit trail and access controls'},
-  {text:'Vendor qualification and cloud GxP residency compliance package'},
-  {text:'Batch release e-signature meaning and dual sign-off evidence'},
-  {text:'Product-grade LIMS Part 11 package (full demo scenario)', hl:true, action:'loadProductGradeSample'},
+  {text:'LIMS batch-release audit trail and e-signature assurance package', short:'LIMS audit trail'},
+  {text:'ALCOA+ data integrity controls for business-critical GxP records', short:'ALCOA+ data integrity'},
+  {text:'Annex 11 evidence package for QMS change control and validation', short:'Annex 11 CSV'},
+  {text:'IQ/OQ/PQ validation evidence for regulated laboratory operations', short:'IQ/OQ/PQ validation'},
+  {text:'CAPA and deviation management controls with root-cause traceability', short:'CAPA & deviations'},
+  {text:'HIPAA technical safeguards for clinical EDC and PHI systems', short:'HIPAA / PHI'},
+  {text:'GDPR data protection by design for EU clinical trial operations', short:'GDPR privacy'},
+  {text:'Computer software assurance (CSA) package for manufacturing MES', short:'CSA for MES'},
+  {text:'eTMF inspection readiness with audit trail and access controls', short:'eTMF readiness'},
+  {text:'Vendor qualification and cloud GxP residency compliance package', short:'Vendor & cloud'},
+  {text:'Batch release e-signature meaning and dual sign-off evidence', short:'E-signature release'},
+  {text:'Part 11 closed-system controls for chromatography data (CDS)', short:'CDS Part 11'},
+  {text:'Serialization track-and-trace with audit trail for supply chain', short:'Serialization'},
+  {text:'Medical device design controls under ISO 13485 and EU MDR', short:'Med device QMS'},
+  {text:'Quick demo: inspection-ready LIMS package with QC rubric', short:'Quick demo', demo:true},
+  {text:'Product-grade LIMS Part 11 package (full demo scenario)', hl:true, action:'loadProductGradeSample', short:'Full demo'},
 ];
 const CATS=[
   {id:'A',lbl:'Lifecycle & Risk',col:'#0891b2',bg:'#ecfeff',sub:'ICH Q9/Q8/Q10 · Annex 15 VMP · CAPA · Deviations',n:5},
@@ -1268,6 +1322,7 @@ function init(){
   ensureValidModel();
   // Auto-select FDA on first load
   applyFramework('FDA');
+  updateMainApiKeyCard();
 }
 
 function initOnboardGuide(){
@@ -1288,10 +1343,10 @@ function buildFocusChecklist(){
   if(!el)return;
   el.innerHTML=REG_FOCUS_CHECKLIST.map(opt=>{
     const on=focusChecked.has(opt.id);
-    return`<div class="qcheck${on?' on':''}" onclick="toggleFocusCheck('${opt.id}')">
-      <div class="qcheck-cb">${on?'✓':''}</div>
+    return`<label class="qcheck${on?' on':''}">
+      <input type="checkbox" class="qcheck-native" ${on?'checked':''} onchange="toggleFocusCheck('${opt.id}')">
       <span class="qcheck-lbl">${opt.lbl}</span>
-    </div>`;
+    </label>`;
   }).join('');
 }
 function syncFocusCheckedFromSelection(){
@@ -1342,14 +1397,71 @@ function buildReqExamples(){
   const el=document.getElementById('req-examples');
   if(!el)return;
   el.innerHTML=REQ_EXAMPLES.map((ex,i)=>{
+    const lbl=ex.short||ex.text.slice(0,40);
     if(ex.action==='loadProductGradeSample'){
-      return`<span class="try-chip hl" onclick="loadProductGradeSample()">${ex.text}</span>`;
+      return`<span class="try-chip hl" title="${ex.text}" onclick="loadProductGradeSample()">${lbl}</span>`;
     }
-    return`<span class="try-chip" onclick="setReqByIndex(${i})">${ex.text}</span>`;
+    const cls='try-chip'+(ex.hl?' hl':'')+(ex.demo?' hl':'');
+    return`<span class="${cls}" title="${ex.text}" onclick="setReqByIndex(${i})">${lbl}</span>`;
   }).join('');
 }
 function setReqByIndex(i){ document.getElementById('req-ta').value=REQ_EXAMPLES[i]?.text||''; }
 function setReqText(t){ document.getElementById('req-ta').value=t; }
+
+function getJurisdictionValue(){
+  const j=document.getElementById('f-jurisdiction')?.value?.trim();
+  const r=document.getElementById('f-client-region')?.value?.trim();
+  return j || r || '';
+}
+function syncJurisdictionField(){
+  const j=document.getElementById('f-jurisdiction')?.value||'';
+  const region=document.getElementById('f-client-region');
+  if(region && j && !region.value) region.value=j;
+}
+function syncJurisdictionFromRegion(){
+  const region=document.getElementById('f-client-region')?.value||'';
+  const sel=document.getElementById('f-jurisdiction');
+  if(!sel || sel.value) return;
+  const nations=['United States','European Union','United Kingdom','Canada','Japan','Australia','China','India','Brazil','Singapore','South Africa','Russia','Multi-Regional','International'];
+  const lower=region.toLowerCase();
+  for(const n of nations){
+    if(lower.includes(n.toLowerCase().split(' ')[0])){ sel.value=n; break; }
+  }
+}
+function syncMainApiKey(){
+  const v=document.getElementById('main-key-inp')?.value||'';
+  const sb=document.getElementById('sbm-key-inp');
+  if(sb && !sb.value.startsWith('••••')) sb.value=v;
+}
+function syncSidebarApiKey(){
+  const v=document.getElementById('sbm-key-inp')?.value||'';
+  const main=document.getElementById('main-key-inp');
+  if(main && !v.startsWith('••••')) main.value=v;
+}
+function saveSessionKeyFromMain(){
+  const main=document.getElementById('main-key-inp');
+  const sb=document.getElementById('sbm-key-inp');
+  if(main && sb) sb.value=main.value;
+  saveSessionKey();
+}
+function updateMainApiKeyCard(){
+  const card=document.getElementById('main-api-key-card');
+  if(card) card.style.display=demoMode?'none':'block';
+  if(!demoMode) refreshMainKeyStatus();
+}
+function refreshMainKeyStatus(){
+  const st=document.getElementById('main-key-st');
+  const main=document.getElementById('main-key-inp');
+  if(!st)return;
+  if(apiKeys[selModel]){
+    st.style.color='var(--teal)';
+    st.textContent='Key saved for '+ (MODELS.find(m=>m.id===selModel)?.name||'selected model') +' ✓';
+    if(main) main.value='••••••••'+apiKeys[selModel].slice(-4);
+  }else{
+    st.style.color='var(--ink4)';
+    st.textContent='Enter the API key for your selected AI model, then click Save.';
+  }
+}
 
 /* ─── TREE ──────────────────────────────────────────────────────── */
 function buildTree(){renderTree('');}
@@ -1476,6 +1588,16 @@ function applyFramework(fw){
   // Re-render tree so checkboxes reflect new state
   renderTree('');
   updateCount();
+  buildFocusChecklist();
+  const FW_JUR={
+    'FDA':'United States','Health Canada':'Canada','EMA / EU GMP':'European Union',
+    'MHRA':'United Kingdom','ICH':'International','WHO':'International',
+    'TGA':'Australia','PMDA':'Japan','HSA (Singapore)':'Singapore',
+    'CDSCO (India)':'India','NMPA (China)':'China','EAEU (Russia)':'Russia',
+    'ANVISA (Brazil)':'Brazil','SAHPRA (South Africa)':'South Africa','Multi-Regional':'Multi-Regional'
+  };
+  const jurSel=document.getElementById('f-jurisdiction');
+  if(jurSel && FW_JUR[fw]) jurSel.value=FW_JUR[fw];
 }
 function setReq(el){document.getElementById('req-ta').value=el.textContent;}
 
@@ -1505,9 +1627,11 @@ function setMode(m){
     pickSBModel(selModel);
     setTimeout(()=>{
       document.getElementById('sbm-key-area')?.scrollIntoView({behavior:'smooth',block:'nearest'});
-      if(!apiKeys[selModel]) document.getElementById('sbm-key-inp')?.focus();
+      document.getElementById('main-api-key-card')?.scrollIntoView({behavior:'smooth',block:'nearest'});
+      if(!apiKeys[selModel]) document.getElementById('main-key-inp')?.focus();
     }, 100);
   }
+  updateMainApiKeyCard();
 }
 
 /* ─── MODELS ─────────────────────────────────────────────────────── */
@@ -1563,6 +1687,8 @@ function pickSBModel(id){
   if(st) st.textContent=apiKeys[id]?'Key saved for this session ✓':'Enter your API key above, then click Save';
   if(st) st.style.color=apiKeys[id]?'var(--teal)':'var(--ink4)';
   document.getElementById('submit-lbl').textContent='Create Package with '+m.name;
+  refreshMainKeyStatus();
+  syncSidebarApiKey();
 }
 
 function saveSessionKey(){
@@ -1582,6 +1708,7 @@ function saveSessionKey(){
   buildSBModels();
   pickSBModel(selModel);
   document.getElementById('submit-lbl').textContent='Create Package with '+(MODELS.find(x=>x.id===selModel)?.name||'AI');
+  refreshMainKeyStatus();
 }
 
 function restoreSessionKeys(){
@@ -1777,7 +1904,8 @@ function qcJaccard(a, b) {
 function resolveScopeControls() {
   const fw = document.getElementById('f-fw')?.value || '';
   const sys = document.getElementById('f-system')?.value || '';
-  const region = document.getElementById('f-client-region')?.value || '';
+  const region = document.getElementById('f-jurisdiction')?.value?.trim()
+    || document.getElementById('f-client-region')?.value?.trim() || '';
   const activeCats = selCatsSet.size ? new Set(selCatsSet) : null;
   const selectedRegs = selItems.size
     ? TREE_DATA.flatMap(g => g.items.filter(it => selItems.has(it.id)))
@@ -2370,7 +2498,7 @@ function runDemoEngine(req, ctx) {
   const sys   = document.getElementById('f-system').value || 'GxP system';
   const fw    = document.getElementById('f-fw').value;
   const businessOutcome = document.getElementById('f-outcome').value || `defensible ${sys} regulated operations`;
-  const clientRegion = document.getElementById('f-client-region').value || fw || 'selected operating region';
+  const clientRegion = getJurisdictionValue() || fw || 'selected operating region';
   const clientDelta = document.getElementById('f-client-delta').value || 'standard client process';
   const auditGap = document.getElementById('f-gap-input').value || 'no prior audit gap supplied';
   const ranked = rankChunks(req);
@@ -2658,9 +2786,10 @@ async function doGenerate() {
     if (!apiKeys[selModel]) {
       setMode('live');
       pickSBModel(selModel);
-      alert('Please enter and save your API key in the left sidebar first.');
-      document.getElementById('sbm-key-inp')?.focus();
-      document.getElementById('sb-model-section')?.scrollIntoView({behavior:'smooth',block:'center'});
+      updateMainApiKeyCard();
+      alert('Please enter and save your API key in the highlighted API Key section (sidebar or main panel).');
+      document.getElementById('main-key-inp')?.focus();
+      document.getElementById('main-api-key-card')?.scrollIntoView({behavior:'smooth',block:'center'});
       return;
     }
   }
@@ -2679,7 +2808,7 @@ async function doGenerate() {
     selDomain,
     document.getElementById('f-fw').value,
     document.getElementById('f-outcome').value,
-    document.getElementById('f-client-region').value,
+    getJurisdictionValue(),
     document.getElementById('f-client-delta').value,
     document.getElementById('f-gap-input').value,
     selItems.size ? `${selItems.size} regulations selected` : 'All regulations',
@@ -2687,7 +2816,7 @@ async function doGenerate() {
 
   // Reset harness state
   Object.assign(H, {ctx:{},req,regObjs:[],riskReg:[],gateLog:[],stories:[],backlog:{},analytics:{},review:{},evidence:{},qcReport:null,healthcarePackage:null,blocked:false,blockReason:''});
-  H.ctx = {req, ctx, fw:document.getElementById('f-fw').value, sys:document.getElementById('f-system').value||'GxP system', outcome:document.getElementById('f-outcome').value, clientRegion:document.getElementById('f-client-region').value, clientDelta:document.getElementById('f-client-delta').value, auditGap:document.getElementById('f-gap-input').value, pfx:autoPrefix()};
+  H.ctx = {req, ctx, fw:document.getElementById('f-fw').value, sys:document.getElementById('f-system').value||'GxP system', outcome:document.getElementById('f-outcome').value, clientRegion:getJurisdictionValue(), jurisdiction:document.getElementById('f-jurisdiction')?.value||'', clientDelta:document.getElementById('f-client-delta').value, auditGap:document.getElementById('f-gap-input').value, pfx:autoPrefix()};
 
   buildStepBar();
   setStatus('run', 'Orchestrator initialising pipeline…');
@@ -3256,6 +3385,8 @@ function loadProductGradeSample(){
   updateCatFooter();
   document.getElementById('f-outcome').value = 'Defensible batch-release decisions with inspection-ready audit trail and e-signature evidence';
   document.getElementById('f-client-region').value = 'United States / Belgium dual-market release';
+  const jur=document.getElementById('f-jurisdiction');
+  if(jur) jur.value='United States';
   document.getElementById('f-client-delta').value = 'Plant SOP still allows shared lab logins for urgent weekend release; CAPA open for audit-trail review lag';
   document.getElementById('f-gap-input').value = '2025 FDA observation: incomplete contemporaneous audit-trail review for batch-release records; missing dual Business Owner + QA sign-off on e-signature meaning';
   document.querySelectorAll('#ch-domain .chip').forEach(c => {
@@ -3280,7 +3411,11 @@ function sourceMetaFor(reg){
   if(r.includes('gamp')) return {authority:'ISPE / GAMP',nation:'International',sourceType:'Licensed industry standard'};
   if(r.includes('hipaa')) return {authority:'HHS / eCFR',nation:'United States',sourceType:'Regulation'};
   if(r.includes('mdr')) return {authority:'European Union',nation:'European Union',sourceType:'Regulation'};
-  return {authority:'Curated regulatory library',nation:normalizeJurisdictionNation(document.getElementById('f-client-region')?.value)||'International',sourceType:'Controlled source summary'};
+  const nation = normalizeJurisdictionNation(
+    document.getElementById('f-jurisdiction')?.value?.trim()
+    || document.getElementById('f-client-region')?.value?.trim() || ''
+  ) || 'International';
+  return {authority:'Curated regulatory library',nation,sourceType:'Controlled source summary'};
 }
 
 
