@@ -46,6 +46,7 @@ MARAS is a stakeholder-review MVP for Pharma and Life Sciences teams. It convert
 | MVP-10 | Keep readiness internally consistent | Missing evidence yields `NOT_READY`, score 0, draft document states, and `submission_ready: false` |
 | MVP-11 | Keep source mappings precise | FDA CSA is identified as nonbinding, medical-device guidance; GAMP 5 and ISO remain license-gated |
 | MVP-12 | Prevent uncontrolled exports from appearing approved | All exports and saved packages are permanently marked `DRAFT_NOT_CONTROLLED` |
+| MVP-13 | Validate every supported regulated system | Regression matrix covers LIMS, MES, SCADA/DCS, Serialization, QMS, EDMS, CDS, PV, EDC/eCRF, CTMS, eTMF, Safety Reporting, RIM, ERP/SAP, and Supply Chain |
 
 ## Stakeholder demo script
 

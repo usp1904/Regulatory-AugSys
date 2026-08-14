@@ -28,5 +28,7 @@ check('semantic regression rules present', html.includes('/is defensible against
 
 const script = html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
 check('inline application script exists', Boolean(script));
+const supportedSystems = ['LIMS','MES','SCADA / DCS','Serialization','QMS','EDMS','CDS','PV System','EDC / eCRF','CTMS','eTMF','Safety Reporting','Regulatory Info Mgmt','ERP / SAP','Supply Chain'];
+check('all 15 supported systems have relevance mappings', supportedSystems.every(system => html.includes(`  '${system}': [`)));
 
-export const result = { status: 'PASS', checks: checks.length, names: checks };
+export const result = { status: 'PASS', checks: checks.length, systemsValidated: 15, names: checks };

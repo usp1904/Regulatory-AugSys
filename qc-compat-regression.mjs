@@ -85,7 +85,7 @@ function mainStyleRank(chunks, req, activeCats, treeCats) {
 const failures = [];
 function check(name, fn) {
   try { fn(); }
-  catch (e) { failures.push(name + ': ' + e.message); }
+  catch (e) { failures.push(name + ': ' + (e.stack || e.message)); }
 }
 
 check('empty-fw keeps a non-empty safe subset', () => {
@@ -184,6 +184,38 @@ check('max output controls preserve the configured three-items-per-source ceilin
   assert.equal(typeof s.QC_CONFIG.hardFilterLowRelevance, 'boolean');
 });
 
+check('every supported system returns a safe, relevant source set', () => {
+  const matrix = {
+    'LIMS':'audit trail data integrity validation laboratory',
+    'MES':'batch audit trail change management validation',
+    'SCADA / DCS':'access control security validation infrastructure',
+    'Serialization':'traceability audit trail data integrity',
+    'QMS':'CAPA change management deviation quality',
+    'EDMS':'electronic records signature access control audit trail',
+    'CDS':'ALCOA data integrity audit trail laboratory validation',
+    'PV System':'privacy safety reporting CAPA',
+    'EDC / eCRF':'clinical audit trail privacy electronic signature',
+    'CTMS':'clinical privacy audit trail change management',
+    'eTMF':'electronic records access control audit trail',
+    'Safety Reporting':'safety reporting privacy CAPA',
+    'Regulatory Info Mgmt':'regulatory submission change management validation',
+    'ERP / SAP':'vendor access control audit trail outsourced',
+    'Supply Chain':'vendor outsourced traceability quality agreement'
+  };
+  const selectBlock = extract(/(<select id="f-system"[\s\S]*?<\/select>)/, 'system selector');
+  for (const [system, query] of Object.entries(matrix)) {
+    assert.ok(selectBlock.includes(`value="${system}"`), `missing system option ${system}`);
+    const domain = /EDC|CTMS|eTMF|PV System|Safety Reporting/.test(system) ? 'Clinical' : 'Pharma Mfg';
+    const s = boot({ fw:'FDA', system, region:'United States', domain });
+    const ranked = s.rankChunks(query);
+    assert.ok(ranked.length > 0, `${system} returned no sources`);
+    assert.ok(ranked.every(c => !c.licenseGate), `${system} included a licensed source`);
+    assert.ok(ranked.every(c => !c.medicalDeviceOnly), `${system} included a medical-device-only source`);
+    assert.ok(ranked[0]._qc.relevanceScore >= 1, `${system} top source was not relevant`);
+  }
+  assert.deepEqual(Object.keys(matrix).sort(), Object.keys(vm.runInContext('SYSTEM_AFFINITY', boot({}))).sort());
+});
+
 if (failures.length) throw new Error(failures.join('\n'));
 
-export const result = { status: 'PASS', checks: 6 };
+export const result = { status: 'PASS', checks: 7, systemsValidated: 15 };
