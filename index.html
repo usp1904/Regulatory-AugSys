@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>MARAS v6.3.1 — Regulatory Business Assurance</title>
+<title>MARAS v6.4.0 MVP — Regulatory Business Assurance</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -493,7 +493,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 <!-- DEMO BANNER -->
 <div class="demo-bar" id="demo-bar">
   <span>🎯</span>
-  <span><b>Demo Mode — No AI required</b> &nbsp;Business value packages built only from curated sourced controls — full evaluation, zero cost, works offline</span>
+  <span><b>MVP Demo — No AI required</b> &nbsp;Draft packages from curated source summaries · automated readiness checks · SME/QA approval required</span>
   <button class="demo-bar-btn" onclick="setMode('live')">Switch to Live AI →</button>
 </div>
 
@@ -502,10 +502,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
   <button class="onboard-close" onclick="dismissOnboardGuide()" title="Close guide">✕ Close guide</button>
   <div class="onboard-inner">
     <div class="onboard-title">Welcome to MARAS — Regulatory Business Assurance</div>
-    <div class="onboard-sub">MARAS converts validated regulatory sources into business-specific controls, PBIs, risk rationale, test obligations, and evidence packages. Work items are one export — the product is the assurance package.</div>
+    <div class="onboard-sub">MARAS converts curated regulatory summaries linked to authoritative sources into draft controls, PBIs, risk rationale, test obligations, and evidence packages. A qualified SME and QA reviewer must approve every package before use.</div>
     <div class="onboard-steps">
       <div class="onboard-step"><b>1 · Focus</b>Expand the Regulatory Library tree to opt in/out sources, or use All/None for bulk selection.</div>
-      <div class="onboard-step"><b>2 · Context</b>Optionally set project context, categories, and your business compliance outcome.</div>
+      <div class="onboard-step"><b>2 · Context</b>Select system, domain, jurisdiction, business outcome, and applicable control scope.</div>
       <div class="onboard-step"><b>3 · Assure</b>Click <em>Create Business Assurance Package</em> — Demo mode works offline; Live AI needs an API key.</div>
       <div class="onboard-step"><b>4 · Export</b>Review PBIs on Value Package tab — export to Jira, ADO, JSON, or FDA Clinical Schema.</div>
     </div>
@@ -575,7 +575,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
           <a href="#" id="sbm-key-link" class="sbm-key-link" target="_blank" rel="noopener">Get a key →</a>
         </div>
         <div class="sbm-key-row">
-          <input type="text" id="sbm-key-inp" class="sbm-key-inp" placeholder="Paste your API key here..." autocomplete="off" spellcheck="false">
+          <input type="password" id="sbm-key-inp" class="sbm-key-inp" placeholder="Paste your API key here..." autocomplete="off" spellcheck="false" aria-label="API key for selected AI provider">
           <button class="sbm-key-save" onclick="saveSessionKey()">Save</button>
         </div>
         <div id="sbm-key-st" class="sbm-key-st"></div>
@@ -619,8 +619,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
       </div>
       <div class="row3">
         <div class="fld">
-          <label>System Type <span style="color:var(--ink4);font-weight:400;text-transform:none">(optional)</span></label>
-          <select id="f-system">
+          <label for="f-system">System Type <span style="color:var(--red);font-weight:700">*</span></label>
+          <select id="f-system" aria-required="true">
             <option value="">Select system type...</option>
             <optgroup label="Laboratory & Manufacturing">
               <option value="LIMS">LIMS — Laboratory Information Management System</option>
@@ -683,14 +683,14 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
         </div>
 
         <div class="fld">
-          <label>Business Outcome</label>
-          <input type="text" id="f-outcome" placeholder="Reduce batch-release risk; prevent audit observations">
+          <label for="f-outcome">Business Outcome <span style="color:var(--red);font-weight:700">*</span></label>
+          <input type="text" id="f-outcome" aria-required="true" placeholder="Reduce batch-release risk; prevent audit observations">
         </div>
       </div>
       <div class="row3" style="margin-top:8px">
         <div class="fld">
-          <label>Jurisdiction <span style="color:var(--red);font-weight:700">*</span></label>
-          <select id="f-jurisdiction" onchange="syncJurisdictionField()">
+          <label for="f-jurisdiction">Jurisdiction <span style="color:var(--red);font-weight:700">*</span></label>
+          <select id="f-jurisdiction" aria-required="true" onchange="syncJurisdictionField()">
             <option value="">Select jurisdiction...</option>
             <option value="United States">United States</option>
             <option value="European Union">European Union</option>
@@ -745,7 +745,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
     </div>
     <div class="card-body" style="padding-top:0">
       <div class="sbm-key-row">
-        <input type="text" id="main-key-inp" class="sbm-key-inp" placeholder="Paste your API key here..." autocomplete="off" spellcheck="false" oninput="syncMainApiKey()">
+        <input type="password" id="main-key-inp" class="sbm-key-inp" placeholder="Paste your API key here..." autocomplete="off" spellcheck="false" aria-label="API key for selected AI provider" oninput="syncMainApiKey()">
         <button class="sbm-key-save" onclick="saveSessionKeyFromMain()">Save Key</button>
       </div>
       <div id="main-key-st" style="font-size:10px;margin-top:4px;color:var(--ink4)">Enter the API key for your selected AI model, then click Save.</div>
@@ -774,7 +774,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
       <span class="req-title">Define the business compliance outcome</span>
     </div>
     <div class="card-body" style="padding-top:0">
-      <textarea class="req-ta" id="req-ta" rows="4"
+      <textarea class="req-ta" id="req-ta" rows="4" aria-required="true"
         placeholder="Describe the regulated business outcome — e.g. 'For LIMS batch release, prove Part 11 audit trail and e-signature controls with source traceability, risk, tests, evidence and inspection questions.'"></textarea>
       <div class="try-row">
         <span class="try-lbl" style="font-size:11px;color:var(--ink4);padding-top:3px">Try:</span>
@@ -793,6 +793,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 
   <!-- SUBMIT — full width, like Image 1 -->
   <div class="submit-footer">
+    <div id="mvp-validation" role="alert" aria-live="assertive" tabindex="-1" style="display:none;margin:0 0 10px;padding:10px 12px;border:1px solid #dc2626;border-radius:7px;background:#fef2f2;color:#991b1b;font-size:12px;line-height:1.5"></div>
     <button class="submit-btn demo" id="submit-btn" onclick="doGenerate()">
       <span class="sb-send-icon">🚀</span>
       <span id="submit-lbl">Create Business Assurance Package</span>
@@ -818,6 +819,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
       <input type="text" id="package-name-inp" placeholder="Package name (e.g. LIMS Part 11 Assurance · Q3 2025)">
       <button class="save-bar-btn" onclick="savePackage()">Save</button>
       <span class="save-ok" id="save-ok"></span>
+      <span style="font-size:10px;color:var(--ink4)">Stored only in this browser. Export JSON for controlled retention.</span>
     </div>
     <div class="stories-toolbar">
       <div class="st-info">
@@ -1035,7 +1037,7 @@ const REQ_EXAMPLES=[
   {text:'Part 11 closed-system controls for chromatography data (CDS)', short:'CDS Part 11'},
   {text:'Serialization track-and-trace with audit trail for supply chain', short:'Serialization'},
   {text:'Medical device design controls under ISO 13485 and EU MDR', short:'Med device QMS'},
-  {text:'Quick demo: inspection-ready LIMS package with QC rubric', short:'Quick demo', demo:true},
+    {text:'Quick demo: inspection-ready LIMS package with QC rubric', short:'Quick demo', demo:true, action:'loadProductGradeSample'},
   {text:'Product-grade LIMS Part 11 package (full demo scenario)', hl:true, action:'loadProductGradeSample', short:'Full demo'},
 ];
 const CATS=[
@@ -1311,14 +1313,37 @@ function buildReqExamples(){
   el.innerHTML=REQ_EXAMPLES.map((ex,i)=>{
     const lbl=ex.short||ex.text.slice(0,40);
     if(ex.action==='loadProductGradeSample'){
-      return`<span class="try-chip hl" title="${ex.text}" onclick="loadProductGradeSample()">${lbl}</span>`;
+      return`<button type="button" class="try-chip hl" title="${ex.text}" onclick="loadProductGradeSample()">${lbl}</button>`;
     }
     const cls='try-chip'+(ex.hl?' hl':'')+(ex.demo?' hl':'');
-    return`<span class="${cls}" title="${ex.text}" onclick="setReqByIndex(${i})">${lbl}</span>`;
+    return`<button type="button" class="${cls}" title="${ex.text}" onclick="setReqByIndex(${i})">${lbl}</button>`;
   }).join('');
 }
 function setReqByIndex(i){ document.getElementById('req-ta').value=REQ_EXAMPLES[i]?.text||''; }
 function setReqText(t){ document.getElementById('req-ta').value=t; }
+
+function showMvpValidation(errors){
+  const box=document.getElementById('mvp-validation');
+  if(!box)return;
+  if(!errors.length){box.style.display='none';box.textContent='';return;}
+  box.innerHTML='<b>Complete the MVP assurance scope before generation:</b><ul style="margin:5px 0 0 18px">'+errors.map(e=>`<li>${e.message}</li>`).join('')+'</ul>';
+  box.style.display='block';
+  box.focus();
+}
+function validateMvpInputs(){
+  const fields=[
+    {ok:!!document.getElementById('f-system')?.value, message:'Select the regulated system type.', id:'f-system'},
+    {ok:!!selDomain, message:'Select the Pharma or Life Sciences industry domain.', id:'ch-domain'},
+    {ok:!!document.getElementById('f-jurisdiction')?.value, message:'Select the governing jurisdiction.', id:'f-jurisdiction'},
+    {ok:!!document.getElementById('f-outcome')?.value.trim(), message:'Describe the measurable business outcome.', id:'f-outcome'},
+    {ok:selItems.size>0, message:'Select at least one controlled regulatory source.', id:'tree'},
+    {ok:!!document.getElementById('req-ta')?.value.trim(), message:'Describe the compliance requirement or assurance outcome.', id:'req-ta'}
+  ];
+  const errors=fields.filter(f=>!f.ok);
+  showMvpValidation(errors);
+  if(errors.length) document.getElementById(errors[0].id)?.focus();
+  return errors.length===0;
+}
 
 function getJurisdictionValue(){
   const j=document.getElementById('f-jurisdiction')?.value?.trim();
@@ -1686,7 +1711,7 @@ const H = {
 };
 
 /* ════════════════════════════════════════════════════════════════════
-   QUALITY CONTROL LAYER v6.3.1
+   QUALITY CONTROL LAYER v6.4.0 MVP
    1) Scope control  2) Source relevance ranking  3) Duplicate suppression
    4) Jurisdiction filtering  5) Output normalization
    6) Scored validation rubric  7) FDA clinical data standardization schema
@@ -1697,13 +1722,13 @@ const H = {
    - exports keep legacy fields; FDA clinical schema is an additive package
    ════════════════════════════════════════════════════════════════════ */
 const QC_CONFIG = {
-  maxScopedChunks: 12,          // matches main demo engine slice(0,12)
-  maxOutputItems: 36,           // 12 chunks × ≤3 reqs — do not shrink prior demo max
+  maxScopedChunks: 8,
+  maxOutputItems: 24,
   duplicateJaccard: 0.72,
   minRelevanceScore: 1,         // soft floor for ranking report; not a hard empty-out
   rubricPassThreshold: 70,
   hardFilterJurisdiction: true, // drop OOJ only when in-jurisdiction alternatives remain
-  hardFilterLowRelevance: false // ranking-only by default — preserves main corpus coverage
+  hardFilterLowRelevance: true
 };
 
 const JURISDICTION_BY_FRAMEWORK = {
@@ -1885,6 +1910,9 @@ function scoreSourceRelevance(chunk, req, scope) {
     const blob = ((chunk.kws || []).join(' ') + ' ' + chunk.title + ' ' + (chunk.reqs || []).join(' ')).toLowerCase();
     aff.forEach(a => { if (blob.includes(a.toLowerCase())) score += 2; });
   }
+  const domainMismatch = (selDomain === 'Pharma Mfg' || selDomain === 'Biotech R&D' || selDomain === 'Clinical') && chunk.cat === 'H';
+  const deviceMismatch = selDomain === 'Med Devices' ? false : chunk.cat === 'H' && !/medical device|iso 13485|eu mdr/i.test(qt);
+  if (domainMismatch || deviceMismatch) score -= 30;
   const inJurisdiction = !scope.allowedNations || scope.allowedNations.has(nation) || nation === 'International';
   if (scope.allowedNations) {
     if (inJurisdiction) score += 4;
@@ -1903,9 +1931,11 @@ function scoreSourceRelevance(chunk, req, scope) {
     jurisdiction: nation,
     authority: meta.authority,
     sourceType: meta.sourceType,
+    domainMismatch: domainMismatch || deviceMismatch,
     inJurisdiction,
     inScopeCategory: (!scope.activeCats || scope.activeCats.has(chunk.cat)) &&
-                     (!scope.treeCats || scope.treeCats.has(chunk.cat))
+                     (!scope.treeCats || scope.treeCats.has(chunk.cat)) &&
+                     !(domainMismatch || deviceMismatch)
   };
 }
 
@@ -1981,29 +2011,37 @@ function normalizeStoryOutput(s, idx, pfx, qcMeta) {
 function scoreValidationRubric(story, scope) {
   const checks = [];
   const hasTrace = !!(story.regRef && (story.regRef.includes('REQ') || story.regulation));
-  checks.push({ id:'traceability', label:'Source traceability (reg + section / req_id)', weight:20, pass:hasTrace, score:hasTrace?20:0 });
-  const hasCitation = !!(story.regulation && story.section && story.sourceAuthority);
-  checks.push({ id:'citation', label:'Official source citation fields', weight:15, pass:hasCitation, score:hasCitation?15:4 });
+  checks.push({ id:'traceability', label:'Source traceability (reg + section / req_id)', weight:15, pass:hasTrace, score:hasTrace?15:0 });
+  const hasCitation = !!(story.regulation && story.section && story.sourceAuthority && story.sourceUrl);
+  const citationVerified = hasCitation && story.sourceExcerptVerified === true;
+  checks.push({ id:'citation', label:'Source metadata and verified excerpt', weight:15, pass:citationVerified, score:citationVerified?15:(hasCitation?9:3) });
   const accept = story.accept || {};
   const acceptOk = !!(accept.action && accept.expected && accept.pass_fail && accept.traceable);
-  checks.push({ id:'accept', label:'ACCEPT completeness', weight:20, pass:acceptOk, score:acceptOk?20: Math.round(20*((!!accept.action)+(!!accept.expected)+(!!accept.pass_fail)+(!!accept.traceable))/4) });
+  checks.push({ id:'accept', label:'ACCEPT completeness', weight:15, pass:acceptOk, score:acceptOk?15: Math.round(15*((!!accept.action)+(!!accept.expected)+(!!accept.pass_fail)+(!!accept.traceable))/4) });
   const inv = story.invest || {};
   const invKeys = ['independent','negotiable','valuable','estimable','small','testable'];
   const invPass = invKeys.filter(k => inv[k] && String(inv[k]).toLowerCase() !== 'no').length;
-  checks.push({ id:'invest', label:'INVEST dimensions', weight:15, pass:invPass===6, score:Math.round(15*invPass/6) });
+  checks.push({ id:'invest', label:'INVEST dimensions', weight:10, pass:invPass===6, score:Math.round(10*invPass/6) });
   const ac = story.ac || [];
   const gwt = ac.filter(a => /given/i.test(a) && /when/i.test(a) && /then/i.test(a)).length;
   checks.push({ id:'ac_quality', label:'Given/When/Then acceptance criteria', weight:15, pass:gwt>=1 && ac.length>=2, score: ac.length>=2 ? (gwt>=1?15:8) : 3 });
   const scopeOk = !scope.activeCats || !story.qc || story.qc.inScopeCategory !== false;
   const jurOk = !story.qc || story.qc.inJurisdiction !== false;
   checks.push({ id:'scope_jurisdiction', label:'Scope & jurisdiction fit', weight:15, pass:scopeOk && jurOk, score:(scopeOk&&jurOk)?15: (scopeOk||jurOk)?8:0 });
+  const text = `${story.title||''} ${story.story||''}`;
+  const brokenGrammar = /\bmust\s+(?:attributable|legible|contemporaneous|computer-generated|management responsibility|installation qualification|operational qualification|performance qualification|design and development planning)\b/i.test(text);
+  const genericOutcome = /defensible\s+GxP system regulated operations/i.test(text);
+  const semanticOk = !brokenGrammar && !genericOutcome && String(story.story||'').length >= 70;
+  checks.push({ id:'semantic_quality', label:'Semantic clarity and business specificity', weight:15, pass:semanticOk, score:semanticOk?15:(brokenGrammar?0:7) });
   const total = checks.reduce((a,c)=>a+c.score,0);
-  const grade = total >= 90 ? 'A' : total >= QC_CONFIG.rubricPassThreshold ? 'B' : total >= 55 ? 'C' : 'D';
+  const hardGatePass = citationVerified && semanticOk && scopeOk && jurOk;
+  const grade = !hardGatePass ? 'REVIEW' : total >= 90 ? 'A' : total >= QC_CONFIG.rubricPassThreshold ? 'B' : total >= 55 ? 'C' : 'D';
   return {
     totalScore: total,
     maxScore: 100,
     grade,
-    pass: total >= QC_CONFIG.rubricPassThreshold,
+    pass: total >= QC_CONFIG.rubricPassThreshold && hardGatePass,
+    decision: hardGatePass ? 'AUTOMATED_CHECKS_PASSED' : 'SME_REVIEW_REQUIRED',
     checks,
     scoredAt: new Date().toISOString()
   };
@@ -2053,6 +2091,9 @@ function toFdaClinicalStandardPackage(stories, pipelineResult, scope, qcReport) 
       narrative: s.story,
       source: {
         authority: s.sourceAuthority || '',
+        url: s.sourceUrl || '',
+        assuranceStatus: s.sourceAssuranceStatus || 'CURATED_SUMMARY_REQUIRES_SME_REVIEW',
+        excerptVerified: s.sourceExcerptVerified === true,
         nation: normalizeJurisdictionNation(s.applicableNation || ''),
         class: s.sourceType || '',
         citation: `${s.regulation} ${s.section}`.trim(),
@@ -2067,6 +2108,7 @@ function toFdaClinicalStandardPackage(stories, pipelineResult, scope, qcReport) 
       evidence: { stage: s.phase || '', gamp: s.gamp || '' },
       relevance: s.qc?.relevanceScore ?? null,
       validationRubric: s.validationRubric || null,
+      review: { status:s.reviewStatus || 'DRAFT_UNREVIEWED', reviewedAt:s.reviewedAt || null },
       clinicalCoding: {
         domain: s.labels?.[0] || s.type,
         systemAffinity: scope.systemType || '',
@@ -2429,6 +2471,28 @@ function runDemoEngine(req, ctx) {
   const FW_TYPE = {'business-control':['BOI','ACCEPT','INVEST','3C'],'compliance-control':['ACCEPT','INVEST','3C'],
                    'integration-control':['INVEST','3C'],'evidence-enabler':['INVEST','ACCEPT']};
 
+  function toBusinessAction(text){
+    const t=String(text||'').replace(/\.$/,'');
+    const rules=[
+      [/^Attributable:/i,'ensure records are attributable and'],
+      [/^Legible:/i,'ensure records are legible with'],
+      [/^Contemporaneous:/i,'ensure records are contemporaneous and'],
+      [/^Computer-generated time-stamped audit trails required$/i,'implement computer-generated, time-stamped audit trails'],
+      [/^Installation Qualification verifies/i,'perform Installation Qualification to verify'],
+      [/^Operational Qualification tests/i,'perform Operational Qualification to test'],
+      [/^Performance Qualification confirms/i,'perform Performance Qualification to confirm'],
+      [/^Management responsibility and review processes defined$/i,'define management responsibilities and review processes'],
+      [/^CAPA system implementation and effectiveness monitoring$/i,'implement the CAPA system and monitor its effectiveness'],
+      [/^Design and development planning documentation required$/i,'maintain approved design and development planning documentation'],
+      [/^Design input requirements formally documented$/i,'formally document and approve design input requirements'],
+      [/^Design verification and validation activities required$/i,'plan, execute, and approve design verification and validation activities']
+    ];
+    for(const [pattern,replacement] of rules){
+      if(pattern.test(t)) return t.replace(pattern,replacement);
+    }
+    return t.charAt(0).toLowerCase()+t.slice(1);
+  }
+
   // ── Agent 1: Regulatory Intake ──────────────────────────────────
   const regObjs = top.map((c, i) => ({
     req_id: `REQ-${String(i+1).padStart(3,'0')}`,
@@ -2438,7 +2502,7 @@ function runDemoEngine(req, ctx) {
                         E:'privacy',F:'validation',G:'vendor-cloud',H:'device-qms'}[c.cat]||'gxp',
     description: c.title,
     acceptance_criteria: c.reqs || [],
-    status: 'COMPLETE', flags: [],
+    status: 'DRAFT_REQUIRES_SME_REVIEW', flags: ['Curated source summary; verify exact source excerpt before approval'],
   }));
   const intakeSummary = {total:regObjs.length,complete:regObjs.length,flagged:0,gate:'PROCEED',block_reason:''};
 
@@ -2470,7 +2534,7 @@ function runDemoEngine(req, ctx) {
       const fwApp = FW_TYPE[type];
       const regulatoryCriticality = i < 3 ? 'P0' : i < 6 ? 'P1' : 'P2';
       const conciseReq = rq.length > 86 ? rq.slice(0,83)+'...' : rq;
-      const lowerReq = rq.charAt(0).toLowerCase()+rq.slice(1).replace(/\.$/,'');
+      const lowerReq = toBusinessAction(rq);
       const pbiId = `${pfx}-${String(itemNo).padStart(3,'0')}`;
       const srcMeta = sourceMetaFor(c.reg);
       const clientFit = `Region: ${clientRegion}; Client delta: ${clientDelta}; Past audit/backlog gap: ${auditGap}`;
@@ -2511,6 +2575,9 @@ function runDemoEngine(req, ctx) {
         sourceAuthority: srcMeta.authority,
         applicableNation: srcMeta.nation,
         sourceType: srcMeta.sourceType,
+        sourceUrl: srcMeta.url || '',
+        sourceExcerptVerified: false,
+        sourceAssuranceStatus: 'CURATED_SUMMARY_REQUIRES_SME_REVIEW',
         sourceRequirement: rq,
         labels: (c.kws||[]).slice(0,3),
       };
@@ -2690,7 +2757,7 @@ function setStatus(t, msg) {
 async function doGenerate() {
   if (running) return;
   const req = document.getElementById('req-ta').value.trim();
-  if (!req) { alert('Please describe your compliance requirement first.'); return; }
+  if (!validateMvpInputs()) return;
   if (!demoMode) {
     const sk = sessionStorage.getItem('maras_key_'+selModel);
     if (sk && !apiKeys[selModel]) apiKeys[selModel] = sk;
@@ -2703,7 +2770,11 @@ async function doGenerate() {
       document.getElementById('main-api-key-card')?.scrollIntoView({behavior:'smooth',block:'center'});
       return;
     }
+    const provider=MODELS.find(m=>m.id===selModel);
+    const ok=confirm(`Live AI will send the entered requirement and project context directly from this browser to ${provider?.provider||'the selected AI provider'}. Do not continue with confidential, patient-identifiable, personal, or proprietary regulated data. Continue?`);
+    if(!ok)return;
   }
+  showMvpValidation([]);
 
   running = true;
   document.getElementById('submit-btn').disabled = true;
@@ -2849,7 +2920,7 @@ async function orchestratorDemo(req, ctx) {
     ev.evidence_package.documents.map(d=>`  ${d.status==='COMPLETE'?'✓':d.status==='PARTIAL'?'◑':'✗'} ${d.title} — ${d.status}`).join('\n')+
     `\n\nsubmission_ready: ${ev.evidence_package.submission_ready} — ${ev.evidence_package.sign_off_required.join(' + ')} sign-off required`);
 
-  setStatus('done', `✓ 4-process assurance graph complete · ${result.stories.length} business PBIs · evidence package assembled`);
+  setStatus('done', `Draft assembled · ${result.stories.length} business PBIs · SME/QA review required before use`);
   renderStories(result.stories, result);
 }
 
@@ -2924,7 +2995,7 @@ async function orchestratorLive(req, ctx) {
     H.healthcarePackage = toHealthcareStandardPackage(allStories, {
       regObjs:H.regObjs, riskReg:H.riskReg, review:H.review, evidence:H.evidence
     }, resolveScopeControls(), H.qcReport);
-    setStatus('done','✓ '+allStories.length+' business PBIs generated — QC + 4-process assurance graph complete');
+    setStatus('done','Draft generated · '+allStories.length+' business PBIs · SME/QA review required before use');
     renderStories(allStories, {qcReport:H.qcReport, healthcarePackage:H.healthcarePackage});
   } else if(!H.blocked){
     setStatus('done','All agents complete — switch to Demo mode for pre-built business PBI examples');
@@ -2962,6 +3033,12 @@ async function callLLM(m, sys, userMsg) {
 /* ═══════════════════════════════════════════════════════════════════
    RENDER STORIES — with full framework display
    ═══════════════════════════════════════════════════════════════════ */
+function escapeHtml(value){
+  return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+function safeExternalUrl(value){
+  try{const u=new URL(String(value||''));return (u.protocol==='https:'||u.protocol==='http:')?u.href:'';}catch{return '';}
+}
 function renderStories(stories, pipelineResult) {
   if (!stories?.length) return;
   const bil   = needsBilingual();
@@ -2979,59 +3056,62 @@ function renderStories(stories, pipelineResult) {
     <button class="exp-btn" style="background:#374151" onclick="dlJSON()">↓ JSON</button>`;
 
   const qcBanner = qc ? `<div class="qc-banner" id="qc-banner">
-    <div class="qc-banner-title">Quality Control Summary</div>
+    <div class="qc-banner-title">Automated readiness checks — SME/QA approval still required</div>
     <div class="qc-grid">
       <div class="qc-chip"><b>Scope</b>${qc.scope?.label||'—'}</div>
       <div class="qc-chip"><b>Relevance</b>${(qc.sourceRelevanceRanking||[]).length} ranked sources</div>
       <div class="qc-chip"><b>Jurisdiction</b>${(qc.jurisdictionFilter?.suppressed||[]).length} filtered out</div>
       <div class="qc-chip"><b>Duplicates</b>${qc.duplicateSuppression?.removed||0} suppressed</div>
       <div class="qc-chip"><b>Normalized</b>${qc.outputNormalization?.itemsNormalized||stories.length} → schema ${qc.outputNormalization?.schemaVersion||'1.0.0'}</div>
-      <div class="qc-chip"><b>Rubric</b>avg ${qc.validationRubric?.averageScore||0}/100 · ${qc.validationRubric?.passCount||0} pass</div>
+      <div class="qc-chip"><b>Readiness</b>avg ${qc.validationRubric?.averageScore||0}/100 · ${qc.validationRubric?.passCount||0} pass</div>
     </div>
   </div>` : '';
 
   document.getElementById('stories-list').innerHTML = qcBanner + stories.map((s,i) => {
+    const sourceUrl=safeExternalUrl(s.sourceUrl);
     const fwBadges = (s.frameworks_applied||[]).map(fw=>
-      `<span class="tag" style="background:#f3f0ff;color:#5b21b6;font-size:9px">${fw}</span>`).join('');
+      `<span class="tag" style="background:#f3f0ff;color:#5b21b6;font-size:9px">${escapeHtml(fw)}</span>`).join('');
     const bilBadge = bil.japanese?'<span class="sc-num-badge" style="background:#fef3c7;color:#92400e">🇯🇵 EN+日本語</span>':
                      bil.chinese ?'<span class="sc-num-badge" style="background:#fee2e2;color:#991b1b">🇨🇳 EN+中文</span>':
                      bil.russian ?'<span class="sc-num-badge" style="background:#ede9fe;color:#5b21b6">🇷🇺 EN+Русский</span>':'';
     const boi = s.boi || (s.roi ? {business_area:s.roi.role,outcome:s.roi.objective,impact:s.roi.insight} : null);
     const boiHtml = boi ? `<div style="margin:8px 0 4px;padding:8px 10px;background:#f0fdf4;border-radius:5px;border-left:3px solid #16a34a">
       <div style="font-size:9px;font-weight:700;color:#15803d;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">BOI · Business Outcome & Impact</div>
-      <div style="font-size:11px;color:#14532d;line-height:1.5"><b>Business area:</b> ${boi.business_area||''}<br><b>Outcome:</b> ${boi.outcome||''}<br><b>Impact:</b> ${boi.impact||''}</div>
-      ${boi.client_context?`<div style="font-size:10px;color:#166534;margin-top:5px"><b>Client fit:</b> ${boi.client_context}</div>`:''}
+      <div style="font-size:11px;color:#14532d;line-height:1.5"><b>Business area:</b> ${escapeHtml(boi.business_area)}<br><b>Outcome:</b> ${escapeHtml(boi.outcome)}<br><b>Impact:</b> ${escapeHtml(boi.impact)}</div>
+      ${boi.client_context?`<div style="font-size:10px;color:#166534;margin-top:5px"><b>Client fit:</b> ${escapeHtml(boi.client_context)}</div>`:''}
     </div>` : '';
     const investHtml = s.invest ? `<div style="margin:6px 0;padding:8px 10px;background:#eff6ff;border-radius:5px;border-left:3px solid #3b82f6">
       <div style="font-size:9px;font-weight:700;color:#1d4ed8;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">INVEST validation</div>
-      <div style="font-size:10px;color:#1e3a5f;line-height:1.6">${Object.entries(s.invest).map(([k,v])=>`<span style="margin-right:10px"><b>${k.charAt(0).toUpperCase()+k.slice(1)}:</b> ${v==='yes'?'<span style="color:#16a34a">✓</span>':v==='no'?'<span style="color:#dc2626">✗</span>':v}</span>`).join('')}</div>
+      <div style="font-size:10px;color:#1e3a5f;line-height:1.6">${Object.entries(s.invest).map(([k,v])=>`<span style="margin-right:10px"><b>${escapeHtml(k.charAt(0).toUpperCase()+k.slice(1))}:</b> ${v==='yes'?'<span style="color:#16a34a">✓</span>':v==='no'?'<span style="color:#dc2626">✗</span>':escapeHtml(v)}</span>`).join('')}</div>
     </div>` : '';
     const rub = s.validationRubric;
     const rubHtml = rub ? `<div class="rubric-box">
       <div class="rubric-top">
-        <span class="rubric-label">Validation rubric</span>
+        <span class="rubric-label">Automated readiness score</span>
         <span class="rubric-score ${rub.pass?'pass':'fail'}">${rub.totalScore}/100 · Grade ${rub.grade}</span>
         ${s.qc?.relevanceScore!=null?`<span class="rubric-rel">Relevance ${s.qc.relevanceScore}</span>`:''}
       </div>
       <div class="rubric-checks">${(rub.checks||[]).map(c=>`<span class="rubric-check ${c.pass?'ok':'no'}">${c.pass?'✓':'·'} ${c.label} (${c.score}/${c.weight})</span>`).join('')}</div>
     </div>` : '';
-    return `<div class="story-card">
+    return `<div class="story-card" data-story-index="${i}">
       <div class="sc-top">
         <div class="sc-num">
           PBI ${s.num||i+1} ${bilBadge}
           ${rub?`<span class="sc-num-badge" style="background:${rub.pass?'#ecfdf5':'#fffbeb'};color:${rub.pass?'#166534':'#92400e'}">${rub.totalScore}/100</span>`:''}
         </div>
-        <div class="sc-title">${s.title}</div>
+        <div class="sc-title">${escapeHtml(s.title)}</div>
         <div class="sc-tags">
-          <span class="tag t-reg">${s.regulation||''} ${s.section||''}</span>
-          ${s.applicableNation?`<span class="tag" style="background:#ecfeff;color:#0e7490">${s.applicableNation}</span>`:''}
-          ${s.sourceType?`<span class="tag" style="background:#f8fafc;color:#475569">${s.sourceType}</span>`:''}
-          ${s.type?`<span class="tag" style="background:#f3f4f6;color:#374151">${s.type}</span>`:''}
-          ${s.phase&&s.phase!='N/A'?`<span class="tag t-phase">${s.phase}</span>`:''}
-          ${s.gamp?`<span class="tag t-gamp">${s.gamp}</span>`:''}
+          <span class="tag t-reg">${escapeHtml(s.regulation)} ${escapeHtml(s.section)}</span>
+          ${s.applicableNation?`<span class="tag" style="background:#ecfeff;color:#0e7490">${escapeHtml(s.applicableNation)}</span>`:''}
+          ${s.sourceType?`<span class="tag" style="background:#f8fafc;color:#475569">${escapeHtml(s.sourceType)}</span>`:''}
+          <span class="tag" style="background:#fff7ed;color:#9a3412">SME review required</span>
+          ${s.type?`<span class="tag" style="background:#f3f4f6;color:#374151">${escapeHtml(s.type)}</span>`:''}
+          ${s.phase&&s.phase!='N/A'?`<span class="tag t-phase">${escapeHtml(s.phase)}</span>`:''}
+          ${s.gamp?`<span class="tag t-gamp">${escapeHtml(s.gamp)}</span>`:''}
           ${fwBadges}
         </div>
-        <p class="sc-story">${s.story||s.userStory||''}</p>
+        <p class="sc-story">${escapeHtml(s.story||s.userStory)}</p>
+        ${sourceUrl?`<div style="font-size:10px;margin:4px 0 8px"><a href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">Open authoritative source ↗</a> · Curated summary; exact excerpt not yet verified</div>`:`<div style="font-size:10px;color:#b45309;margin:4px 0 8px">No authoritative source URL mapped — clarification required</div>`}
         ${boiHtml}${investHtml}${rubHtml}
       </div>
       <button class="sc-expand" onclick="toggleAC(this)">
@@ -3039,22 +3119,22 @@ function renderStories(stories, pipelineResult) {
         <span style="transition:transform .14s">▼</span>
       </button>
       <div class="sc-ac">
-        ${(s.ac||s.acceptanceCriteria||[]).map((a,j)=>`<div class="ac-item"><span class="ac-n">${j+1}</span><span class="ac-t">${a}</span></div>`).join('')}
+        ${(s.ac||s.acceptanceCriteria||[]).map((a,j)=>`<div class="ac-item"><span class="ac-n">${j+1}</span><span class="ac-t">${escapeHtml(a)}</span></div>`).join('')}
         ${s.accept?`<div style="margin-top:8px;padding:8px 10px;background:#fefce8;border-radius:5px;border-left:3px solid #ca8a04">
           <div style="font-size:9px;font-weight:700;color:#92400e;text-transform:uppercase;margin-bottom:4px">ACCEPT</div>
           <div style="font-size:10px;color:#78350f;line-height:1.6">
-            <b>Action:</b> ${s.accept.action||''}<br>
-            <b>Expected:</b> ${s.accept.expected||''}<br>
-            <b>Pass/Fail:</b> ${s.accept.pass_fail||''}<br>
-            <b>Traceable:</b> <span style="font-family:monospace">${s.accept.traceable||s.regRef||''}</span>
+            <b>Action:</b> ${escapeHtml(s.accept.action)}<br>
+            <b>Expected:</b> ${escapeHtml(s.accept.expected)}<br>
+            <b>Pass/Fail:</b> ${escapeHtml(s.accept.pass_fail)}<br>
+            <b>Traceable:</b> <span style="font-family:monospace">${escapeHtml(s.accept.traceable||s.regRef)}</span>
           </div>
         </div>`:''}
-        ${s.regRef?`<div class="ac-ref">📖 ${s.regRef}</div>`:''}
+        ${s.regRef?`<div class="ac-ref">📖 ${escapeHtml(s.regRef)}</div>`:''}
       </div>
       <div class="sc-footer">
-        <button class="ftr-btn" onclick="markFtr(this,'v')">✓ Validate</button>
-        <button class="ftr-btn" onclick="markFtr(this,'c')">⚠ Clarify</button>
-        <button class="ftr-btn" onclick="markFtr(this,'n')">N/A</button>
+        <button class="ftr-btn ${s.reviewStatus==='SME_REVIEWED'?'v':''}" onclick="markFtr(this,'v',${i})">✓ SME reviewed</button>
+        <button class="ftr-btn ${s.reviewStatus==='CLARIFICATION_REQUIRED'?'c':''}" onclick="markFtr(this,'c',${i})">⚠ Clarify</button>
+        <button class="ftr-btn" onclick="markFtr(this,'n',${i})">N/A</button>
       </div>
     </div>`;
   }).join('');
@@ -3065,9 +3145,13 @@ function toggleAC(btn){
   const ac=btn.nextElementSibling; ac.classList.toggle('show');
   btn.querySelector('span:last-child').style.transform=ac.classList.contains('show')?'rotate(180deg)':'';
 }
-function markFtr(btn,st){
+function markFtr(btn,st,index){
   btn.parentElement.querySelectorAll('.ftr-btn').forEach(b=>b.className='ftr-btn');
   if(st==='v')btn.className='ftr-btn v'; else if(st==='c')btn.className='ftr-btn c';
+  if(allStories[index]){
+    allStories[index].reviewStatus=st==='v'?'SME_REVIEWED':st==='c'?'CLARIFICATION_REQUIRED':'NOT_APPLICABLE';
+    allStories[index].reviewedAt=new Date().toISOString();
+  }
 }
 
 /* ─── SAVE / LOAD ────────────────────────────────────────────────── */
@@ -3077,7 +3161,9 @@ function savePackage(){
   const fw=document.getElementById('f-fw').value;
   const sys=document.getElementById('f-system').value||selApp;
   const ctx=[sys,selDomain,fw].filter(Boolean).join(' · ');
+  const reviewed=allStories.filter(s=>s.reviewStatus==='SME_REVIEWED').length;
   const rec={key:'pkg_'+Date.now(),name,at:new Date().toISOString(),count:allStories.length,
+             packageStatus:reviewed===allStories.length?'REVIEWED':'DRAFT',reviewedCount:reviewed,
              stories:allStories,ctx,gateLog:H.gateLog};
   try{localStorage.setItem(rec.key,JSON.stringify(rec));}catch{alert('Browser storage full. Export JSON to save.');}
   document.getElementById('save-ok').textContent='Saved ✓';
@@ -3095,9 +3181,9 @@ function loadSaved(){
     <div class="saved-card">
       <div class="svc-top">
         <div>
-          <div class="svc-name">${pkg.name}</div>
-          <div class="svc-ctx">${pkg.ctx||''}</div>
-          <div class="svc-meta">${new Date(pkg.at).toLocaleString()} · ${pkg.count} PBIs</div>
+          <div class="svc-name">${escapeHtml(pkg.name)}</div>
+          <div class="svc-ctx">${escapeHtml(pkg.ctx)}</div>
+          <div class="svc-meta">${escapeHtml(new Date(pkg.at).toLocaleString())} · ${Number(pkg.count)||0} PBIs · ${escapeHtml(pkg.packageStatus||'DRAFT')} (${Number(pkg.reviewedCount)||0} reviewed)</div>
         </div>
         <div class="svc-btns">
           <button class="svc-btn svc-load" onclick="loadPackage('${pkg.key}')">Load</button>
@@ -3120,20 +3206,20 @@ function delPackage(key){localStorage.removeItem(key);loadSaved();}
 function q(s){return'"'+(String(s||'').replace(/"/g,'""'))+'"';}
 function dlCSV(c,n){const u=URL.createObjectURL(new Blob([c],{type:'text/csv'}));const a=document.createElement('a');a.href=u;a.download=n;a.click();URL.revokeObjectURL(u);}
 function dlJira(){
-  const h=['Issue Type','Summary','Business PBI','Acceptance Criteria','Labels','Epic Name','Regulatory Reference','Regulatory Criticality','Source Authority','Applicable Nation','Source Type','Frameworks Applied','GAMP Category','Evidence Stage','Business Outcome','Client Context','Source Requirement','Relevance Score','Rubric Score','Rubric Grade'];
+  const h=['Issue Type','Summary','Business PBI','Acceptance Criteria','Labels','Epic Name','Regulatory Reference','Regulatory Criticality','Source Authority','Source URL','Source Assurance Status','Applicable Nation','Source Type','Review Status','Frameworks Applied','GAMP Category','Evidence Stage','Business Outcome','Client Context','Source Requirement','Relevance Score','Readiness Score','Readiness Grade'];
   const r=allStories.map(s=>[q('Task'),q(s.title),q(s.story||''),q((s.ac||[]).join('\n')),
     q((s.labels||[]).join(',')),q(s.epic||''),q(s.regRef||''),q(s.regulatoryCriticality||''),
-    q(s.sourceAuthority||''),q(s.applicableNation||''),q(s.sourceType||''),q((s.frameworks_applied||[]).join('+')),q(s.gamp||''),q(s.phase||''),q(s.boi?.outcome||''),q(s.boi?.client_context||''),q(s.sourceRequirement||''),
+    q(s.sourceAuthority||''),q(s.sourceUrl||''),q(s.sourceAssuranceStatus||''),q(s.applicableNation||''),q(s.sourceType||''),q(s.reviewStatus||'DRAFT_UNREVIEWED'),q((s.frameworks_applied||[]).join('+')),q(s.gamp||''),q(s.phase||''),q(s.boi?.outcome||''),q(s.boi?.client_context||''),q(s.sourceRequirement||''),
     q(s.qc?.relevanceScore??''),q(s.validationRubric?.totalScore??''),q(s.validationRubric?.grade??'')]);
   dlCSV([h.join(','),...r.map(x=>x.join(','))].join('\n'),'MARAS-Business-PBI-Jira-Export.csv');
 }
 function dlADO(){
   const h=['Work Item Type','Title','Business PBI','Acceptance Criteria',
-           'Tags','Custom.RegulatoryRef','Custom.RegulatoryCriticality','Custom.SourceAuthority','Custom.ApplicableNation','Custom.SourceType','Custom.FrameworksApplied','Custom.GAMPCategory','Custom.EvidenceStage','Custom.BusinessOutcome','Custom.ClientContext','Custom.SourceRequirement','Custom.RelevanceScore','Custom.RubricScore','Custom.RubricGrade'];
+           'Tags','Custom.RegulatoryRef','Custom.RegulatoryCriticality','Custom.SourceAuthority','Custom.SourceURL','Custom.SourceAssuranceStatus','Custom.ApplicableNation','Custom.SourceType','Custom.ReviewStatus','Custom.FrameworksApplied','Custom.GAMPCategory','Custom.EvidenceStage','Custom.BusinessOutcome','Custom.ClientContext','Custom.SourceRequirement','Custom.RelevanceScore','Custom.ReadinessScore','Custom.ReadinessGrade'];
   const r=allStories.map(s=>[q('Product Backlog Item'),q(s.title),q(s.story||''),
     q((s.ac||[]).map((a,i)=>`${i+1}. ${a}`).join('\n')),
     q((s.labels||[]).join('; ')),
-    q(s.regRef||''),q(s.regulatoryCriticality||''),q(s.sourceAuthority||''),q(s.applicableNation||''),q(s.sourceType||''),q((s.frameworks_applied||[]).join('+')),q(s.gamp||''),q(s.phase||''),q(s.boi?.outcome||''),q(s.boi?.client_context||''),q(s.sourceRequirement||''),
+    q(s.regRef||''),q(s.regulatoryCriticality||''),q(s.sourceAuthority||''),q(s.sourceUrl||''),q(s.sourceAssuranceStatus||''),q(s.applicableNation||''),q(s.sourceType||''),q(s.reviewStatus||'DRAFT_UNREVIEWED'),q((s.frameworks_applied||[]).join('+')),q(s.gamp||''),q(s.phase||''),q(s.boi?.outcome||''),q(s.boi?.client_context||''),q(s.sourceRequirement||''),
     q(s.qc?.relevanceScore??''),q(s.validationRubric?.totalScore??''),q(s.validationRubric?.grade??'')]);
   dlCSV([h.join(','),...r.map(x=>x.join(','))].join('\n'),'MARAS-Business-PBI-ADO-Export.csv');
 }
@@ -3141,6 +3227,8 @@ function dlJSON(){
   // Legacy-compatible payload (main fields first) + additive QC / schema metadata
   const b=new Blob([JSON.stringify({
     generatedAt:new Date().toISOString(),
+    packageStatus:allStories.length && allStories.every(s=>s.reviewStatus==='SME_REVIEWED')?'REVIEWED':'DRAFT_REQUIRES_SME_REVIEW',
+    reviewSummary:{reviewed:allStories.filter(s=>s.reviewStatus==='SME_REVIEWED').length,total:allStories.length},
     context:{org:document.getElementById('f-org').value,project:document.getElementById('f-proj').value,
              system:document.getElementById('f-system').value,framework:document.getElementById('f-fw').value,
              businessOutcome:document.getElementById('f-outcome').value},
@@ -3199,7 +3287,7 @@ function buildAssurance(){
         </div>
         <span class="status-pill ${assuranceStatusClass(s.status)}">${assuranceStatusLabel(s.status)}</span>
       </div>
-      <div class="source-url">${s.url}</div>
+      <div class="source-url"><a href="${s.url}" target="_blank" rel="noopener noreferrer">${s.url}</a></div>
       <div class="source-meta">${s.usage}</div>
       <div class="bullet-list">${s.controls.map(c=>`<div class="bullet-item">${c}</div>`).join('')}</div>
     </div>`).join('');
@@ -3314,19 +3402,20 @@ function loadProductGradeSample(){
 
 function sourceMetaFor(reg){
   const r=(reg||'').toLowerCase();
-  if(r.includes('21 cfr')||r.includes('fda')) return {authority:'US FDA / eCFR',nation:'United States',sourceType:'Regulation / FDA guidance'};
-  if(r.includes('gdpr')) return {authority:'European Union',nation:'European Union',sourceType:'Regulation'};
-  if(r.includes('eu gmp')||r.includes('annex')||r.includes('eudralex')) return {authority:'European Commission / EudraLex',nation:'European Union',sourceType:'Guideline'};
-  if(r.includes('ich')) return {authority:'ICH',nation:'International',sourceType:'Guideline'};
-  if(r.includes('iso')) return {authority:'ISO',nation:'International',sourceType:'Licensed standard'};
-  if(r.includes('gamp')) return {authority:'ISPE / GAMP',nation:'International',sourceType:'Licensed industry standard'};
-  if(r.includes('hipaa')) return {authority:'HHS / eCFR',nation:'United States',sourceType:'Regulation'};
-  if(r.includes('mdr')) return {authority:'European Union',nation:'European Union',sourceType:'Regulation'};
+  if(r.includes('21 cfr')||r.includes('fda')) return {authority:'US FDA / eCFR',nation:'United States',sourceType:'Regulation / FDA guidance',url:'https://www.ecfr.gov/current/title-21/chapter-I/subchapter-A/part-11'};
+  if(r.includes('gdpr')) return {authority:'European Union',nation:'European Union',sourceType:'Regulation',url:'https://eur-lex.europa.eu/eli/reg/2016/679/oj'};
+  if(r.includes('eu gmp')||r.includes('annex')||r.includes('eudralex')) return {authority:'European Commission / EudraLex',nation:'European Union',sourceType:'Guideline',url:'https://health.ec.europa.eu/medicinal-products/eudralex/eudralex-volume-4_en'};
+  if(r.includes('ich')) return {authority:'ICH',nation:'International',sourceType:'Guideline',url:'https://www.ich.org/page/quality-guidelines'};
+  if(r.includes('iso')) return {authority:'ISO',nation:'International',sourceType:'Licensed standard',url:'https://www.iso.org/copyright.html'};
+  if(r.includes('gamp')) return {authority:'ISPE / GAMP',nation:'International',sourceType:'Licensed industry standard',url:'https://ispe.org/publications/guidance-documents/gamp-5'};
+  if(r.includes('hipaa')) return {authority:'HHS / eCFR',nation:'United States',sourceType:'Regulation',url:'https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-C/part-164/subpart-C'};
+  if(r.includes('alcoa')) return {authority:'US FDA',nation:'United States',sourceType:'Data integrity principle / FDA guidance',url:'https://www.fda.gov/regulatory-information/search-fda-guidance-documents/data-integrity-and-compliance-drug-cgmp-questions-and-answers'};
+  if(r.includes('mdr')) return {authority:'European Union',nation:'European Union',sourceType:'Regulation',url:'https://eur-lex.europa.eu/eli/reg/2017/745/oj'};
   const nation = normalizeJurisdictionNation(
     document.getElementById('f-jurisdiction')?.value?.trim()
     || document.getElementById('f-client-region')?.value?.trim() || ''
   ) || 'International';
-  return {authority:'Curated regulatory library',nation,sourceType:'Controlled source summary'};
+  return {authority:'Curated regulatory library',nation,sourceType:'Controlled source summary',url:''};
 }
 
 
