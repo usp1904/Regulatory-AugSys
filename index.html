@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>MARAS v6.4.0 MVP — Regulatory Business Assurance</title>
+<title>MARAS v6.4.1 MVP — Regulatory Business Assurance</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -533,10 +533,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
   <div class="sb-tree" id="tree"></div>
   <div class="sb-upload">
     <div class="sb-upl-zone">
-      <input type="file" multiple accept=".pdf,.docx,.doc,.xlsx,.xls,.txt,.csv,.json" onchange="handleSBDocs(this.files)">
+      <input type="file" multiple accept=".pdf,.docx,.doc,.xlsx,.xls,.txt,.csv,.json" disabled aria-disabled="true">
       <div class="sb-upl-ico">📄</div>
-      <div class="sb-upl-t">Upload Regulatory PDF</div>
-      <div class="sb-upl-s">FDA · EMA · ICH · WHO · ISO docs &nbsp;<span style="color:var(--ink4)">(optional)</span></div>
+      <div class="sb-upl-t">Controlled source ingestion — production gate</div>
+      <div class="sb-upl-s">Disabled until document parsing, versioning, hashing, licensing and approval are validated</div>
     </div>
     <div class="sb-docs" id="sb-docs"></div>
     <div class="sb-sel" id="sb-sel">0 of 64 selected</div>
@@ -781,10 +781,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
         <div class="try-chips" id="req-examples"></div>
       </div>
       <div class="upload-row" id="req-upload-row">
-        <input type="file" multiple accept=".pdf,.docx,.xlsx,.txt,.csv" onchange="handleReqFiles(this.files)">
+        <input type="file" multiple accept=".pdf,.docx,.xlsx,.txt,.csv" disabled aria-disabled="true">
         <div class="ur-ico">📎</div>
-        <span class="ur-txt" id="req-upload-lbl">Upload your requirements file</span>
-        <span class="ur-types">PDF · Excel · CSV · TXT &nbsp;<span style="color:var(--ink4)">(optional)</span></span>
+        <span class="ur-txt" id="req-upload-lbl">Requirement-file ingestion — production gate</span>
+        <span class="ur-types">Disabled until file parsing and validation are implemented</span>
       </div>
       <!-- Model config moved to sidebar -->
       <div id="ms-key-wrap" style="display:none"></div>
@@ -817,9 +817,12 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
     <div class="save-bar">
       <span class="save-bar-lbl">💾 Save package:</span>
       <input type="text" id="package-name-inp" placeholder="Package name (e.g. LIMS Part 11 Assurance · Q3 2025)">
+      <input type="text" id="reviewer-name-inp" placeholder="Reviewer name" aria-label="Reviewer name">
+      <input type="text" id="reviewer-role-inp" placeholder="Reviewer role" aria-label="Reviewer role">
+      <input type="text" id="review-comment-inp" placeholder="Review comment" aria-label="Review comment">
       <button class="save-bar-btn" onclick="savePackage()">Save</button>
       <span class="save-ok" id="save-ok"></span>
-      <span style="font-size:10px;color:var(--ink4)">Stored only in this browser. Export JSON for controlled retention.</span>
+      <span style="font-size:10px;color:var(--ink4)">Draft only. Browser review attestations are not electronic signatures or immutable audit records.</span>
     </div>
     <div class="stories-toolbar">
       <div class="st-info">
@@ -1080,24 +1083,32 @@ function ensureValidModel(){
   if(!apiKeyModels().some(m=>m.id===selModel)) selModel='claude';
 }
 const GXP_CHUNKS=[
-  {id:'c1',cat:'B',reg:'21 CFR Part 11',sec:'§11.10',title:'Controls for Closed Systems',reqs:['Validate systems for accuracy, reliability and performance','Limit access to authorised individuals via unique credentials','Generate computer-generated, time-stamped audit trails'],kws:['audit trail','access control','validation','closed system','electronic records']},
-  {id:'c2',cat:'B',reg:'21 CFR Part 11',sec:'§11.50',title:'Signature Manifestations',reqs:['Display printed name, date/time and meaning on all signed records','Retain signature information permanently linked to the record'],kws:['e-signature','printed name','signature meaning','electronic signature']},
-  {id:'c3',cat:'B',reg:'21 CFR Part 11',sec:'§11.10(e)',title:'Audit Trail Requirements',reqs:['Computer-generated time-stamped audit trails required','Record date and time of every operator entry and action','Audit trail must be independent and operator cannot disable'],kws:['audit trail','timestamp','operator entries','independent']},
+  {id:'c1',cat:'B',sourceKey:'PART11',reg:'21 CFR Part 11',sec:'§11.10',title:'Controls for Closed Systems',reqs:['Validate systems for accuracy, reliability and performance','Limit access to authorised individuals via unique credentials','Generate computer-generated, time-stamped audit trails'],excerpts:['Validation of systems to ensure accuracy, reliability, consistent intended performance, and the ability to discern invalid or altered records.','Limiting system access to authorized individuals.','Use of secure, computer-generated, time-stamped audit trails to independently record the date and time of operator entries and actions.'],kws:['audit trail','access control','validation','closed system','electronic records']},
+  {id:'c2',cat:'B',sourceKey:'PART11',reg:'21 CFR Part 11',sec:'§11.50',title:'Signature Manifestations',reqs:['Display printed name, date/time and meaning on all signed records','Retain signature information permanently linked to the record'],excerpts:['Signed electronic records shall contain information associated with the signing that clearly indicates all of the following: the printed name of the signer; the date and time when the signature was executed; and the meaning associated with the signature.','The items identified in paragraphs (a)(1), (a)(2), and (a)(3) of this section shall be subject to the same controls as for electronic records and shall be included as part of any human readable form of the electronic record.'],kws:['e-signature','printed name','signature meaning','electronic signature']},
+  {id:'c3',cat:'B',sourceKey:'PART11',reg:'21 CFR Part 11',sec:'§11.10(e)',title:'Audit Trail Requirements',reqs:['Computer-generated time-stamped audit trails required','Record date and time of every operator entry and action','Audit trail must be independent and operator cannot disable'],excerpts:['Use of secure, computer-generated, time-stamped audit trails to independently record the date and time of operator entries and actions.','Record changes shall not obscure previously recorded information.','Such audit trail documentation shall be retained for a period at least as long as that required for the subject electronic records.'],kws:['audit trail','timestamp','operator entries','independent']},
   {id:'c4',cat:'C',reg:'EU GMP Annex 11',sec:'Cl.10',title:'Audit Trail — Annex 11',reqs:['Record all relevant changes to GxP critical data','Changes must be traceable to the individual who made them'],kws:['audit trail','data integrity','traceability','annex 11','EU GMP']},
   {id:'c5',cat:'B',reg:'EU GMP Annex 11',sec:'Cl.12',title:'Security Controls',reqs:['Physical and logical access controls required','Password policy and strength requirements enforced','Access rights reviewed at defined periodic intervals'],kws:['access control','security','password','annex 11','logical access']},
-  {id:'c6',cat:'C',reg:'ALCOA+',sec:'Principle',title:'Data Integrity Principles',reqs:['Attributable: linked to the person who created it','Legible: permanent and readable records','Contemporaneous: recorded at time of activity','Original or a verified true copy','Accurate: error-free, truthful'],kws:['ALCOA','data integrity','attributable','legible','contemporaneous','accurate']},
+  {id:'c6',cat:'C',sourceKey:'FDA_DI',reg:'FDA Data Integrity Guidance',sec:'Q1',title:'Data Integrity Principles',reqs:['Attributable: linked to the person who created it','Legible: permanent and readable records','Contemporaneous: recorded at time of activity','Original or a verified true copy','Accurate: error-free, truthful'],excerpts:['Data integrity refers to the completeness, consistency, and accuracy of data.','Data should be attributable, legible, contemporaneously recorded, original or a true copy, and accurate (ALCOA).','Data integrity is critical throughout the CGMP data life cycle.'],kws:['ALCOA','data integrity','attributable','legible','contemporaneous','accurate']},
   {id:'c7',cat:'E',reg:'HIPAA Security Rule',sec:'§164.312',title:'Technical Safeguards',reqs:['Implement unique user identification for all users','Automatic logoff after period of inactivity','Encryption and decryption of electronic PHI in transit and at rest'],kws:['HIPAA','PHI','encryption','access control','automatic logoff']},
   {id:'c8',cat:'E',reg:'GDPR',sec:'Art.25',title:'Data Protection by Design',reqs:['Implement appropriate technical and organisational measures','Ensure only necessary personal data is processed','Technically enable data subject rights (access, erasure, portability)'],kws:['GDPR','privacy','data protection','by design','data subject rights']},
-  {id:'c9',cat:'F',reg:'GAMP5',sec:'Ch.7',title:'IQ/OQ/PQ Validation',reqs:['Installation Qualification verifies system installed correctly','Operational Qualification tests all system functions','Performance Qualification confirms consistent performance'],kws:['IQ','OQ','PQ','validation','GAMP5','CSV','installation']},
-  {id:'c10',cat:'H',reg:'ISO 13485',sec:'§7.3',title:'Design Controls',reqs:['Design and development planning documentation required','Design input requirements formally documented','Design verification and validation activities required'],kws:['design control','medical device','ISO 13485','design input','verification']},
+  {id:'c9',cat:'F',sourceKey:'GAMP5',licenseGate:true,reg:'GAMP 5',sec:'Licensed source',title:'IQ/OQ/PQ Validation',reqs:['Installation Qualification verifies system installed correctly','Operational Qualification tests all system functions','Performance Qualification confirms consistent performance'],kws:['IQ','OQ','PQ','validation','GAMP5','CSV','installation']},
+  {id:'c10',cat:'H',sourceKey:'ISO13485',licenseGate:true,medicalDeviceOnly:true,reg:'ISO 13485',sec:'Licensed source',title:'Design Controls',reqs:['Design and development planning documentation required','Design input requirements formally documented','Design verification and validation activities required'],kws:['design control','medical device','ISO 13485','design input','verification']},
   {id:'c11',cat:'H',reg:'EU MDR',sec:'Annex IX',title:'Conformity Assessment',reqs:['Technical documentation requirements for conformity','QMS audit requirements must be satisfied','Post-market surveillance plan must be established and maintained'],kws:['MDR','conformity','post-market','CE marking','technical documentation']},
   {id:'c12',cat:'A',reg:'ICH Q10',sec:'§2',title:'Pharmaceutical Quality System',reqs:['Management responsibility and review processes defined','CAPA system implementation and effectiveness monitoring','Change management process for GxP changes'],kws:['PQS','CAPA','change management','ICH Q10','management review']},
   {id:'c13',cat:'A',reg:'ICH Q9(R1)',sec:'Quality Risk Management',title:'Quality Risk Management',reqs:['Apply systematic quality risk management to product quality and patient safety','Evaluate risk severity, occurrence and detectability using documented rationale','Review and update risk controls through the product lifecycle'],kws:['quality risk management','QRM','risk assessment','severity','detectability']},
   {id:'c14',cat:'G',reg:'EU GMP Chapter 7',sec:'Outsourced Activities',title:'Outsourced Activities & Vendor Qualification',reqs:['Define responsibilities for outsourced GMP activities in a written agreement','Qualify and periodically review vendors performing regulated work','Ensure outsourced activities remain under the pharmaceutical quality system'],kws:['outsourced activities','vendor qualification','supplier','quality agreement','chapter 7']},
   {id:'c15',cat:'F',reg:'EU GMP Annex 15',sec:'Qualification & Validation',title:'Performance Qualification',reqs:['Demonstrate process or system performance under routine operating conditions','Define acceptance criteria before PQ execution','Retain approved qualification protocol, execution evidence and summary report'],kws:['performance qualification','PQ','qualification','validation evidence','annex 15']},
   {id:'c16',cat:'A',reg:'ICH Q10',sec:'CAPA',title:'CAPA System Effectiveness',reqs:['Investigate root cause for quality issues and deviations','Define corrective and preventive actions with accountable owners','Verify CAPA effectiveness and document closure evidence'],kws:['CAPA','corrective action','preventive action','deviation','root cause']},
-  {id:'c17',cat:'F',reg:'FDA CSA / GAMP5',sec:'CSV/CSA',title:'Computer Software Assurance',reqs:['Apply risk-based assurance for software used in production or quality systems','Scale testing rigor according to intended use and patient/product risk','Maintain traceability between requirement, risk, test evidence and approval'],kws:['CSV','CSA','GAMP5','software assurance','traceability','test evidence']},
+  {id:'c17',cat:'F',sourceKey:'FDA_CSA',medicalDeviceOnly:true,reg:'FDA CSA Guidance',sec:'Computer Software Assurance (February 2026)',title:'Computer Software Assurance',reqs:['Apply risk-based assurance for software used in production or quality management systems','Scale testing rigor according to intended use and patient/product risk','Maintain objective evidence for assurance activities supporting regulatory requirements'],excerpts:['Computer software assurance is a risk-based approach to establish confidence in the automation used for production or quality management systems.','This guidance identifies where additional rigor may be appropriate.','Testing activities may be applied to establish computer software assurance and provide objective evidence to fulfill regulatory requirements.'],kws:['CSA','software assurance','risk-based assurance','objective evidence','medical device']},
 ];
+
+const CONTROLLED_SOURCES={
+  PART11:{authority:'US FDA / eCFR',nation:'United States',sourceType:'Regulation',url:'https://www.ecfr.gov/current/title-21/chapter-I/subchapter-A/part-11',sourceVersion:'Current eCFR',effectiveDate:'1997-08-20',capturedAt:'2026-08-14',licenseTag:'PUBLIC_US_GOVERNMENT',sourceApprovalStatus:'SME_PENDING'},
+  FDA_DI:{authority:'US FDA',nation:'United States',sourceType:'Nonbinding guidance',url:'https://www.fda.gov/regulatory-information/search-fda-guidance-documents/data-integrity-and-compliance-drug-cgmp-questions-and-answers',sourceVersion:'December 2018',effectiveDate:'2018-12-13',capturedAt:'2026-08-14',licenseTag:'PUBLIC_US_GOVERNMENT',sourceApprovalStatus:'SME_PENDING'},
+  FDA_CSA:{authority:'US FDA',nation:'United States',sourceType:'Nonbinding medical-device guidance',url:'https://www.fda.gov/regulatory-information/search-fda-guidance-documents/computer-software-assurance-production-and-quality-management-system-software',sourceVersion:'Final guidance, February 2026',effectiveDate:'2026-02-01',capturedAt:'2026-08-14',licenseTag:'PUBLIC_US_GOVERNMENT',sourceApprovalStatus:'SME_PENDING'},
+  GAMP5:{authority:'ISPE / GAMP',nation:'International',sourceType:'Licensed industry standard',url:'https://ispe.org/publications/guidance-documents/gamp-5',sourceVersion:'Customer licensed copy required',effectiveDate:'',capturedAt:'2026-08-14',licenseTag:'LICENSE_REQUIRED',sourceApprovalStatus:'BLOCKED_LICENSE'},
+  ISO13485:{authority:'ISO',nation:'International',sourceType:'Licensed standard',url:'https://www.iso.org/copyright.html',sourceVersion:'Customer licensed copy required',effectiveDate:'',capturedAt:'2026-08-14',licenseTag:'LICENSE_REQUIRED',sourceApprovalStatus:'BLOCKED_LICENSE'}
+};
 
 const SOURCE_TRUST=[
   {name:'21 CFR Part 11',authority:'US FDA / eCFR',docClass:'Regulation',region:'United States',status:'pass',
@@ -1151,7 +1162,7 @@ const ASSURANCE_CRITERIA=[
    validation:'The demo engine creates FMEA risk register, RPN score, mitigation, owner, and regulatory criticality without assigning delivery ranking or effort estimates.',
    proof:'Governance risk output and business sequencing step.'},
   {name:'Validation evidence package',status:'pass',
-   validation:'The pipeline assembles RTM, interpretation log, gate decisions, risk register, business assurance review record, evidence readiness decision, and readiness score.',
+   validation:'The pipeline assembles draft RTM, interpretation log, gate decisions, risk register, review record, evidence decision, and readiness score; approval remains external.',
    proof:'Retrospective & Evidence pipeline step.'},
   {name:'Inspection readiness gap detection',status:'pass',
    validation:'MARAS flags missing negative tests, missing test environment documentation, missing dual sign-off, and submission readiness false when evidence is incomplete.',
@@ -1248,7 +1259,7 @@ const PRODUCTIVITY_CRITERIA=[
    maras:'Roadmaps regulatory-change diffing into impacted systems, SOPs, PBIs, tests and evidence deltas.',
    proof:'This is presented as a production gate, not falsely claimed in the demo.'},
   {name:'Downstream tool neutrality',impact:'Avoids being only a Jira feature',
-   maras:'Exports business PBIs and evidence metadata to Jira, ADO or JSON after assurance is complete.',
+   maras:'Exports clearly watermarked draft business PBIs and evidence metadata to Jira, ADO or JSON for controlled downstream review.',
    proof:'Jira becomes an execution target, not the center of product value.'},
 ];
 
@@ -1711,7 +1722,7 @@ const H = {
 };
 
 /* ════════════════════════════════════════════════════════════════════
-   QUALITY CONTROL LAYER v6.4.0 MVP
+   QUALITY CONTROL LAYER v6.4.1 MVP
    1) Scope control  2) Source relevance ranking  3) Duplicate suppression
    4) Jurisdiction filtering  5) Output normalization
    6) Scored validation rubric  7) FDA clinical data standardization schema
@@ -1891,7 +1902,7 @@ function resolveScopeControls() {
 
 function scoreSourceRelevance(chunk, req, scope) {
   const qt = (req || '').toLowerCase();
-  const meta = sourceMetaFor(chunk.reg);
+  const meta = sourceMetaFor(chunk.reg, chunk.sourceKey);
   const nation = normalizeJurisdictionNation(meta.nation);
   let score = 0;
   const matchedKws = (chunk.kws || []).filter(k => qt.includes(k.toLowerCase()));
@@ -1911,7 +1922,7 @@ function scoreSourceRelevance(chunk, req, scope) {
     aff.forEach(a => { if (blob.includes(a.toLowerCase())) score += 2; });
   }
   const domainMismatch = (selDomain === 'Pharma Mfg' || selDomain === 'Biotech R&D' || selDomain === 'Clinical') && chunk.cat === 'H';
-  const deviceMismatch = selDomain === 'Med Devices' ? false : chunk.cat === 'H' && !/medical device|iso 13485|eu mdr/i.test(qt);
+  const deviceMismatch = selDomain === 'Med Devices' ? false : !!chunk.medicalDeviceOnly || (chunk.cat === 'H' && !/medical device|iso 13485|eu mdr/i.test(qt));
   if (domainMismatch || deviceMismatch) score -= 30;
   const inJurisdiction = !scope.allowedNations || scope.allowedNations.has(nation) || nation === 'International';
   if (scope.allowedNations) {
@@ -2014,7 +2025,8 @@ function scoreValidationRubric(story, scope) {
   checks.push({ id:'traceability', label:'Source traceability (reg + section / req_id)', weight:15, pass:hasTrace, score:hasTrace?15:0 });
   const hasCitation = !!(story.regulation && story.section && story.sourceAuthority && story.sourceUrl);
   const citationVerified = hasCitation && story.sourceExcerptVerified === true;
-  checks.push({ id:'citation', label:'Source metadata and verified excerpt', weight:15, pass:citationVerified, score:citationVerified?15:(hasCitation?9:3) });
+  const sourceApproved = story.sourceApprovalStatus === 'SME_APPROVED';
+  checks.push({ id:'citation', label:'Source metadata, exact excerpt and SME approval', weight:15, pass:citationVerified && sourceApproved, score:(citationVerified&&sourceApproved)?15:(citationVerified?11:(hasCitation?7:3)) });
   const accept = story.accept || {};
   const acceptOk = !!(accept.action && accept.expected && accept.pass_fail && accept.traceable);
   checks.push({ id:'accept', label:'ACCEPT completeness', weight:15, pass:acceptOk, score:acceptOk?15: Math.round(15*((!!accept.action)+(!!accept.expected)+(!!accept.pass_fail)+(!!accept.traceable))/4) });
@@ -2029,12 +2041,13 @@ function scoreValidationRubric(story, scope) {
   const jurOk = !story.qc || story.qc.inJurisdiction !== false;
   checks.push({ id:'scope_jurisdiction', label:'Scope & jurisdiction fit', weight:15, pass:scopeOk && jurOk, score:(scopeOk&&jurOk)?15: (scopeOk||jurOk)?8:0 });
   const text = `${story.title||''} ${story.story||''}`;
-  const brokenGrammar = /\bmust\s+(?:attributable|legible|contemporaneous|computer-generated|management responsibility|installation qualification|operational qualification|performance qualification|design and development planning)\b/i.test(text);
+  const brokenGrammar = /\bmust\s+(?:attributable|legible|contemporaneous|computer-generated|management responsibility|installation qualification|operational qualification|performance qualification|design and development planning)\b/i.test(text) || /\bmust\b[^.]{0,60}\bmust\b/i.test(text) || /is defensible against/i.test(text);
   const genericOutcome = /defensible\s+GxP system regulated operations/i.test(text);
   const semanticOk = !brokenGrammar && !genericOutcome && String(story.story||'').length >= 70;
   checks.push({ id:'semantic_quality', label:'Semantic clarity and business specificity', weight:15, pass:semanticOk, score:semanticOk?15:(brokenGrammar?0:7) });
-  const total = checks.reduce((a,c)=>a+c.score,0);
-  const hardGatePass = citationVerified && semanticOk && scopeOk && jurOk;
+  const hardGatePass = citationVerified && sourceApproved && semanticOk && scopeOk && jurOk;
+  const rawTotal = checks.reduce((a,c)=>a+c.score,0);
+  const total = hardGatePass ? rawTotal : Math.min(rawTotal, 69);
   const grade = !hardGatePass ? 'REVIEW' : total >= 90 ? 'A' : total >= QC_CONFIG.rubricPassThreshold ? 'B' : total >= 55 ? 'C' : 'D';
   return {
     totalScore: total,
@@ -2065,7 +2078,8 @@ function toFdaClinicalStandardPackage(stories, pipelineResult, scope, qcReport) 
       clientRegion: scope.clientRegion || '',
       scope: scope.scopeLabel,
       mode: demoMode ? 'demo' : 'live-ai',
-      standard: 'FDA clinical / GxP regulatory assurance'
+      standard: 'FDA clinical / GxP regulatory assurance',
+      packageStatus: 'DRAFT_NOT_CONTROLLED'
     },
     qualityControl: {
       scopeControl: true,
@@ -2094,6 +2108,12 @@ function toFdaClinicalStandardPackage(stories, pipelineResult, scope, qcReport) 
         url: s.sourceUrl || '',
         assuranceStatus: s.sourceAssuranceStatus || 'CURATED_SUMMARY_REQUIRES_SME_REVIEW',
         excerptVerified: s.sourceExcerptVerified === true,
+        excerpt: s.sourceExcerpt || '',
+        version: s.sourceVersion || '',
+        effectiveDate: s.sourceEffectiveDate || '',
+        capturedAt: s.sourceCapturedAt || '',
+        licenseTag: s.sourceLicenseTag || '',
+        approvalStatus: s.sourceApprovalStatus || 'SME_PENDING',
         nation: normalizeJurisdictionNation(s.applicableNation || ''),
         class: s.sourceType || '',
         citation: `${s.regulation} ${s.section}`.trim(),
@@ -2108,7 +2128,7 @@ function toFdaClinicalStandardPackage(stories, pipelineResult, scope, qcReport) 
       evidence: { stage: s.phase || '', gamp: s.gamp || '' },
       relevance: s.qc?.relevanceScore ?? null,
       validationRubric: s.validationRubric || null,
-      review: { status:s.reviewStatus || 'DRAFT_UNREVIEWED', reviewedAt:s.reviewedAt || null },
+      review: { status:s.reviewStatus || 'DRAFT_UNREVIEWED', reviewerName:s.reviewerName||'', reviewerRole:s.reviewerRole||'', comment:s.reviewComment||'', reviewedAt:s.reviewedAt || null, history:s.reviewHistory||[] },
       clinicalCoding: {
         domain: s.labels?.[0] || s.type,
         systemAffinity: scope.systemType || '',
@@ -2204,7 +2224,7 @@ function applyQualityControls(rawStories, rankedChunks, req, pipelineExtras) {
 function rankChunks(req) {
   const scope = resolveScopeControls();
   // 1. Scope control — identical category/tree filter semantics to main
-  const scoped = GXP_CHUNKS.map(c => {
+  const scoped = GXP_CHUNKS.filter(c => !c.licenseGate).map(c => {
     const _qc = scoreSourceRelevance(c, req, scope);
     return { ...c, _qc };
   }).filter(c => c._qc.inScopeCategory);
@@ -2474,10 +2494,11 @@ function runDemoEngine(req, ctx) {
   function toBusinessAction(text){
     const t=String(text||'').replace(/\.$/,'');
     const rules=[
-      [/^Attributable:/i,'ensure records are attributable and'],
-      [/^Legible:/i,'ensure records are legible with'],
-      [/^Contemporaneous:/i,'ensure records are contemporaneous and'],
+      [/^Attributable: linked to the person who created it$/i,'ensure each record is attributable to its creator'],
+      [/^Legible: permanent and readable records$/i,'ensure records remain permanent and readable'],
+      [/^Contemporaneous: recorded at time of activity$/i,'record each activity when it occurs'],
       [/^Computer-generated time-stamped audit trails required$/i,'implement computer-generated, time-stamped audit trails'],
+      [/^Audit trail must be independent and operator cannot disable$/i,'ensure the audit trail is independent and cannot be disabled by operators'],
       [/^Installation Qualification verifies/i,'perform Installation Qualification to verify'],
       [/^Operational Qualification tests/i,'perform Operational Qualification to test'],
       [/^Performance Qualification confirms/i,'perform Performance Qualification to confirm'],
@@ -2504,7 +2525,7 @@ function runDemoEngine(req, ctx) {
     acceptance_criteria: c.reqs || [],
     status: 'DRAFT_REQUIRES_SME_REVIEW', flags: ['Curated source summary; verify exact source excerpt before approval'],
   }));
-  const intakeSummary = {total:regObjs.length,complete:regObjs.length,flagged:0,gate:'PROCEED',block_reason:''};
+  const intakeSummary = {total:regObjs.length,complete:0,flagged:regObjs.length,gate:'PROCEED_DRAFT_ONLY',block_reason:'Source approval and controlled evidence remain outstanding'};
 
   // ── Agent 2: Agile Governance (FMEA) ────────────────────────────
   const riskReg = top.slice(0,6).map((c, i) => {
@@ -2520,7 +2541,7 @@ function runDemoEngine(req, ctx) {
       owner: rpn>150?'Business Owner':'QA Lead',
     };
   });
-  const govGate = riskReg.some(r=>r.risk_level==='CRITICAL') ? 'CONDITIONAL' : 'APPROVED';
+  const govGate = 'DRAFT_RISK_REVIEW_REQUIRED';
 
   // ── Agent 3: Business PBI Decomposition (BOI + ACCEPT + INVEST + 3C) ───
   let itemNo = 0;
@@ -2536,12 +2557,13 @@ function runDemoEngine(req, ctx) {
       const conciseReq = rq.length > 86 ? rq.slice(0,83)+'...' : rq;
       const lowerReq = toBusinessAction(rq);
       const pbiId = `${pfx}-${String(itemNo).padStart(3,'0')}`;
-      const srcMeta = sourceMetaFor(c.reg);
+      const srcMeta = sourceMetaFor(c.reg, c.sourceKey);
+      const sourceExcerpt = (c.excerpts||[])[ri] || '';
       const clientFit = `Region: ${clientRegion}; Client delta: ${clientDelta}; Past audit/backlog gap: ${auditGap}`;
       const ac = [
-        `Given ${c.reg} ${c.sec} is the approved source, when ${sys} supports ${businessArea.toLowerCase()}, then it demonstrably implements: ${rq}.`,
+        `Given ${c.reg} ${c.sec} is the identified source pending SME approval, when ${sys} supports ${businessArea.toLowerCase()}, then it demonstrably implements: ${rq}.`,
         `Given QA reviews ${pbiId}, when objective evidence is inspected, then pass/fail results link to ${reqId} and cannot rely on unsupported assumptions.`,
-        `Given the client context is "${clientFit}", when the control is approved, then the evidence package shows reduced regulatory and operational risk.`
+        `Given the client context is "${clientFit}", when the draft control is reviewed, then the evidence package records the remaining regulatory and operational risk.`
       ];
       return {
         num: itemNo,
@@ -2559,7 +2581,7 @@ function runDemoEngine(req, ctx) {
           impact: `Reduces ${c.title.toLowerCase()} exposure for ${sys} while preserving traceability to ${c.reg} ${c.sec}`,
           client_context: clientFit
         },
-        story: `For ${businessArea.toLowerCase()} in ${sys}, the business must ${lowerReq} so that ${businessOutcome} is defensible against ${c.reg} ${c.sec}.`,
+        story: `For ${businessArea.toLowerCase()} in ${sys}, the business must ${lowerReq} to support ${businessOutcome.charAt(0).toLowerCase()+businessOutcome.slice(1)} and demonstrate alignment with ${c.reg} ${c.sec}.`,
         invest: {independent:'yes',negotiable:'yes',valuable:`Protects ${businessArea.toLowerCase()} and proves ${c.reg} ${c.sec} compliance`,estimable:'yes',small:'yes',testable:'yes'},
         ac,
         accept: {
@@ -2576,8 +2598,14 @@ function runDemoEngine(req, ctx) {
         applicableNation: srcMeta.nation,
         sourceType: srcMeta.sourceType,
         sourceUrl: srcMeta.url || '',
-        sourceExcerptVerified: false,
-        sourceAssuranceStatus: 'CURATED_SUMMARY_REQUIRES_SME_REVIEW',
+        sourceVersion: srcMeta.sourceVersion || '',
+        sourceEffectiveDate: srcMeta.effectiveDate || '',
+        sourceCapturedAt: srcMeta.capturedAt || '',
+        sourceLicenseTag: srcMeta.licenseTag || 'REVIEW_REQUIRED',
+        sourceApprovalStatus: srcMeta.sourceApprovalStatus || 'SME_PENDING',
+        sourceExcerpt,
+        sourceExcerptVerified: !!sourceExcerpt,
+        sourceAssuranceStatus: sourceExcerpt ? 'EXACT_EXCERPT_CAPTURED_SME_APPROVAL_PENDING' : 'CURATED_SUMMARY_REQUIRES_SOURCE_VERIFICATION',
         sourceRequirement: rq,
         labels: (c.kws||[]).slice(0,3),
       };
@@ -2602,7 +2630,7 @@ function runDemoEngine(req, ctx) {
 
   // ── Agent 5: Board Recommendation ───────────────────────────────
   const board = {
-    columns: ['Source Validated','Control Defined','PBI Ready','Evidence Needed','QA Review','Business Approved'],
+    columns: ['Source Identified','Draft Control','Draft PBI','Evidence Needed','QA Review','Business Approval Required'],
     swimlanes: [...new Set(qcStories.map(s=>s.accept?.traceable?.split('·')[1]?.trim().split(' ')[0]||'GxP'))].map(d=>({name:d,stories:qcStories.filter(s=>s.regulation.includes(d)).map(s=>s.id)})),
     wip_limits: {'QA Review':1,'Evidence Needed':3},
     compliance_gates: [{column:'QA Review',required_by:fw,approver:'QA Lead',auto_transition:false}],
@@ -2625,7 +2653,7 @@ function runDemoEngine(req, ctx) {
 
   // Process 4: Business evidence review
   const review = {
-    evidence_decision: 'CONDITIONALLY_READY',
+    evidence_decision: 'NOT_READY',
     p0_coverage_pct: 0,
     checklist: {p0_test_cases:false,negative_tests:false,env_documented:false,dual_signoff:false},
     blocking_gaps: [
@@ -2656,17 +2684,17 @@ function runDemoEngine(req, ctx) {
     },
     evidence_package: {
       package_id: `EP-${ts}-001`,
-      audit_readiness_score: Math.min(92, Math.round(52 + avgRubric * 0.35)),
+      audit_readiness_score: 0,
       documents: [
-        {title:'Requirements Traceability Matrix (RTM)',status:'COMPLETE'},
-        {title:'Regulatory Interpretation Log',status:'COMPLETE'},
-        {title:'Governance Gate Decisions',status:'COMPLETE'},
-        {title:'Risk Register (FMEA)',status:'COMPLETE'},
-        {title:'Business Assurance Review Record',status:'PARTIAL'},
+        {title:'Requirements Traceability Matrix (RTM)',status:'GENERATED_DRAFT'},
+        {title:'Regulatory Interpretation Log',status:'GENERATED_DRAFT'},
+        {title:'Governance Gate Decisions',status:'GENERATED_DRAFT'},
+        {title:'Risk Register (FMEA)',status:'GENERATED_DRAFT'},
+        {title:'Business Assurance Review Record',status:'MISSING'},
         {title:'Evidence Readiness Decision',status:'MISSING'},
-        {title:'Outstanding Issues Log',status:'COMPLETE'},
-        {title:'Scored Validation Rubric',status:'COMPLETE'},
-        {title:'FDA Clinical Standardization Package',status:'COMPLETE'},
+        {title:'Outstanding Issues Log',status:'GENERATED_DRAFT'},
+        {title:'Scored Validation Rubric',status:'GENERATED_DRAFT'},
+        {title:'FDA Clinical Standardization Package',status:'GENERATED_DRAFT'},
       ],
       submission_ready: false,
       sign_off_required: ['Business Owner','QA Lead'],
@@ -2734,10 +2762,10 @@ function setStep(id, state, txt) {
   const body  = document.getElementById('scbod-'+id);
   if (!sp) return;
   sp.className = 'sp-step' + (state==='run'?' active':state==='done'?' done':state==='blocked'?' blocked':'');
-  if (st) st.textContent = state==='run'?'Running…':state==='done'?'Complete':state==='blocked'?'Blocked':'Waiting';
+  if (st) st.textContent = state==='run'?'Running…':state==='done'?'Drafted':state==='blocked'?'Blocked':'Waiting';
   if (ico && state==='done') ico.textContent = '✓';
   if (ico && state==='blocked') ico.textContent = '✗';
-  const bmap = {run:'scdb-run Running',done:'scdb-done Complete',blocked:'scdb-block Blocked',wait:'scdb-wait Waiting'};
+  const bmap = {run:'scdb-run Running',done:'scdb-done Drafted',blocked:'scdb-block Blocked',wait:'scdb-wait Waiting'};
   const [bc,bl] = (bmap[state]||'scdb-wait Waiting').split(' ');
   if (badge) { badge.className='scd-badge '+bc; badge.textContent=bl; }
   if (dot) dot.style.background = state==='done'?'var(--teal)':state==='blocked'?'var(--red)':state==='run'?DOTCOLS[id]||'var(--amber)':'var(--border2)';
@@ -2819,7 +2847,7 @@ async function orchestratorDemo(req, ctx) {
   // ── Gate function — harness decides, not agents ──
   function gate(agentId, condition, reason) {
     const pass = condition;
-    H.gateLog.push({agent:agentId, decision:pass?'PROCEED':'BLOCK', reason, ts:new Date().toISOString()});
+    H.gateLog.push({agent:agentId, decision:pass?'PROCEED_DRAFT_ONLY':'BLOCK', reason, ts:new Date().toISOString()});
     if (!pass) { H.blocked=true; H.blockReason=reason; }
     return pass;
   }
@@ -2830,7 +2858,7 @@ async function orchestratorDemo(req, ctx) {
   /* Loop 1 — Regulatory Intelligence */
   setStep('intake','run');
   await tick();
-  if (!gate('intake', result.intakeSummary.gate==='PROCEED', 'Intake: '+result.intakeSummary.block_reason||'')) {
+  if (!gate('intake', ['PROCEED','PROCEED_DRAFT_ONLY'].includes(result.intakeSummary.gate), 'Intake: '+(result.intakeSummary.block_reason||''))) {
     setStep('intake','blocked','Gate blocked: '+H.blockReason); setStatus('block','Pipeline blocked at intake'); return;
   }
   setStep('intake','done',
@@ -2838,7 +2866,7 @@ async function orchestratorDemo(req, ctx) {
     `SCOPE: ${result.scope?.scopeLabel||'default'}\n`+
     `Jurisdiction suppressed: ${(result.qcReport?.jurisdictionFilter?.suppressed||[]).length} · Relevance-ranked sources: ${(result.qcReport?.sourceRelevanceRanking||[]).length}\n\n`+
     result.regObjs.map(r=>`  ${r.req_id} [${r.criticality}] ${r.source}\n  Domain: ${r.compliance_domain} · Status: ${r.status}\n  Description: ${r.description}`).join('\n\n')+
-    `\n\nGate: PROCEED → Governance Agent`);
+    `\n\nGate: PROCEED_DRAFT_ONLY → Governance review`);
 
   setStep('govern','run');
   await tick();
@@ -2875,7 +2903,7 @@ async function orchestratorDemo(req, ctx) {
     `BUSINESS SEQUENCING — flexible delivery handoff\n\n`+
     `P0 criticality PBIs: ${result.p0Count}\nP1 criticality PBIs: ${result.p1Count}\nDelivery ranking and effort: team-owned\n\n`+
     result.backlog.map(b=>`  ${b.id} → ${b.regulatory_criticality} · ${b.business_sequence}`).join('\n')+
-    `\n\nGate: PROCEED → Evidence Workflow`);
+    `\n\nGate: PROCEED_DRAFT_ONLY → Evidence workflow`);
 
   setStep('board','run');
   await tick();
@@ -2885,7 +2913,7 @@ async function orchestratorDemo(req, ctx) {
     `Swimlanes: ${result.board.swimlanes.map(s=>s.name).join(', ')}\n\n`+
     `WIP Limits: QA Review = 1 (no batching of compliance reviews)\n\n`+
     `Compliance Gates:\n`+result.board.compliance_gates.map(g=>`  ${g.column} → Required by: ${g.required_by} · Approver: ${g.approver} · Auto-transition: ${g.auto_transition}`).join('\n')+
-    `\n\nGate: PROCEED → Productivity Analytics`);
+    `\n\nGate: PROCEED_DRAFT_ONLY → Readiness analytics`);
 
   /* Loop 3 — Assurance Evidence */
   setStep('analytics','run');
@@ -2917,7 +2945,7 @@ async function orchestratorDemo(req, ctx) {
     `\n\nTo improve:\n`+ev.retrospective.improve.map(w=>`  · ${w}`).join('\n')+
     `\n\nAction items:\n`+ev.retrospective.actions.map(a=>`  → ${a.action} (${a.owner}, ${a.due})`).join('\n')+
     `\n\nEvidence Package: ${ev.evidence_package.package_id}\nAudit Readiness: ${ev.evidence_package.audit_readiness_score}/100\n`+
-    ev.evidence_package.documents.map(d=>`  ${d.status==='COMPLETE'?'✓':d.status==='PARTIAL'?'◑':'✗'} ${d.title} — ${d.status}`).join('\n')+
+    ev.evidence_package.documents.map(d=>`  ${d.status==='GENERATED_DRAFT'?'◑':'✗'} ${d.title} — ${d.status}`).join('\n')+
     `\n\nsubmission_ready: ${ev.evidence_package.submission_ready} — ${ev.evidence_package.sign_off_required.join(' + ')} sign-off required`);
 
   setStatus('done', `Draft assembled · ${result.stories.length} business PBIs · SME/QA review required before use`);
@@ -2998,7 +3026,7 @@ async function orchestratorLive(req, ctx) {
     setStatus('done','Draft generated · '+allStories.length+' business PBIs · SME/QA review required before use');
     renderStories(allStories, {qcReport:H.qcReport, healthcarePackage:H.healthcarePackage});
   } else if(!H.blocked){
-    setStatus('done','All agents complete — switch to Demo mode for pre-built business PBI examples');
+    setStatus('done','Draft processing complete — switch to Demo mode for pre-built business PBI examples');
   } else {
     setStatus('block','Pipeline blocked — see agent details above');
   }
@@ -3050,10 +3078,10 @@ function renderStories(stories, pipelineResult) {
     (avg!=null ? ` · rubric avg ${avg}/100` : '') +
     (qc?.duplicateSuppression?.removed ? ` · ${qc.duplicateSuppression.removed} duplicates suppressed` : '');
   document.getElementById('exp-btns').innerHTML = `
-    <button class="exp-btn" style="background:#0052cc" onclick="dlJira()">↓ Jira PBI CSV</button>
-    <button class="exp-btn" style="background:#0078d4" onclick="dlADO()">↓ ADO PBI CSV</button>
-    <button class="exp-btn" style="background:#0e7a62" onclick="dlFdaClinicalSchema()">↓ FDA Clinical Schema</button>
-    <button class="exp-btn" style="background:#374151" onclick="dlJSON()">↓ JSON</button>`;
+    <button class="exp-btn" style="background:#0052cc" onclick="dlJira()">↓ Draft Jira CSV</button>
+    <button class="exp-btn" style="background:#0078d4" onclick="dlADO()">↓ Draft ADO CSV</button>
+    <button class="exp-btn" style="background:#0e7a62" onclick="dlFdaClinicalSchema()">↓ Draft FDA Schema</button>
+    <button class="exp-btn" style="background:#374151" onclick="dlJSON()">↓ Draft JSON</button>`;
 
   const qcBanner = qc ? `<div class="qc-banner" id="qc-banner">
     <div class="qc-banner-title">Automated readiness checks — SME/QA approval still required</div>
@@ -3111,7 +3139,8 @@ function renderStories(stories, pipelineResult) {
           ${fwBadges}
         </div>
         <p class="sc-story">${escapeHtml(s.story||s.userStory)}</p>
-        ${sourceUrl?`<div style="font-size:10px;margin:4px 0 8px"><a href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">Open authoritative source ↗</a> · Curated summary; exact excerpt not yet verified</div>`:`<div style="font-size:10px;color:#b45309;margin:4px 0 8px">No authoritative source URL mapped — clarification required</div>`}
+        ${sourceUrl?`<div style="font-size:10px;margin:4px 0 8px"><a href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">Open authoritative source ↗</a> · ${s.sourceExcerptVerified?'Exact excerpt captured':'Curated summary'} · ${escapeHtml(s.sourceApprovalStatus||'SME_PENDING')}</div>`:`<div style="font-size:10px;color:#b45309;margin:4px 0 8px">No authoritative source URL mapped — clarification required</div>`}
+        ${s.sourceExcerpt?`<div style="font-size:10px;color:#475569;margin:0 0 8px;padding:7px 9px;background:#f8fafc;border-left:2px solid #94a3b8"><b>Source excerpt:</b> ${escapeHtml(s.sourceExcerpt)}<br><b>Version:</b> ${escapeHtml(s.sourceVersion||'')} · <b>Captured:</b> ${escapeHtml(s.sourceCapturedAt||'')} · <b>License:</b> ${escapeHtml(s.sourceLicenseTag||'')}</div>`:''}
         ${boiHtml}${investHtml}${rubHtml}
       </div>
       <button class="sc-expand" onclick="toggleAC(this)">
@@ -3132,7 +3161,7 @@ function renderStories(stories, pipelineResult) {
         ${s.regRef?`<div class="ac-ref">📖 ${escapeHtml(s.regRef)}</div>`:''}
       </div>
       <div class="sc-footer">
-        <button class="ftr-btn ${s.reviewStatus==='SME_REVIEWED'?'v':''}" onclick="markFtr(this,'v',${i})">✓ SME reviewed</button>
+        <button class="ftr-btn ${s.reviewStatus==='SME_REVIEW_ATTESTED_DRAFT'?'v':''}" onclick="markFtr(this,'v',${i})">✓ SME review attested (draft)</button>
         <button class="ftr-btn ${s.reviewStatus==='CLARIFICATION_REQUIRED'?'c':''}" onclick="markFtr(this,'c',${i})">⚠ Clarify</button>
         <button class="ftr-btn" onclick="markFtr(this,'n',${i})">N/A</button>
       </div>
@@ -3146,11 +3175,26 @@ function toggleAC(btn){
   btn.querySelector('span:last-child').style.transform=ac.classList.contains('show')?'rotate(180deg)':'';
 }
 function markFtr(btn,st,index){
+  const reviewerName=document.getElementById('reviewer-name-inp')?.value.trim()||'';
+  const reviewerRole=document.getElementById('reviewer-role-inp')?.value.trim()||'';
+  const reviewComment=document.getElementById('review-comment-inp')?.value.trim()||'';
+  if(st==='v' && (!reviewerName || !reviewerRole || !reviewComment)){
+    alert('Reviewer name, role, and comment are required for a draft review attestation. This is not an electronic signature.');
+    (!reviewerName?document.getElementById('reviewer-name-inp'):!reviewerRole?document.getElementById('reviewer-role-inp'):document.getElementById('review-comment-inp'))?.focus();
+    return;
+  }
   btn.parentElement.querySelectorAll('.ftr-btn').forEach(b=>b.className='ftr-btn');
   if(st==='v')btn.className='ftr-btn v'; else if(st==='c')btn.className='ftr-btn c';
   if(allStories[index]){
-    allStories[index].reviewStatus=st==='v'?'SME_REVIEWED':st==='c'?'CLARIFICATION_REQUIRED':'NOT_APPLICABLE';
-    allStories[index].reviewedAt=new Date().toISOString();
+    const reviewedAt=new Date().toISOString();
+    const reviewStatus=st==='v'?'SME_REVIEW_ATTESTED_DRAFT':st==='c'?'CLARIFICATION_REQUIRED':'NOT_APPLICABLE';
+    const event={status:reviewStatus,reviewerName,reviewerRole,comment:reviewComment,reviewedAt,sourceVersion:allStories[index].sourceVersion||'',sourceUrl:allStories[index].sourceUrl||''};
+    allStories[index].reviewStatus=reviewStatus;
+    allStories[index].reviewerName=reviewerName;
+    allStories[index].reviewerRole=reviewerRole;
+    allStories[index].reviewComment=reviewComment;
+    allStories[index].reviewedAt=reviewedAt;
+    allStories[index].reviewHistory=[...(allStories[index].reviewHistory||[]),event];
   }
 }
 
@@ -3161,9 +3205,9 @@ function savePackage(){
   const fw=document.getElementById('f-fw').value;
   const sys=document.getElementById('f-system').value||selApp;
   const ctx=[sys,selDomain,fw].filter(Boolean).join(' · ');
-  const reviewed=allStories.filter(s=>s.reviewStatus==='SME_REVIEWED').length;
+  const reviewed=allStories.filter(s=>s.reviewStatus==='SME_REVIEW_ATTESTED_DRAFT').length;
   const rec={key:'pkg_'+Date.now(),name,at:new Date().toISOString(),count:allStories.length,
-             packageStatus:reviewed===allStories.length?'REVIEWED':'DRAFT',reviewedCount:reviewed,
+             packageStatus:'DRAFT_NOT_CONTROLLED',reviewedCount:reviewed,
              stories:allStories,ctx,gateLog:H.gateLog};
   try{localStorage.setItem(rec.key,JSON.stringify(rec));}catch{alert('Browser storage full. Export JSON to save.');}
   document.getElementById('save-ok').textContent='Saved ✓';
@@ -3206,29 +3250,29 @@ function delPackage(key){localStorage.removeItem(key);loadSaved();}
 function q(s){return'"'+(String(s||'').replace(/"/g,'""'))+'"';}
 function dlCSV(c,n){const u=URL.createObjectURL(new Blob([c],{type:'text/csv'}));const a=document.createElement('a');a.href=u;a.download=n;a.click();URL.revokeObjectURL(u);}
 function dlJira(){
-  const h=['Issue Type','Summary','Business PBI','Acceptance Criteria','Labels','Epic Name','Regulatory Reference','Regulatory Criticality','Source Authority','Source URL','Source Assurance Status','Applicable Nation','Source Type','Review Status','Frameworks Applied','GAMP Category','Evidence Stage','Business Outcome','Client Context','Source Requirement','Relevance Score','Readiness Score','Readiness Grade'];
-  const r=allStories.map(s=>[q('Task'),q(s.title),q(s.story||''),q((s.ac||[]).join('\n')),
+  const h=['Package Status','Issue Type','Summary','Business PBI','Acceptance Criteria','Labels','Epic Name','Regulatory Reference','Regulatory Criticality','Source Authority','Source URL','Source Version','Source Captured At','Source License','Source Approval Status','Source Excerpt','Source Assurance Status','Applicable Nation','Source Type','Review Status','Reviewer Name','Reviewer Role','Review Comment','Reviewed At','Frameworks Applied','GAMP Category','Evidence Stage','Business Outcome','Client Context','Source Requirement','Relevance Score','Readiness Score','Readiness Grade'];
+  const r=allStories.map(s=>[q('DRAFT_NOT_CONTROLLED'),q('Task'),q(s.title),q(s.story||''),q((s.ac||[]).join('\n')),
     q((s.labels||[]).join(',')),q(s.epic||''),q(s.regRef||''),q(s.regulatoryCriticality||''),
-    q(s.sourceAuthority||''),q(s.sourceUrl||''),q(s.sourceAssuranceStatus||''),q(s.applicableNation||''),q(s.sourceType||''),q(s.reviewStatus||'DRAFT_UNREVIEWED'),q((s.frameworks_applied||[]).join('+')),q(s.gamp||''),q(s.phase||''),q(s.boi?.outcome||''),q(s.boi?.client_context||''),q(s.sourceRequirement||''),
+    q(s.sourceAuthority||''),q(s.sourceUrl||''),q(s.sourceVersion||''),q(s.sourceCapturedAt||''),q(s.sourceLicenseTag||''),q(s.sourceApprovalStatus||''),q(s.sourceExcerpt||''),q(s.sourceAssuranceStatus||''),q(s.applicableNation||''),q(s.sourceType||''),q(s.reviewStatus||'DRAFT_UNREVIEWED'),q(s.reviewerName||''),q(s.reviewerRole||''),q(s.reviewComment||''),q(s.reviewedAt||''),q((s.frameworks_applied||[]).join('+')),q(s.gamp||''),q(s.phase||''),q(s.boi?.outcome||''),q(s.boi?.client_context||''),q(s.sourceRequirement||''),
     q(s.qc?.relevanceScore??''),q(s.validationRubric?.totalScore??''),q(s.validationRubric?.grade??'')]);
-  dlCSV([h.join(','),...r.map(x=>x.join(','))].join('\n'),'MARAS-Business-PBI-Jira-Export.csv');
+  dlCSV([h.join(','),...r.map(x=>x.join(','))].join('\n'),'DRAFT-MARAS-Business-PBI-Jira-Export.csv');
 }
 function dlADO(){
-  const h=['Work Item Type','Title','Business PBI','Acceptance Criteria',
-           'Tags','Custom.RegulatoryRef','Custom.RegulatoryCriticality','Custom.SourceAuthority','Custom.SourceURL','Custom.SourceAssuranceStatus','Custom.ApplicableNation','Custom.SourceType','Custom.ReviewStatus','Custom.FrameworksApplied','Custom.GAMPCategory','Custom.EvidenceStage','Custom.BusinessOutcome','Custom.ClientContext','Custom.SourceRequirement','Custom.RelevanceScore','Custom.ReadinessScore','Custom.ReadinessGrade'];
-  const r=allStories.map(s=>[q('Product Backlog Item'),q(s.title),q(s.story||''),
+  const h=['Custom.PackageStatus','Work Item Type','Title','Business PBI','Acceptance Criteria',
+           'Tags','Custom.RegulatoryRef','Custom.RegulatoryCriticality','Custom.SourceAuthority','Custom.SourceURL','Custom.SourceVersion','Custom.SourceCapturedAt','Custom.SourceLicense','Custom.SourceApprovalStatus','Custom.SourceExcerpt','Custom.SourceAssuranceStatus','Custom.ApplicableNation','Custom.SourceType','Custom.ReviewStatus','Custom.ReviewerName','Custom.ReviewerRole','Custom.ReviewComment','Custom.ReviewedAt','Custom.FrameworksApplied','Custom.GAMPCategory','Custom.EvidenceStage','Custom.BusinessOutcome','Custom.ClientContext','Custom.SourceRequirement','Custom.RelevanceScore','Custom.ReadinessScore','Custom.ReadinessGrade'];
+  const r=allStories.map(s=>[q('DRAFT_NOT_CONTROLLED'),q('Product Backlog Item'),q(s.title),q(s.story||''),
     q((s.ac||[]).map((a,i)=>`${i+1}. ${a}`).join('\n')),
     q((s.labels||[]).join('; ')),
-    q(s.regRef||''),q(s.regulatoryCriticality||''),q(s.sourceAuthority||''),q(s.sourceUrl||''),q(s.sourceAssuranceStatus||''),q(s.applicableNation||''),q(s.sourceType||''),q(s.reviewStatus||'DRAFT_UNREVIEWED'),q((s.frameworks_applied||[]).join('+')),q(s.gamp||''),q(s.phase||''),q(s.boi?.outcome||''),q(s.boi?.client_context||''),q(s.sourceRequirement||''),
+    q(s.regRef||''),q(s.regulatoryCriticality||''),q(s.sourceAuthority||''),q(s.sourceUrl||''),q(s.sourceVersion||''),q(s.sourceCapturedAt||''),q(s.sourceLicenseTag||''),q(s.sourceApprovalStatus||''),q(s.sourceExcerpt||''),q(s.sourceAssuranceStatus||''),q(s.applicableNation||''),q(s.sourceType||''),q(s.reviewStatus||'DRAFT_UNREVIEWED'),q(s.reviewerName||''),q(s.reviewerRole||''),q(s.reviewComment||''),q(s.reviewedAt||''),q((s.frameworks_applied||[]).join('+')),q(s.gamp||''),q(s.phase||''),q(s.boi?.outcome||''),q(s.boi?.client_context||''),q(s.sourceRequirement||''),
     q(s.qc?.relevanceScore??''),q(s.validationRubric?.totalScore??''),q(s.validationRubric?.grade??'')]);
-  dlCSV([h.join(','),...r.map(x=>x.join(','))].join('\n'),'MARAS-Business-PBI-ADO-Export.csv');
+  dlCSV([h.join(','),...r.map(x=>x.join(','))].join('\n'),'DRAFT-MARAS-Business-PBI-ADO-Export.csv');
 }
 function dlJSON(){
   // Legacy-compatible payload (main fields first) + additive QC / schema metadata
   const b=new Blob([JSON.stringify({
     generatedAt:new Date().toISOString(),
-    packageStatus:allStories.length && allStories.every(s=>s.reviewStatus==='SME_REVIEWED')?'REVIEWED':'DRAFT_REQUIRES_SME_REVIEW',
-    reviewSummary:{reviewed:allStories.filter(s=>s.reviewStatus==='SME_REVIEWED').length,total:allStories.length},
+    packageStatus:'DRAFT_NOT_CONTROLLED',
+    reviewSummary:{draftAttestations:allStories.filter(s=>s.reviewStatus==='SME_REVIEW_ATTESTED_DRAFT').length,total:allStories.length,electronicSignature:false,immutableAuditRecord:false},
     context:{org:document.getElementById('f-org').value,project:document.getElementById('f-proj').value,
              system:document.getElementById('f-system').value,framework:document.getElementById('f-fw').value,
              businessOutcome:document.getElementById('f-outcome').value},
@@ -3239,7 +3283,7 @@ function dlJSON(){
     schemaVersion:FDA_CLINICAL_DATA_SCHEMA.schemaVersion,
     qualityControl:H.qcReport
   },null,2)],{type:'application/json'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='MARAS-Backlog.json';a.click();
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='DRAFT-MARAS-Backlog.json';a.click();
 }
 function dlFdaClinicalSchema(){
   const pkg = H.healthcarePackage || toFdaClinicalStandardPackage(allStories, {
@@ -3253,7 +3297,7 @@ function dlFdaClinicalSchema(){
     validationRubric: {averageScore:0, passCount:0, failCount:0, threshold:QC_CONFIG.rubricPassThreshold, byItem:[]}
   });
   const b=new Blob([JSON.stringify({schema:FDA_CLINICAL_DATA_SCHEMA, package:pkg},null,2)],{type:'application/json'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='MARAS-FDA-Clinical-Standard-Package.json';a.click();
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='DRAFT-MARAS-FDA-Clinical-Standard-Package.json';a.click();
 }
 // Alias for earlier QC button / saved HTML references
 function dlHealthcareSchema(){ return dlFdaClinicalSchema(); }
@@ -3400,22 +3444,24 @@ function loadProductGradeSample(){
   setStatus('idle', 'Product-grade LIMS Part 11 sample loaded — create the assurance package to run QC controls');
 }
 
-function sourceMetaFor(reg){
+function sourceMetaFor(reg,sourceKey){
+  if(sourceKey && CONTROLLED_SOURCES[sourceKey]) return {...CONTROLLED_SOURCES[sourceKey]};
   const r=(reg||'').toLowerCase();
-  if(r.includes('21 cfr')||r.includes('fda')) return {authority:'US FDA / eCFR',nation:'United States',sourceType:'Regulation / FDA guidance',url:'https://www.ecfr.gov/current/title-21/chapter-I/subchapter-A/part-11'};
+  if(r.includes('21 cfr')) return {...CONTROLLED_SOURCES.PART11};
+  if(r.includes('fda csa')) return {...CONTROLLED_SOURCES.FDA_CSA};
+  if(r.includes('fda')||r.includes('alcoa')) return {...CONTROLLED_SOURCES.FDA_DI};
   if(r.includes('gdpr')) return {authority:'European Union',nation:'European Union',sourceType:'Regulation',url:'https://eur-lex.europa.eu/eli/reg/2016/679/oj'};
   if(r.includes('eu gmp')||r.includes('annex')||r.includes('eudralex')) return {authority:'European Commission / EudraLex',nation:'European Union',sourceType:'Guideline',url:'https://health.ec.europa.eu/medicinal-products/eudralex/eudralex-volume-4_en'};
   if(r.includes('ich')) return {authority:'ICH',nation:'International',sourceType:'Guideline',url:'https://www.ich.org/page/quality-guidelines'};
-  if(r.includes('iso')) return {authority:'ISO',nation:'International',sourceType:'Licensed standard',url:'https://www.iso.org/copyright.html'};
-  if(r.includes('gamp')) return {authority:'ISPE / GAMP',nation:'International',sourceType:'Licensed industry standard',url:'https://ispe.org/publications/guidance-documents/gamp-5'};
+  if(r.includes('iso')) return {...CONTROLLED_SOURCES.ISO13485};
+  if(r.includes('gamp')) return {...CONTROLLED_SOURCES.GAMP5};
   if(r.includes('hipaa')) return {authority:'HHS / eCFR',nation:'United States',sourceType:'Regulation',url:'https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-C/part-164/subpart-C'};
-  if(r.includes('alcoa')) return {authority:'US FDA',nation:'United States',sourceType:'Data integrity principle / FDA guidance',url:'https://www.fda.gov/regulatory-information/search-fda-guidance-documents/data-integrity-and-compliance-drug-cgmp-questions-and-answers'};
   if(r.includes('mdr')) return {authority:'European Union',nation:'European Union',sourceType:'Regulation',url:'https://eur-lex.europa.eu/eli/reg/2017/745/oj'};
   const nation = normalizeJurisdictionNation(
     document.getElementById('f-jurisdiction')?.value?.trim()
     || document.getElementById('f-client-region')?.value?.trim() || ''
   ) || 'International';
-  return {authority:'Curated regulatory library',nation,sourceType:'Controlled source summary',url:''};
+  return {authority:'Curated regulatory library',nation,sourceType:'Curated source summary',url:'',sourceVersion:'',effectiveDate:'',capturedAt:'2026-08-14',licenseTag:'REVIEW_REQUIRED',sourceApprovalStatus:'SME_PENDING'};
 }
 
 
