@@ -48,6 +48,7 @@ MARAS is a stakeholder-review MVP for Pharma and Life Sciences teams. It convert
 | MVP-12 | Prevent uncontrolled exports from appearing approved | All exports and saved packages are permanently marked `DRAFT_NOT_CONTROLLED` |
 | MVP-13 | Validate every supported regulated system | Regression matrix covers LIMS, MES, SCADA/DCS, Serialization, QMS, EDMS, CDS, PV, EDC/eCRF, CTMS, eTMF, Safety Reporting, RIM, ERP/SAP, and Supply Chain |
 | MVP-14 | Keep Saved Package controls usable at the larger type size | Label, inputs, Save button, status and note increase by 2px; flex wrapping and shrink-safe inputs keep every control inside the bordered container |
+| MVP-15 | Align first-time guidance with the assurance workflow | Versioned guide is re-enabled once for existing users, sits directly above the assurance hero, shares its content boundaries, and the Regulatory Library uses a wider responsive panel |
 
 ## Stakeholder demo script
 

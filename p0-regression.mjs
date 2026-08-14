@@ -32,5 +32,7 @@ const supportedSystems = ['LIMS','MES','SCADA / DCS','Serialization','QMS','EDMS
 check('all 15 supported systems have relevance mappings', supportedSystems.every(system => html.includes(`  '${system}': [`)));
 check('Saved Package controls use the requested two-pixel font increase', html.includes('.save-bar-lbl{font-size:14px') && html.includes('.save-bar input{flex:1 1 170px;min-width:0;box-sizing:border-box;padding:7px 10px;font-size:14px') && html.includes('.save-bar-btn{padding:7px 13px') && html.includes('font-size:14px;font-weight:600') && html.includes('.save-ok{font-size:13px') && html.includes('.save-bar-note{flex:1 1 100%;min-width:0;font-size:12px'));
 check('Saved Package controls are wrap-safe', html.includes('display:flex;flex-wrap:wrap;align-items:center') && html.includes('overflow-wrap:anywhere') && !html.includes('<span style="font-size:10px;color:var(--ink4)">Draft only.'));
+check('first-time guide is enabled and aligned with the assurance hero', /<div id="view-gen" class="gv">\s*<!-- FIRST-TIME USER GUIDE[\s\S]*?<div class="value-hero">/.test(html) && html.includes("maras_guide_dismissed_v641_alignment") && html.includes('.onboard-bar{background:linear-gradient') && html.includes('margin-bottom:12px;position:relative'));
+check('Regulatory Library uses the extended responsive width', html.includes('.sidebar{width:280px;') && html.includes('@media(max-width:860px){\n  .sidebar{width:232px}'));
 
 export const result = { status: 'PASS', checks: checks.length, systemsValidated: 15, names: checks };

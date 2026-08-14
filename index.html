@@ -55,7 +55,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .layout{display:flex;flex:1;overflow:hidden}
 
 /* ── SIDEBAR ── */
-.sidebar{width:248px;flex-shrink:0;background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;min-height:0}
+.sidebar{width:280px;flex-shrink:0;background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;min-height:0}
 .sb-scroll{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column}
 .sb-scroll::-webkit-scrollbar{width:4px}
 .sb-scroll::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:2px}
@@ -382,9 +382,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .sbm-key-note{font-size:10px;color:var(--ink4);margin-top:4px;line-height:1.4;padding:5px 7px;background:rgba(255,255,255,.7);border-radius:5px}
 
 /* First-time user guide */
-.onboard-bar{background:linear-gradient(135deg,#eff6ff 0%,#ecfdf5 100%);border-bottom:1px solid rgba(29,111,206,.15);padding:12px 18px;flex-shrink:0;position:relative}
-.onboard-inner{max-width:1040px;margin:0 auto;padding-right:36px}
+.onboard-bar{background:linear-gradient(135deg,#eff6ff 0%,#ecfdf5 100%);border:1px solid rgba(29,111,206,.15);border-radius:var(--r2);padding:12px 14px;margin-bottom:12px;position:relative}
+.onboard-inner{width:100%;margin:0}
 .onboard-title{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:4px}
+.onboard-title,.onboard-sub{padding-right:96px}
 .onboard-sub{font-size:11px;color:var(--ink2);line-height:1.55;margin-bottom:8px}
 .onboard-steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:6px;margin-bottom:8px}
 .onboard-step{font-size:10px;color:var(--ink2);background:rgba(255,255,255,.75);border:1px solid var(--border);border-radius:var(--r);padding:6px 8px;line-height:1.4}
@@ -443,7 +444,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .value-chain-step span{display:block;font-size:10px;color:var(--ink3);margin-top:2px;line-height:1.3}
 
 @media(max-width:860px){
-  .sidebar{width:210px}
+  .sidebar{width:232px}
   .cat-grid{grid-template-columns:repeat(2,1fr)}
   .row3{grid-template-columns:1fr 1fr}
   .row4{grid-template-columns:1fr 1fr}
@@ -496,21 +497,6 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
   <span>🎯</span>
   <span><b>MVP Demo — No AI required</b> &nbsp;Draft packages from curated source summaries · automated readiness checks · SME/QA approval required</span>
   <button class="demo-bar-btn" onclick="setMode('live')">Switch to Live AI →</button>
-</div>
-
-<!-- FIRST-TIME USER GUIDE (dismissible) -->
-<div class="onboard-bar" id="onboard-guide">
-  <button class="onboard-close" onclick="dismissOnboardGuide()" title="Close guide">✕ Close guide</button>
-  <div class="onboard-inner">
-    <div class="onboard-title">Welcome to MARAS — Regulatory Business Assurance</div>
-    <div class="onboard-sub">MARAS converts curated regulatory summaries linked to authoritative sources into draft controls, PBIs, risk rationale, test obligations, and evidence packages. A qualified SME and QA reviewer must approve every package before use.</div>
-    <div class="onboard-steps">
-      <div class="onboard-step"><b>1 · Focus</b>Expand the Regulatory Library tree to opt in/out sources, or use All/None for bulk selection.</div>
-      <div class="onboard-step"><b>2 · Context</b>Select system, domain, jurisdiction, business outcome, and applicable control scope.</div>
-      <div class="onboard-step"><b>3 · Assure</b>Click <em>Create Business Assurance Package</em> — Demo mode works offline; Live AI needs an API key.</div>
-      <div class="onboard-step"><b>4 · Export</b>Review PBIs on Value Package tab — export to Jira, ADO, JSON, or FDA Clinical Schema.</div>
-    </div>
-  </div>
 </div>
 
 <!-- LAYOUT -->
@@ -593,6 +579,21 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 
 <!-- GENERATE VIEW -->
 <div id="view-gen" class="gv">
+
+  <!-- FIRST-TIME USER GUIDE (dismissible) -->
+  <div class="onboard-bar" id="onboard-guide">
+    <button class="onboard-close" onclick="dismissOnboardGuide()" title="Close guide">✕ Close guide</button>
+    <div class="onboard-inner">
+      <div class="onboard-title">Welcome to MARAS — Regulatory Business Assurance</div>
+      <div class="onboard-sub">MARAS converts curated regulatory summaries linked to authoritative sources into draft controls, PBIs, risk rationale, test obligations, and evidence packages. A qualified SME and QA reviewer must approve every package before use.</div>
+      <div class="onboard-steps">
+        <div class="onboard-step"><b>1 · Focus</b>Expand the Regulatory Library tree to opt in/out sources, or use All/None for bulk selection.</div>
+        <div class="onboard-step"><b>2 · Context</b>Select system, domain, jurisdiction, business outcome, and applicable control scope.</div>
+        <div class="onboard-step"><b>3 · Assure</b>Click <em>Create Business Assurance Package</em> — Demo mode works offline; Live AI needs an API key.</div>
+        <div class="onboard-step"><b>4 · Export</b>Review PBIs on Value Package tab — export to Jira, ADO, JSON, or FDA Clinical Schema.</div>
+      </div>
+    </div>
+  </div>
 
   <div class="value-hero">
     <div class="value-hero-title">From regulation to business assurance package</div>
@@ -1310,10 +1311,10 @@ function init(){
 function initOnboardGuide(){
   const el=document.getElementById('onboard-guide');
   if(!el)return;
-  if(localStorage.getItem('maras_guide_dismissed')==='1') el.style.display='none';
+  if(localStorage.getItem('maras_guide_dismissed_v641_alignment')==='1') el.style.display='none';
 }
 function dismissOnboardGuide(){
-  localStorage.setItem('maras_guide_dismissed','1');
+  localStorage.setItem('maras_guide_dismissed_v641_alignment','1');
   const el=document.getElementById('onboard-guide');
   if(el) el.style.display='none';
 }
