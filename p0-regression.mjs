@@ -30,5 +30,7 @@ const script = html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
 check('inline application script exists', Boolean(script));
 const supportedSystems = ['LIMS','MES','SCADA / DCS','Serialization','QMS','EDMS','CDS','PV System','EDC / eCRF','CTMS','eTMF','Safety Reporting','Regulatory Info Mgmt','ERP / SAP','Supply Chain'];
 check('all 15 supported systems have relevance mappings', supportedSystems.every(system => html.includes(`  '${system}': [`)));
+check('Saved Package controls use the requested two-pixel font increase', html.includes('.save-bar-lbl{font-size:14px') && html.includes('.save-bar input{flex:1 1 170px;min-width:0;box-sizing:border-box;padding:7px 10px;font-size:14px') && html.includes('.save-bar-btn{padding:7px 13px') && html.includes('font-size:14px;font-weight:600') && html.includes('.save-ok{font-size:13px') && html.includes('.save-bar-note{flex:1 1 100%;min-width:0;font-size:12px'));
+check('Saved Package controls are wrap-safe', html.includes('display:flex;flex-wrap:wrap;align-items:center') && html.includes('overflow-wrap:anywhere') && !html.includes('<span style="font-size:10px;color:var(--ink4)">Draft only.'));
 
 export const result = { status: 'PASS', checks: checks.length, systemsValidated: 15, names: checks };
