@@ -59,6 +59,7 @@ function boot(values = {}, cats = [], items = []) {
     reqFiles: [],
     allStories: [],
     H: { stories: [], review: {}, evidence: {}, qcReport: null },
+    selItems: new Set(items),
     INGESTED_SOURCE_META: {},
   };
   vm.createContext(sandbox);
@@ -305,13 +306,21 @@ check('SOP mapper surfaces gaps and inspection pack schema', () => {
     value: id === 'f-client-delta' ? '' : id === 'req-ta' ? 'Part 11 audit trail LIMS' : id === 'f-gap-input' ? 'missing dual sign-off' : ''
   });
   const sop = s.mapSopToRegulations();
-  assert.ok(sop.gaps.length >= 1, 'expected SOP gaps without client delta text');
-  const insp = s.buildInspectionReadinessPack();
+  assert.ok(sop.gaps.length >= 1, 'expected true gaps without library anchors');
+  const sopLib = boot({ fw: 'FDA', system: 'LIMS', domain: 'Pharma Mfg' }, [], ['p11', 'sop', 'fda_di', 'ichq10', 'ichq9', 'capa']);
+  sopLib.selItems = new Set(['p11', 'sop', 'fda_di', 'ichq10', 'ichq9', 'capa']);
+  sopLib.document.getElementById = (id) => ({
+    value: id === 'f-gap-input' ? 'audit trail dual sign-off' : id === 'req-ta' ? 'Part 11 audit trail' : ''
+  });
+  const mapped = sopLib.mapSopToRegulations();
+  assert.ok(mapped.mappedCount >= 5, 'library anchors should map Part 11 and ICH controls');
+  assert.equal(mapped.gaps.filter(g => /21 CFR Part 11/.test(g.regulation)).length, 0);
+  const insp = sopLib.buildInspectionReadinessPack(mapped);
   assert.equal(insp.schema, 'maras.inspection-readiness.v1');
   assert.ok(insp.checklist.length >= 6);
-  assert.ok(insp.mockQuestions.length >= 1);
+  assert.ok(insp.evidenceRequests.length >= 1);
 });
 
 if (failures.length) throw new Error(failures.join('\n'));
 
-export const result = { status: 'PASS', checks: 10, systemsValidated: 15 };
+export const result = { status: 'PASS', checks: 11, systemsValidated: 15 };
