@@ -38,6 +38,13 @@ Use graphs for visibility, not as a substitute for coded gates or SME approval.
 - Do not claim regulatory approval, electronic signatures, or controlled records from browser-only review
 - All exports remain `DRAFT_NOT_CONTROLLED` until customer-controlled systems approve
 
+## Development environment
+
+Repository-managed Cloud Agent setup: `.cursor/environment.json`
+
+- **install** — `p0-regression.mjs` + `qc-compat-regression.mjs` (idempotent gate)
+- **static-preview** terminal — `http://127.0.0.1:8080/index.html`
+
 ## Subagents
 
 - Document ingestion post-processing: `.cursor/agents/okf-document-pipeline.md` (OKF v0.2, when ingestion expands beyond browser parse)

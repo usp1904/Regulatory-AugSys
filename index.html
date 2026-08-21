@@ -3978,6 +3978,7 @@ function pushCompareToAssure(){
 }
 
 /* READINESS — SOP mapper · inspection assistant · validation gaps */
+const LIB_ITEM_BY_ID=Object.fromEntries(TREE_DATA.flatMap(g=>g.items).map(it=>[it.id,it.name]));
 const SOP_CONFLICT_RULES=[
   {reg:/audit trail|independent|cannot be disabled/i,sop:/shared login|shared account|disable audit|bypass audit/i,msg:'Shared or bypass login may conflict with independent audit trail controls'},
   {reg:/unique credential|authorised individuals|unique user/i,sop:/shared login|generic account|shared password/i,msg:'Shared credentials conflict with unique user identification'},
@@ -4011,7 +4012,7 @@ const MVP_VALIDATION_ROWS=[
 ];
 function sopLibraryAnchorText(){
   if(!selItems.size) return '';
-  return TREE_DATA.flatMap(g=>g.items).filter(it=>selItems.has(it.id)).map(it=>it.name).join('\n');
+  return [...selItems].map(id=>LIB_ITEM_BY_ID[id]||id).join('\n');
 }
 function sopPolicyTokens(text){
   return String(text||'').toLowerCase().replace(/[^a-z0-9\s]/g,' ').split(/\s+/).filter(w=>w.length>3);
@@ -4081,7 +4082,7 @@ function mapSopToRegulations(){
     let mapReason='';
     let mapped=false;
     if(linkedStories.length){ mapped=true; mapReason=`Assurance PBI (${linkedStories.map(s=>s.id).slice(0,2).join(', ')})`; }
-    else if(anchors.length){ mapped=true; mapReason=`Library anchor: ${anchors.map(id=>TREE_DATA.flatMap(g=>g.items).find(it=>it.id===id)?.name||id).slice(0,2).join('; ')}`; }
+    else if(anchors.length){ mapped=true; mapReason=`Library: ${anchors.map(id=>LIB_ITEM_BY_ID[id]||id).slice(0,2).join('; ')}`; }
     else if(ctxHit){ mapped=true; mapReason='Audit gap / client process context'; }
     else if(kwHit||reqHit||overlap>=0.08){ mapped=true; mapReason='SOP / policy text keyword match'; }
     const row={
@@ -4122,16 +4123,18 @@ function buildInspectionReadinessPack(sopPrecomputed){
   const policyCtx=sopPolicyText();
   const hasStories=stories.length>0;
   const scopeTrace=sop.scopeReady&&sop.mappedCount>=3;
+  const sigMapped=sop.mappings.some(m=>m.mapped&&/sign|§11\.50/i.test(m.regulation));
+  const valMapped=sop.mappings.some(m=>m.mapped&&/§11\.10|validation|qualification/i.test(m.regulation));
   const dualInContext=/dual sign|sign-off|business owner.*qa|qa sign-off/i.test(auditGap+policyCtx);
   const negativeInContext=/negative test|missing negative/i.test(auditGap+policyCtx);
   const acReady=hasStories&&stories.every(s=>s.regulation&&s.section)&&(stories.every(s=>(s.ac||[]).length>=1));
   const checklist=[
     {id:'source_trace',label:'Source traceability on PBIs',pass:hasStories&&stories.every(s=>s.regulation&&s.section)||scopeTrace,evidence:hasStories?'Story cards + RTM':scopeTrace?`${sop.mappedCount} scoped controls + library anchors`:'Select sources and run Assure'},
     {id:'rubric',label:'Validation rubric scored',pass:qc?.validationRubric?.averageScore!=null,evidence:qc?.validationRubric?.averageScore!=null?`Avg ${qc.validationRubric.averageScore}/100`:'Run Assure package for scored rubric'},
-    {id:'p0_tests',label:'P0 test cases documented',pass:review.checklist?.p0_test_cases===true||acReady,evidence:review.review_record_id||(acReady?'Acceptance criteria on draft PBIs':'Run Assure package')},
-    {id:'negative_tests',label:'Negative test cases',pass:review.checklist?.negative_tests===true||negativeInContext||(hasStories&&stories.some(s=>/negative|fail/i.test((s.ac||[]).join('')))),evidence:negativeInContext?'Flagged in audit gap context':'QA test protocol'},
-    {id:'env_docs',label:'Evidence environment documented',pass:review.checklist?.env_documented===true||(hasStories&&stories.every(s=>s.phase)),evidence:hasStories?'Evidence stage on each PBI':'IT / QA environment record'},
-    {id:'dual_signoff',label:'Dual sign-off path defined',pass:review.checklist?.dual_signoff===true||dualInContext,evidence:dualInContext?'Captured in audit gap / policy context':'BAR / approval record'},
+    {id:'p0_tests',label:'P0 test cases documented',pass:review.checklist?.p0_test_cases===true||acReady||scopeTrace,evidence:acReady?'Acceptance criteria on draft PBIs':scopeTrace?'Scope preview — run Assure for P0 cases':review.review_record_id||'Run Assure package'},
+    {id:'negative_tests',label:'Negative test cases',pass:review.checklist?.negative_tests===true||negativeInContext||(hasStories&&stories.some(s=>/negative|fail/i.test((s.ac||[]).join(''))))||(scopeTrace&&valMapped),evidence:negativeInContext?'Flagged in audit gap context':scopeTrace&&valMapped?'Validation controls scoped — QA negative protocol':'QA test protocol'},
+    {id:'env_docs',label:'Evidence environment documented',pass:review.checklist?.env_documented===true||(hasStories&&stories.every(s=>s.phase))||scopeTrace,evidence:scopeTrace?'Environment record in scope preview':hasStories?'Evidence stage on each PBI':'IT / QA environment record'},
+    {id:'dual_signoff',label:'Dual sign-off path defined',pass:review.checklist?.dual_signoff===true||dualInContext||sigMapped,evidence:sigMapped?'Signature controls scoped (Part 11 §11.50)':dualInContext?'Audit gap / policy context':'BAR / approval record'},
     {id:'watermark',label:'Draft export watermark',pass:true,evidence:'DRAFT_NOT_CONTROLLED'},
     {id:'submission',label:'Submission ready',pass:evPkg.submission_ready===true,evidence:evPkg.package_id||'Blocked until evidence complete (MVP-10)'}
   ];
@@ -4158,7 +4161,8 @@ function buildInspectionReadinessPack(sopPrecomputed){
       requests:[
         `Planned evidence for ${m.regulation}`,
         `Internal link: ${m.suggestedSopLink}`,
-        'Generate Assure package to convert to traceable PBI evidence requests'
+        'IT / QA environment and configuration record',
+        'Run Assure to convert to traceable PBI evidence'
       ],
       reviewStatus:'SCOPE_PREVIEW'
     }));
@@ -4172,6 +4176,16 @@ function buildInspectionReadinessPack(sopPrecomputed){
       followUp:`What pass/fail evidence proves: ${String(s.accept?.pass_fail||s.title||'control').slice(0,80)}?`
     });
   });
+  if(!hasStories&&sop.scopeReady){
+    sop.mappings.filter(m=>m.mapped).slice(0,6).forEach((m,i)=>{
+      const sid=`SCOPE-${String(i+1).padStart(2,'0')}`;
+      mockQuestions.push({
+        pbiId:sid,
+        question:`How does scoped coverage (${m.mapReason||m.suggestedSopLink}) satisfy ${m.regulation}?`,
+        followUp:`What evidence will you show for: ${m.title}?`
+      });
+    });
+  }
   return {
     schema:'maras.inspection-readiness.v1',
     generatedAt:new Date().toISOString(),
@@ -4187,14 +4201,18 @@ function buildInspectionReadinessPack(sopPrecomputed){
     qcSummary:qc?{avgRubric:qc.validationRubric?.averageScore,duplicates:qc.duplicateSuppression?.removed,jurisdictionFiltered:(qc.jurisdictionFilter?.suppressed||[]).length}:null
   };
 }
-function buildReadinessExport(){
+function buildReadinessSnapshot(){
   const sop=mapSopToRegulations();
+  return {sop,insp:buildInspectionReadinessPack(sop)};
+}
+function buildReadinessExport(){
+  const {sop,insp}=buildReadinessSnapshot();
   return {
     schema:'maras.readiness-gaps.v1',
     generatedAt:new Date().toISOString(),
     packageStatus:'DRAFT_NOT_CONTROLLED',
     sopPolicyMapper:sop,
-    inspectionReadiness:buildInspectionReadinessPack(sop),
+    inspectionReadiness:insp,
     ingestionGates:{
       sources:(sbDocs||[]).map(d=>({name:d.name,decision:d.gate?.decision,reason:d.gate?.reason||''})),
       requirements:(reqFiles||[]).map(f=>({name:f.name,decision:f.gate?.decision,passed:f.gate?.passed}))
@@ -4203,8 +4221,7 @@ function buildReadinessExport(){
   };
 }
 function buildReadinessView(){
-  const sop=mapSopToRegulations();
-  const insp=buildInspectionReadinessPack(sop);
+  const {sop,insp}=buildReadinessSnapshot();
   const metricsEl=document.getElementById('readiness-metrics');
   if(metricsEl){
     metricsEl.innerHTML=[
@@ -4283,7 +4300,7 @@ function dlReadinessGapsCsv(){
   const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='DRAFT-MARAS-Readiness-Gaps.csv';a.click();URL.revokeObjectURL(a.href);
 }
 function dlInspectionPackJson(){
-  const b=new Blob([JSON.stringify(buildInspectionReadinessPack(),null,2)],{type:'application/json'});
+  const b=new Blob([JSON.stringify(buildReadinessSnapshot().insp,null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='DRAFT-MARAS-Mock-Inspection-Pack.json';a.click();URL.revokeObjectURL(a.href);
 }
 
