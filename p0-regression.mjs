@@ -39,5 +39,9 @@ check('Regulatory Library uses the extended responsive width', html.includes('.s
 check('global compare tab is present', html.includes('id="view-compare"') && html.includes('ntab-compare') && html.includes('Global Compare'));
 check('global compare engine is wired', html.includes('GLOBAL_COMPARE_TOPICS') && html.includes('function buildGlobalCompare') && html.includes('maras.global-regulation-compare.v1'));
 check('co-operations modes exist', html.includes('setCoOpMode') && html.includes('renderCompareGap') && html.includes('renderCompareBriefing'));
+check('readiness tab with SOP mapper', html.includes('id="view-readiness"') && html.includes('function mapSopToRegulations') && html.includes('sop-mapper-grid'));
+check('inspection readiness assistant', html.includes('function buildInspectionReadinessPack') && html.includes('maras.inspection-readiness.v1') && html.includes('dlInspectionPackJson'));
+check('readiness gap downloads', html.includes('maras.readiness-gaps.v1') && html.includes('dlReadinessGapsCsv'));
+check('Agents.md default instructions', fs.existsSync('Agents.md') && fs.readFileSync('Agents.md','utf8').includes('CRS Mode') && fs.readFileSync('Agents.md','utf8').includes('Graphiffy'));
 
 export const result = { status: 'PASS', checks: checks.length, systemsValidated: 15, names: checks };

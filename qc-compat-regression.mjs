@@ -56,6 +56,9 @@ function boot(values = {}, cats = [], items = []) {
     GXP_CHUNKS: [],
     CONTROLLED_SOURCES: {},
     sbDocs: [],
+    reqFiles: [],
+    allStories: [],
+    H: { stories: [], review: {}, evidence: {}, qcReport: null },
     INGESTED_SOURCE_META: {},
   };
   vm.createContext(sandbox);
@@ -74,6 +77,9 @@ function boot(values = {}, cats = [], items = []) {
   vm.runInContext(html.slice(cmpFnStart, cmpFnEnd), sandbox);
   sandbox.compareMarketSel = new Set(['US', 'EU', 'INT']);
   sandbox.coOpMode = 'matrix';
+  const rdStart = html.indexOf('/* READINESS — SOP mapper');
+  const rdEnd = html.indexOf('/* ASSURANCE */', rdStart);
+  if (rdStart >= 0 && rdEnd > rdStart) vm.runInContext(html.slice(rdStart, rdEnd), sandbox);
   sandbox.QC_CONFIG = vm.runInContext('QC_CONFIG', sandbox);
   sandbox.FDA_CLINICAL_DATA_SCHEMA = vm.runInContext('FDA_CLINICAL_DATA_SCHEMA', sandbox);
   return sandbox;
@@ -293,6 +299,19 @@ check('global compare matrix cites US and EU audit trail with deltas', () => {
   assert.equal(payload.packageStatus, 'DRAFT_NOT_CONTROLLED');
 });
 
+check('SOP mapper surfaces gaps and inspection pack schema', () => {
+  const s = boot({ fw: 'FDA', system: 'LIMS', domain: 'Pharma Mfg' });
+  s.document.getElementById = (id) => ({
+    value: id === 'f-client-delta' ? '' : id === 'req-ta' ? 'Part 11 audit trail LIMS' : id === 'f-gap-input' ? 'missing dual sign-off' : ''
+  });
+  const sop = s.mapSopToRegulations();
+  assert.ok(sop.gaps.length >= 1, 'expected SOP gaps without client delta text');
+  const insp = s.buildInspectionReadinessPack();
+  assert.equal(insp.schema, 'maras.inspection-readiness.v1');
+  assert.ok(insp.checklist.length >= 6);
+  assert.ok(insp.mockQuestions.length >= 1);
+});
+
 if (failures.length) throw new Error(failures.join('\n'));
 
-export const result = { status: 'PASS', checks: 9, systemsValidated: 15 };
+export const result = { status: 'PASS', checks: 10, systemsValidated: 15 };

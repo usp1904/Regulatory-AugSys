@@ -442,6 +442,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .scenario-flow{font-size:11px;color:var(--ink2);line-height:1.45;margin-top:7px;padding:8px;background:var(--bg);border-radius:var(--r)}
 .assurance-note{font-size:11px;color:var(--ink3);line-height:1.5;background:var(--amber-t);border:1px solid rgba(146,64,14,.18);border-radius:var(--r);padding:10px;margin-top:10px}
 .compare-view{display:none;padding:16px 20px 48px;max-width:1180px;margin:0 auto;width:100%}
+.readiness-view{display:none;padding:16px 20px 48px;max-width:1180px;margin:0 auto;width:100%}
+.rd-gap-row{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--r);margin-bottom:6px;background:#fff}
+.rd-gap-row.warn{border-color:rgba(146,64,14,.35);background:var(--amber-t)}
+.rd-gap-row.fail{border-color:rgba(220,38,38,.35);background:var(--red-t)}
 .cmp-toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
 .cmp-modes{display:flex;gap:6px;flex-wrap:wrap}
 .cmp-mode-btn{font-size:11px;padding:5px 10px;border-radius:20px;border:1px solid var(--border);background:#fff;cursor:pointer;font-family:inherit;color:var(--ink2)}
@@ -506,6 +510,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
     <button class="nav-tab" id="ntab-results" onclick="goTab('results',this)">Value Package</button>
     <button class="nav-tab" id="ntab-assurance" onclick="goTab('assurance',this)">Assurance</button>
     <button class="nav-tab" id="ntab-compare" onclick="goTab('compare',this)">Global Compare</button>
+    <button class="nav-tab" id="ntab-readiness" onclick="goTab('readiness',this)">Readiness</button>
     <button class="nav-tab" id="ntab-saved" onclick="goTab('saved',this)">Saved Packages</button>
   </div>
   <div class="nav-right">
@@ -991,6 +996,43 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
       <div id="compare-body"></div>
       <div class="assurance-note">Comparison uses the curated MARAS corpus plus ingested DRIVE sources. Licensed standards appear as gates. Differences are lexical heuristics — not legal equivalence. Use for consulting workshops and harmonisation planning; confirm with qualified regulatory counsel before client commitments.</div>
     </div>
+  </div>
+</div>
+
+<!-- READINESS VIEW — SOP mapper · inspection assistant · validation gaps -->
+<div id="view-readiness" class="readiness-view">
+  <div class="assurance-hero">
+    <div class="assurance-kicker">Quality &amp; compliance operations</div>
+    <div class="assurance-title">SOP mapper · Inspection readiness · Validation gaps</div>
+    <div class="assurance-sub">Links regulations to internal SOP/policy text, flags control gaps and conflicts, and assembles audit checklists, evidence requests, and mock inspection questions. Validations and ingestion gate status are visible here with downloadable gap reports.</div>
+    <div class="cmp-graph">Regulation ↔ <b>SOP map</b> → Gap flags → <b>Inspection pack</b> → Gap download</div>
+    <div class="assurance-actions">
+      <button class="assurance-btn" onclick="dlReadinessGapsJson()">Download gaps JSON</button>
+      <button class="assurance-btn secondary" onclick="dlReadinessGapsCsv()">Download gaps CSV</button>
+      <button class="assurance-btn secondary" onclick="dlInspectionPackJson()">Download inspection pack</button>
+    </div>
+    <div class="metric-row" id="readiness-metrics"></div>
+  </div>
+  <div class="assurance-section">
+    <div class="assurance-section-h">
+      <div class="assurance-section-t">1. SOP &amp; policy mapper</div>
+      <div class="assurance-section-s">Regulation → internal SOP / policy · gap and conflict flags for quality teams</div>
+    </div>
+    <div class="assurance-body"><div id="sop-mapper-grid"></div></div>
+  </div>
+  <div class="assurance-section">
+    <div class="assurance-section-h">
+      <div class="assurance-section-t">2. Inspection readiness assistant</div>
+      <div class="assurance-section-s">Checklists · evidence requests · mock inspection Q&amp;A</div>
+    </div>
+    <div class="assurance-body"><div id="inspection-pack-grid"></div></div>
+  </div>
+  <div class="assurance-section">
+    <div class="assurance-section-h">
+      <div class="assurance-section-t">3. Validations &amp; production gates</div>
+      <div class="assurance-section-s">MVP checks · ingestion HOLD/DRIVE · last package QC</div>
+    </div>
+    <div class="assurance-body"><div id="validation-status-grid" class="assurance-grid"></div></div>
   </div>
 </div>
 
@@ -1772,13 +1814,14 @@ function restoreSessionKeys(){
 
 /* ─── TABS ──────────────────────────────────────────────────────── */
 function goTab(t,btn){
-  ['gen','results','saved','assurance','compare'].forEach(id=>{
+  ['gen','results','saved','assurance','compare','readiness'].forEach(id=>{
     const target=document.getElementById('view-'+id);
     if(target) target.style.display=id===t?'block':'none';
   });
   document.querySelectorAll('.nav-tab').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
   if(t==='compare') buildGlobalCompare();
+  if(t==='readiness') buildReadinessView();
 }
 
 /* ─── FILE UPLOAD ────────────────────────────────────────────────── */
@@ -3293,6 +3336,10 @@ async function orchestratorDemo(req, ctx) {
   allStories = result.stories;
   H.qcReport = result.qcReport;
   H.healthcarePackage = result.healthcarePackage;
+  H.review = result.review;
+  H.evidence = result.evidence;
+  H.regObjs = result.regObjs;
+  H.riskReg = result.riskReg;
   document.getElementById('ns-stories').textContent = result.stories.length;
   document.getElementById('ns-stories').className = 'nstat-v lit';
   setStep('decomp','done',
@@ -3927,6 +3974,220 @@ function pushCompareToAssure(){
   }
   goTab('gen',document.getElementById('ntab-gen'));
   setStatus('idle','Global compare gaps pushed to Assure — refine outcome and generate package');
+}
+
+/* READINESS — SOP mapper · inspection assistant · validation gaps */
+const SOP_CONFLICT_RULES=[
+  {reg:/audit trail|independent|cannot be disabled/i,sop:/shared login|shared account|disable audit|bypass audit/i,msg:'Shared or bypass login may conflict with independent audit trail controls'},
+  {reg:/unique credential|authorised individuals|unique user/i,sop:/shared login|generic account|shared password/i,msg:'Shared credentials conflict with unique user identification'},
+  {reg:/e-signature|signature meaning|printed name/i,sop:/wet sign only|paper override|unsigned release/i,msg:'Paper-only override may conflict with electronic signature manifestations'},
+  {reg:/dual sign|sign-off|business owner/i,sop:/single approver|one sign|manager only/i,msg:'Single-approver SOP may conflict with dual sign-off expectations'}
+];
+const MVP_VALIDATION_ROWS=[
+  {id:'MVP-09',label:'Ingestion production gates',check:()=>typeof evaluateSourceProductionGate==='function'},
+  {id:'MVP-10',label:'NOT_READY when evidence incomplete',check:()=>!H.review?.evidence_decision||H.review.evidence_decision==='NOT_READY'},
+  {id:'MVP-12',label:'Exports draft-watermarked',check:()=>true},
+  {id:'MVP-16',label:'Global Compare tab',check:()=>document.getElementById('view-compare')},
+  {id:'MVP-17',label:'SOP & policy mapper',check:()=>document.getElementById('sop-mapper-grid')},
+  {id:'MVP-18',label:'Inspection readiness assistant',check:()=>document.getElementById('inspection-pack-grid')}
+];
+function sopPolicyText(){
+  const parts=[
+    document.getElementById('f-client-delta')?.value||'',
+    document.getElementById('f-gap-input')?.value||'',
+    document.getElementById('f-outcome')?.value||'',
+    ...(typeof sbDocs!=='undefined'&&Array.isArray(sbDocs)?sbDocs.map(d=>d.text||'').filter(Boolean):[]),
+    ...(typeof reqFiles!=='undefined'&&Array.isArray(reqFiles)?reqFiles.map(f=>f.text||'').filter(Boolean):[])
+  ];
+  return parts.join('\n');
+}
+function mapSopToRegulations(){
+  const sopRaw=sopPolicyText();
+  const sopText=sopRaw.toLowerCase();
+  const req=document.getElementById('req-ta')?.value.trim()||document.getElementById('f-outcome')?.value.trim()||'audit trail validation access control data integrity';
+  const ranked=rankChunks(req).slice(0,12);
+  const mappings=[], gaps=[], conflicts=[];
+  ranked.forEach(c=>{
+    if(c.licenseGate) return;
+    const meta=sourceMetaFor(c.reg,c.sourceKey);
+    const reqs=(c.reqs||[c.title]).slice(0,4);
+    const blob=reqs.join(' ').toLowerCase();
+    const kwHit=(c.kws||[]).some(k=>sopText.includes(k.toLowerCase()));
+    const reqHit=reqs.some(r=>sopText.includes(String(r).toLowerCase().slice(0,28)));
+    const overlap=qcJaccard(blob,sopText);
+    const mapped=kwHit||reqHit||overlap>=0.12;
+    const row={
+      regulation:`${c.reg} ${c.sec}`,title:c.title,citation:c.reg,section:c.sec,
+      overlapPct:Math.round(overlap*100),mapped,
+      suggestedSopLink:`SOP / policy area: ${(c.kws||[]).slice(0,2).join(', ')||c.cat}`,
+      url:meta.url||'',docClass:meta.sourceType||'',requirements:reqs
+    };
+    mappings.push(row);
+    if(!mapped) gaps.push({...row,gap:'No internal SOP/policy text maps to this regulatory control',audience:'Quality / Compliance'});
+    const regBlob=blob+' '+String(c.title).toLowerCase();
+    SOP_CONFLICT_RULES.forEach(rule=>{
+      if(rule.reg.test(regBlob)&&rule.sop.test(sopText)) conflicts.push({regulation:row.regulation,msg:rule.msg,severity:'SME review'});
+    });
+  });
+  const policyOnly=[];
+  if(/weekend|urgent release/i.test(sopRaw)&&!/audit trail/i.test(sopRaw))
+    policyOnly.push({text:'Urgent/weekend release process',note:'Map explicitly to audit trail and sign-off controls'});
+  if(/shared login|shared account/i.test(sopRaw))
+    policyOnly.push({text:'Shared login allowance',note:'Conflict risk vs Part 11 / Annex 11 access controls'});
+  return {mappings,gaps,conflicts,policyOnly,sopPresent:sopRaw.trim().length>12,mappedCount:mappings.filter(m=>m.mapped).length};
+}
+function buildInspectionReadinessPack(){
+  const stories=H.stories?.length?H.stories:(allStories?.length?allStories:[]);
+  const review=H.review||{};
+  const evidence=H.evidence||{};
+  const evPkg=evidence.evidence_package||{};
+  const qc=H.qcReport||{};
+  const auditGap=document.getElementById('f-gap-input')?.value.trim()||'';
+  const checklist=[
+    {id:'source_trace',label:'Source traceability on PBIs',pass:stories.length>0&&stories.every(s=>s.regulation&&s.section),evidence:'Story cards + RTM'},
+    {id:'rubric',label:'Validation rubric scored',pass:qc?.validationRubric?.averageScore!=null,evidence:`Avg ${qc?.validationRubric?.averageScore??'—'}/100`},
+    {id:'p0_tests',label:'P0 test cases documented',pass:review.checklist?.p0_test_cases===true,evidence:review.review_record_id||'Run Assure package'},
+    {id:'negative_tests',label:'Negative test cases',pass:review.checklist?.negative_tests===true,evidence:'QA test protocol'},
+    {id:'env_docs',label:'Evidence environment documented',pass:review.checklist?.env_documented===true,evidence:'IT / QA environment record'},
+    {id:'dual_signoff',label:'Dual sign-off path defined',pass:review.checklist?.dual_signoff===true,evidence:'BAR / approval record'},
+    {id:'watermark',label:'Draft export watermark',pass:true,evidence:'DRAFT_NOT_CONTROLLED'},
+    {id:'submission',label:'Submission ready',pass:evPkg.submission_ready===true,evidence:evPkg.package_id||'—'}
+  ];
+  const blockingGaps=[...(review.blocking_gaps||[])];
+  const sop=mapSopToRegulations();
+  sop.gaps.forEach(g=>blockingGaps.push(`SOP gap: ${g.regulation} — ${g.gap}`));
+  sop.conflicts.forEach(c=>blockingGaps.push(`SOP conflict (${c.regulation}): ${c.msg}`));
+  if(!stories.length) blockingGaps.push('No assurance package — generate on Assure tab for full evidence requests');
+  const evidenceRequests=stories.map(s=>({
+    pbiId:s.id,criticality:s.regulatoryCriticality||'—',
+    regulation:`${s.regulation||''} ${s.section||''}`.trim(),
+    trace:s.regRef||s.accept?.traceable||'',
+    requests:[
+      `Test evidence linked to ${s.id}`,
+      `Protocol/script for: ${String(s.accept?.action||s.title||'control').slice(0,72)}`,
+      'Environment and configuration record for evidence capture',
+      s.sourceUrl?`Verified excerpt from: ${s.sourceUrl}`:'Official source URL and excerpt'
+    ],
+    reviewStatus:s.reviewStatus||'PENDING'
+  }));
+  const mockQuestions=[];
+  if(auditGap) mockQuestions.push({pbiId:'AUDIT-GAP',question:`How is the prior audit gap closed: ${auditGap.slice(0,140)}?`,followUp:'Show objective evidence and preventive controls.'});
+  stories.filter(s=>s.regulatoryCriticality==='P0'||s.regulatoryCriticality==='P1').slice(0,10).forEach(s=>{
+    mockQuestions.push({
+      pbiId:s.id,
+      question:`Why does ${s.id} exist? Which ${s.regulation} ${s.section} clause drives it?`,
+      followUp:`What pass/fail evidence proves: ${String(s.accept?.pass_fail||s.title||'control').slice(0,80)}?`
+    });
+  });
+  return {
+    schema:'maras.inspection-readiness.v1',
+    generatedAt:new Date().toISOString(),
+    packageStatus:'DRAFT_NOT_CONTROLLED',
+    readinessScore:evPkg.audit_readiness_score??0,
+    evidenceDecision:review.evidence_decision||'NOT_RUN',
+    checklist,blockingGaps,evidenceRequests,mockQuestions,
+    mockInspectionPack:{
+      id:evPkg.package_id||`MOCK-${new Date().toISOString().slice(0,10)}`,
+      documents:(evPkg.documents||[]).map(d=>({title:d.title,status:d.status})),
+      signOffRequired:evPkg.sign_off_required||review.sign_off_required||['Business Owner','QA Lead']
+    },
+    qcSummary:qc?{avgRubric:qc.validationRubric?.averageScore,duplicates:qc.duplicateSuppression?.removed,jurisdictionFiltered:(qc.jurisdictionFilter?.suppressed||[]).length}:null
+  };
+}
+function buildReadinessExport(){
+  return {
+    schema:'maras.readiness-gaps.v1',
+    generatedAt:new Date().toISOString(),
+    packageStatus:'DRAFT_NOT_CONTROLLED',
+    sopPolicyMapper:mapSopToRegulations(),
+    inspectionReadiness:buildInspectionReadinessPack(),
+    ingestionGates:{
+      sources:(sbDocs||[]).map(d=>({name:d.name,decision:d.gate?.decision,reason:d.gate?.reason||''})),
+      requirements:(reqFiles||[]).map(f=>({name:f.name,decision:f.gate?.decision,passed:f.gate?.passed}))
+    },
+    mvpValidations:MVP_VALIDATION_ROWS.map(r=>({id:r.id,label:r.label,pass:!!r.check()}))
+  };
+}
+function buildReadinessView(){
+  const sop=mapSopToRegulations();
+  const insp=buildInspectionReadinessPack();
+  const metricsEl=document.getElementById('readiness-metrics');
+  if(metricsEl){
+    metricsEl.innerHTML=[
+      {v:sop.mappedCount,l:'SOP-mapped controls'},
+      {v:sop.gaps.length,l:'SOP gaps'},
+      {v:sop.conflicts.length,l:'SOP conflicts'},
+      {v:insp.checklist.filter(c=>c.pass).length,l:'Checklist pass'}
+    ].map(m=>`<div class="metric-card"><div class="metric-v">${m.v}</div><div class="metric-l">${m.l}</div></div>`).join('');
+  }
+  const sopEl=document.getElementById('sop-mapper-grid');
+  if(sopEl){
+    if(!sop.sopPresent){
+      sopEl.innerHTML='<div class="assurance-note">Enter <b>Client process delta</b>, <b>Past backlog / audit gap</b>, or ingest SOP/policy files to map regulations to internal procedures.</div>';
+    } else {
+      const rows=sop.mappings.map(m=>`
+        <div class="rd-gap-row${m.mapped?'':' warn'}">
+          <div style="flex:1"><div class="cmp-gap-title">${escapeHtml(m.regulation)}</div>
+          <div class="cmp-gap-meta">${escapeHtml(m.title)} · overlap ${m.overlapPct}% · ${escapeHtml(m.suggestedSopLink)}</div>
+          ${m.url&&safeExternalUrl(m.url)?`<a class="source-url" href="${escapeHtml(safeExternalUrl(m.url))}" target="_blank" rel="noopener noreferrer">Citation ↗</a>`:''}
+          <div class="cmp-req">${m.mapped?'✓ Mapped to SOP/policy text':'⚠ Gap — no SOP anchor detected'}</div></div>
+          <span class="status-pill ${m.mapped?'status-pass':'status-partial'}">${m.mapped?'Mapped':'Gap'}</span>
+        </div>`).join('');
+      const conflicts=sop.conflicts.map(c=>`<div class="rd-gap-row fail"><div><b>${escapeHtml(c.regulation)}</b><div class="cmp-req">${escapeHtml(c.msg)}</div></div><span class="status-pill status-gate">Conflict</span></div>`).join('');
+      const policy=sop.policyOnly.map(p=>`<div class="rd-gap-row"><div><b>${escapeHtml(p.text)}</b><div class="cmp-req">${escapeHtml(p.note)}</div></div></div>`).join('');
+      sopEl.innerHTML=rows+conflicts+policy;
+    }
+  }
+  const inspEl=document.getElementById('inspection-pack-grid');
+  if(inspEl){
+    const chk=insp.checklist.map(c=>`
+      <div class="rd-gap-row${c.pass?'':' warn'}"><div>${escapeHtml(c.label)}<div class="cmp-gap-meta">${escapeHtml(c.evidence)}</div></div>
+      <span class="status-pill ${c.pass?'status-pass':'status-partial'}">${c.pass?'Pass':'Gap'}</span></div>`).join('');
+    const evReq=insp.evidenceRequests.slice(0,8).map(e=>`
+      <div class="cmp-gap-card"><div class="cmp-gap-title">${escapeHtml(e.pbiId)} · ${escapeHtml(e.criticality)}</div>
+      <div class="cmp-gap-meta">${escapeHtml(e.regulation)} · ${escapeHtml(e.trace)}</div>
+      <div class="bullet-list">${e.requests.map(r=>`<div class="bullet-item">${escapeHtml(r)}</div>`).join('')}</div></div>`).join('');
+    const mock=insp.mockQuestions.slice(0,6).map(q=>`
+      <div class="cmp-brief-card"><div class="cmp-gap-meta">${escapeHtml(q.pbiId)}</div>
+      <div class="cmp-req"><b>Q:</b> ${escapeHtml(q.question)}</div>
+      <div class="cmp-req"><b>Follow-up:</b> ${escapeHtml(q.followUp)}</div></div>`).join('');
+    inspEl.innerHTML=`<div class="cmp-gap-meta" style="margin-bottom:8px">Readiness ${insp.readinessScore}/100 · ${escapeHtml(insp.evidenceDecision)} · Pack ${escapeHtml(insp.mockInspectionPack.id)}</div>`+chk+
+      (insp.blockingGaps.length?`<div class="assurance-note" style="margin-top:10px"><b>Blocking gaps</b><ul style="margin:6px 0 0 16px">${insp.blockingGaps.slice(0,8).map(g=>`<li>${escapeHtml(g)}</li>`).join('')}</ul></div>`:'')+
+      `<div style="margin-top:12px;font-size:11px;font-weight:600;color:var(--ink2)">Evidence requests</div>${evReq||'<div class="cmp-req">Generate an assurance package for per-PBI evidence requests.</div>'}`+
+      `<div style="margin-top:12px;font-size:11px;font-weight:600;color:var(--ink2)">Mock inspection questions</div>${mock||'<div class="cmp-req">Add audit gap context or generate PBIs for mock Q&amp;A.</div>'}`;
+  }
+  const valEl=document.getElementById('validation-status-grid');
+  if(valEl){
+    const mvp=MVP_VALIDATION_ROWS.map(r=>{
+      const pass=r.check();
+      return `<div class="criterion-card"><div class="criterion-top"><div class="criterion-name">${escapeHtml(r.id)} · ${escapeHtml(r.label)}</div></div>
+      <span class="status-pill ${pass?'status-pass':'status-partial'}">${pass?'Visible / pass':'Review'}</span></div>`;
+    }).join('');
+    const ing=(sbDocs||[]).concat((reqFiles||[]).map(f=>({name:f.name,gate:f.gate}))).map(d=>`
+      <div class="source-card"><div class="source-name">${escapeHtml(d.name)}</div>
+      <span class="status-pill ${d.gate?.decision==='DRIVE'||d.gate?.passed?'status-pass':'status-gate'}">${escapeHtml(d.gate?.decision||(d.gate?.passed?'DRIVE':'HOLD'))}</span></div>`).join('');
+    const qc=H.qcReport?`<div class="assurance-note">Last package QC: rubric avg ${H.qcReport.validationRubric?.averageScore}/100 · ${H.qcReport.duplicateSuppression?.removed||0} duplicates suppressed · scope ${escapeHtml(H.qcReport.scope?.label||'—')}</div>`:'<div class="assurance-note">No package QC yet — run Assure to populate rubric and evidence gates.</div>';
+    valEl.innerHTML=mvp+(ing?`<div style="margin-top:10px;font-size:11px;font-weight:600">Ingestion gates</div>${ing}`:'')+qc;
+  }
+}
+function dlReadinessGapsJson(){
+  const b=new Blob([JSON.stringify(buildReadinessExport(),null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='DRAFT-MARAS-Readiness-Gaps.json';a.click();URL.revokeObjectURL(a.href);
+}
+function dlReadinessGapsCsv(){
+  const exp=buildReadinessExport();
+  const esc=v=>`"${String(v??'').replace(/"/g,'""')}"`;
+  const lines=[['Type','Regulation','Detail','Severity'].map(esc).join(',')];
+  exp.sopPolicyMapper.gaps.forEach(g=>lines.push(['SOP_GAP',g.regulation,g.gap,'Quality'].map(esc).join(',')));
+  exp.sopPolicyMapper.conflicts.forEach(c=>lines.push(['SOP_CONFLICT',c.regulation,c.msg,c.severity].map(esc).join(',')));
+  exp.inspectionReadiness.blockingGaps.forEach(g=>lines.push(['INSPECTION','',g,'Blocking'].map(esc).join(',')));
+  exp.inspectionReadiness.checklist.filter(c=>!c.pass).forEach(c=>lines.push(['CHECKLIST',c.id,c.label,'Gap'].map(esc).join(',')));
+  const b=new Blob([lines.join('\n')],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='DRAFT-MARAS-Readiness-Gaps.csv';a.click();URL.revokeObjectURL(a.href);
+}
+function dlInspectionPackJson(){
+  const b=new Blob([JSON.stringify(buildInspectionReadinessPack(),null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='DRAFT-MARAS-Mock-Inspection-Pack.json';a.click();URL.revokeObjectURL(a.href);
 }
 
 /* ASSURANCE */
