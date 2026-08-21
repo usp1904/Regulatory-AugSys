@@ -65,6 +65,15 @@ function boot(values = {}, cats = [], items = []) {
   vm.runInContext(qcSrc, sandbox);
   vm.runInContext(sm[0], sandbox);
   vm.runInContext(`function autoPrefix(){ return 'GXP'; }`, sandbox);
+  const cmpDataStart = html.indexOf('const COMPARE_MARKETS');
+  const cmpDataEnd = html.indexOf('/* ─── STATE ─────────────────────────────────────────────────────── */');
+  const cmpFnStart = html.indexOf('/* GLOBAL COMPARE ENGINE */');
+  const cmpFnEnd = html.indexOf('function dlCompareJson');
+  if (cmpDataStart < 0 || cmpDataEnd < 0 || cmpFnStart < 0 || cmpFnEnd < 0) throw new Error('compare block bounds not found');
+  vm.runInContext(html.slice(cmpDataStart, cmpDataEnd), sandbox);
+  vm.runInContext(html.slice(cmpFnStart, cmpFnEnd), sandbox);
+  sandbox.compareMarketSel = new Set(['US', 'EU', 'INT']);
+  sandbox.coOpMode = 'matrix';
   sandbox.QC_CONFIG = vm.runInContext('QC_CONFIG', sandbox);
   sandbox.FDA_CLINICAL_DATA_SCHEMA = vm.runInContext('FDA_CLINICAL_DATA_SCHEMA', sandbox);
   return sandbox;
@@ -269,6 +278,21 @@ check('ingestion production gate holds incomplete sources and drives complete on
   assert.match(parsed.text, /Prove Part 11/);
 });
 
+check('global compare matrix cites US and EU audit trail with deltas', () => {
+  const s = boot({ fw: 'FDA', system: 'LIMS', domain: 'Pharma Mfg' });
+  s.compareMarketSel = new Set(['US', 'EU']);
+  const rows = s.buildCompareRows();
+  const audit = rows.find(r => r.topic.id === 'audit-trail');
+  assert.ok(audit);
+  assert.equal(audit.cells.US.status, 'ok');
+  assert.equal(audit.cells.EU.status, 'ok');
+  assert.ok(audit.cells.US.citation.includes('21 CFR'));
+  assert.ok(audit.cells.EU.citation.includes('Annex 11'));
+  const payload = s.buildCompareExportPayload();
+  assert.equal(payload.schema, 'maras.global-regulation-compare.v1');
+  assert.equal(payload.packageStatus, 'DRAFT_NOT_CONTROLLED');
+});
+
 if (failures.length) throw new Error(failures.join('\n'));
 
-export const result = { status: 'PASS', checks: 8, systemsValidated: 15 };
+export const result = { status: 'PASS', checks: 9, systemsValidated: 15 };

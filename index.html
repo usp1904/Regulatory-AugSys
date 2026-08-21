@@ -441,6 +441,29 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .compare-box p{font-size:11px;color:var(--ink3);line-height:1.5}
 .scenario-flow{font-size:11px;color:var(--ink2);line-height:1.45;margin-top:7px;padding:8px;background:var(--bg);border-radius:var(--r)}
 .assurance-note{font-size:11px;color:var(--ink3);line-height:1.5;background:var(--amber-t);border:1px solid rgba(146,64,14,.18);border-radius:var(--r);padding:10px;margin-top:10px}
+.compare-view{display:none;padding:16px 20px 48px;max-width:1180px;margin:0 auto;width:100%}
+.cmp-toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.cmp-modes{display:flex;gap:6px;flex-wrap:wrap}
+.cmp-mode-btn{font-size:11px;padding:5px 10px;border-radius:20px;border:1px solid var(--border);background:#fff;cursor:pointer;font-family:inherit;color:var(--ink2)}
+.cmp-mode-btn.on{background:var(--blue-t);border-color:var(--blue);color:var(--blue);font-weight:600}
+.cmp-market-filters{display:flex;gap:6px;flex-wrap:wrap}
+.cmp-mfilt{font-size:10px;padding:3px 8px;border-radius:12px;border:1px solid var(--border);cursor:pointer;background:var(--bg);color:var(--ink3);font-family:inherit}
+.cmp-mfilt.on{background:var(--teal-t);border-color:var(--teal);color:var(--teal);font-weight:600}
+.cmp-matrix-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--r2);background:#fff;box-shadow:var(--shadow)}
+.cmp-matrix{width:100%;border-collapse:collapse;font-size:11px}
+.cmp-matrix th,.cmp-matrix td{border:1px solid var(--border);padding:8px 10px;vertical-align:top;text-align:left}
+.cmp-matrix th{background:var(--bg);font-weight:600;color:var(--ink2);font-size:10px;text-transform:uppercase;letter-spacing:.3px}
+.cmp-matrix th.topic-col{min-width:148px}
+.cmp-matrix td.cell{min-width:190px;max-width:260px}
+.cmp-cite{font-size:10px;color:var(--blue);font-weight:600;display:block;margin-bottom:4px;line-height:1.35}
+.cmp-req{font-size:10px;color:var(--ink2);line-height:1.35;margin-top:2px}
+.cmp-diff{font-size:10px;color:var(--amber);margin-top:6px;padding-top:6px;border-top:1px dashed var(--border);line-height:1.4}
+.cmp-gap-card{border:1px solid var(--border);border-radius:var(--r);padding:11px;margin-bottom:8px;background:#fff}
+.cmp-gap-title{font-size:12px;font-weight:600;color:var(--ink);margin-bottom:4px}
+.cmp-gap-meta{font-size:10px;color:var(--ink4);margin-bottom:6px}
+.cmp-brief-card{border:1px solid var(--border);border-radius:var(--r2);padding:12px;margin-bottom:10px;background:#fff;box-shadow:var(--shadow)}
+.cmp-graph{font-size:9px;color:var(--ink4);text-align:center;margin:8px 0 12px;letter-spacing:.2px}
+.cmp-graph b{color:var(--ink3);font-weight:600}
 .value-hero{background:#fff;border:1px solid var(--border);border-radius:var(--r2);box-shadow:var(--shadow);padding:14px;margin-bottom:12px}
 .value-hero-title{font-size:17px;font-weight:800;color:var(--ink);line-height:1.25}
 .value-hero-sub{font-size:12px;color:var(--ink3);line-height:1.45;margin-top:4px}
@@ -482,6 +505,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
     <button class="nav-tab on" id="ntab-gen" onclick="goTab('gen',this)"><span class="nav-tab-pip"></span>Assure</button>
     <button class="nav-tab" id="ntab-results" onclick="goTab('results',this)">Value Package</button>
     <button class="nav-tab" id="ntab-assurance" onclick="goTab('assurance',this)">Assurance</button>
+    <button class="nav-tab" id="ntab-compare" onclick="goTab('compare',this)">Global Compare</button>
     <button class="nav-tab" id="ntab-saved" onclick="goTab('saved',this)">Saved Packages</button>
   </div>
   <div class="nav-right">
@@ -936,6 +960,40 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
   </div>
 </div>
 
+<!-- GLOBAL COMPARE VIEW — consulting / strategy co-operations -->
+<div id="view-compare" class="compare-view">
+  <div class="assurance-hero">
+    <div class="assurance-kicker">Co-operations · Consulting &amp; strategy</div>
+    <div class="assurance-title">Global regulation comparison engine</div>
+    <div class="assurance-sub">Compare the same control topic across markets in a citation-backed matrix. Built for consulting firms and strategy teams harmonising multi-jurisdiction programmes — separate from the Assure delivery workflow. Draft citations only; SME approval still required.</div>
+    <div class="cmp-graph" id="compare-graph">Topic → <b>Market matrix</b> → Diff engine → Co-op deliverable (matrix · gap · briefing)</div>
+    <div class="assurance-actions">
+      <button class="assurance-btn" onclick="dlCompareJson()">Download comparison JSON</button>
+      <button class="assurance-btn secondary" onclick="dlCompareCsv()">Download matrix CSV</button>
+      <button class="assurance-btn secondary" onclick="pushCompareToAssure()">Push gaps to Assure tab</button>
+    </div>
+    <div class="metric-row" id="compare-metrics"></div>
+  </div>
+  <div class="assurance-section">
+    <div class="assurance-section-h">
+      <div class="assurance-section-t">Cross-market matrix</div>
+      <div class="assurance-section-s">Same topic · different markets · citations and deltas</div>
+    </div>
+    <div class="assurance-body">
+      <div class="cmp-toolbar">
+        <div class="cmp-modes">
+          <button type="button" class="cmp-mode-btn on" data-mode="matrix" onclick="setCoOpMode('matrix')">Matrix</button>
+          <button type="button" class="cmp-mode-btn" data-mode="gap" onclick="setCoOpMode('gap')">Gap analysis</button>
+          <button type="button" class="cmp-mode-btn" data-mode="briefing" onclick="setCoOpMode('briefing')">Client briefing</button>
+        </div>
+        <div class="cmp-market-filters" id="compare-market-filters"></div>
+      </div>
+      <div id="compare-body"></div>
+      <div class="assurance-note">Comparison uses the curated MARAS corpus plus ingested DRIVE sources. Licensed standards appear as gates. Differences are lexical heuristics — not legal equivalence. Use for consulting workshops and harmonisation planning; confirm with qualified regulatory counsel before client commitments.</div>
+    </div>
+  </div>
+</div>
+
 </div><!-- rpanel -->
 </div><!-- layout -->
 
@@ -1297,6 +1355,38 @@ const LEADERSHIP_ACTIONS=[
    evidence:'Model picker, validation report and benchmark plan.'},
 ];
 
+/* ─── GLOBAL COMPARE (consulting / strategy co-operations) ───────── */
+const COMPARE_MARKETS=[
+  {id:'US',label:'United States',short:'US FDA'},
+  {id:'EU',label:'European Union',short:'EU GMP'},
+  {id:'INT',label:'International',short:'ICH'},
+  {id:'PRIV',label:'Privacy overlay',short:'GDPR / HIPAA'}
+];
+const GLOBAL_COMPARE_TOPICS=[
+  {id:'audit-trail',label:'Audit trail & record changes',consulting:'Harmonise event taxonomy before multi-site LIMS/MES rollout.',
+   slots:{US:'c3',EU:'c4'}},
+  {id:'e-signature',label:'Electronic signatures',consulting:'Signature meaning and manifestation rules need legal review per market.',
+   slots:{US:'c2'}},
+  {id:'data-integrity',label:'Data integrity (ALCOA+)',consulting:'ALCOA+ is the harmonisation anchor; local guidance depth varies.',
+   slots:{US:'c6',EU:'c4',INT:'c13'}},
+  {id:'access-security',label:'Access control & security',consulting:'Password policy and periodic access review cadence often diverge.',
+   slots:{US:'c1',EU:'c5'}},
+  {id:'validation',label:'Validation & qualification',consulting:'IQ/OQ/PQ vs CSA/risk-based assurance — align CSV strategy early.',
+   slots:{US:'c1',EU:'c15'}},
+  {id:'quality-risk',label:'Quality risk management',consulting:'QRM rigor scales with ICH Q9 — map to site risk registers.',
+   slots:{INT:'c13'}},
+  {id:'capa-change',label:'CAPA & change control',consulting:'Change-impact analysis spans QMS and IT — single thread for auditors.',
+   slots:{INT:'c16'}},
+  {id:'outsourced',label:'Outsourced activities & vendors',consulting:'Quality agreements and vendor oversight differ by EU Chapter 7 depth.',
+   slots:{EU:'c14'}},
+  {id:'privacy',label:'Privacy & PHI safeguards',consulting:'Privacy overlay sits beside GxP — separate control families in matrix.',
+   slots:{PRIV:'c8',US:'c7'}},
+  {id:'device-qms',label:'Medical device conformity',consulting:'Device QMS and MDR conformity are market-specific programmes.',
+   slots:{EU:'c11',US:'c10'}}
+];
+let coOpMode='matrix';
+const compareMarketSel=new Set(['US','EU','INT']);
+
 /* ─── STATE ─────────────────────────────────────────────────────── */
 let demoMode=true,selItems=new Set(),selCatsSet=new Set(),selDomain='',selApp='';
 let selModel='claude',apiKeys={},sbDocs=[],reqFiles=[],allStories=[],running=false;
@@ -1311,7 +1401,7 @@ function init(){
   buildTree();buildCats();
   buildReqExamples();
   buildChips('ch-domain',DOMAINS,'domain');
-  buildSBModels();buildStepBar();loadSaved();buildAssurance();
+  buildSBModels();buildStepBar();loadSaved();buildAssurance();buildCompareMarketFilters();
   document.getElementById('ns-chunks').textContent=GXP_CHUNKS.length;
   restoreSessionKeys();
   restoreIngestMemory();
@@ -1682,13 +1772,13 @@ function restoreSessionKeys(){
 
 /* ─── TABS ──────────────────────────────────────────────────────── */
 function goTab(t,btn){
-  ['gen','results','saved','assurance'].forEach(id=>{
-    const el=document.getElementById('view-'+id)||(id==='saved'?document.getElementById('view-saved'):null);
+  ['gen','results','saved','assurance','compare'].forEach(id=>{
     const target=document.getElementById('view-'+id);
-    if(target)target.style.display=id===t?'block':'none';
+    if(target) target.style.display=id===t?'block':'none';
   });
   document.querySelectorAll('.nav-tab').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
+  if(t==='compare') buildGlobalCompare();
 }
 
 /* ─── FILE UPLOAD ────────────────────────────────────────────────── */
@@ -3616,6 +3706,228 @@ function dlFdaClinicalSchema(){
 }
 // Alias for earlier QC button / saved HTML references
 function dlHealthcareSchema(){ return dlFdaClinicalSchema(); }
+
+/* GLOBAL COMPARE ENGINE */
+function buildCompareMarketFilters(){
+  const el=document.getElementById('compare-market-filters');
+  if(!el) return;
+  el.innerHTML=COMPARE_MARKETS.map(m=>`
+    <button type="button" class="cmp-mfilt${compareMarketSel.has(m.id)?' on':''}" onclick="toggleCompareMarket('${m.id}')">${escapeHtml(m.short)}</button>`).join('');
+}
+function toggleCompareMarket(id){
+  if(compareMarketSel.has(id)){
+    if(compareMarketSel.size<=1) return;
+    compareMarketSel.delete(id);
+  } else compareMarketSel.add(id);
+  buildCompareMarketFilters();
+  buildGlobalCompare();
+}
+function setCoOpMode(m){
+  coOpMode=m;
+  document.querySelectorAll('.cmp-mode-btn').forEach(b=>b.classList.toggle('on',b.dataset.mode===m));
+  buildGlobalCompare();
+}
+function compareSlotCell(chunkId){
+  if(!chunkId) return null;
+  const c=GXP_CHUNKS.find(x=>x.id===chunkId);
+  if(!c) return {status:'missing'};
+  if(c.licenseGate) return {status:'gated',label:c.reg,citation:c.sec,title:c.title};
+  const meta=sourceMetaFor(c.reg,c.sourceKey);
+  return {
+    status:'ok',chunkId,citation:`${c.reg} ${c.sec}`,title:c.title,
+    reqs:(c.reqs||[]).slice(0,4),excerpt:(c.excerpts&&c.excerpts[0])||'',
+    url:meta.url||'',docClass:meta.sourceType||'',authority:meta.authority||''
+  };
+}
+function ingestedCompareCells(){
+  const out={};
+  if(typeof sbDocs==='undefined'||!Array.isArray(sbDocs)) return out;
+  sbDocs.filter(d=>d.gate?.decision==='DRIVE'&&d.chunk).forEach(d=>{
+    const nation=normalizeJurisdictionNation(d.meta?.nation||'');
+    const market=COMPARE_MARKETS.find(m=>{
+      if(m.id==='PRIV') return /gdpr|hipaa|privacy|phi/i.test(d.chunk.reg||d.name||'');
+      if(m.id==='US') return nation==='United States';
+      if(m.id==='EU') return nation==='European Union'||nation==='United Kingdom';
+      if(m.id==='INT') return nation==='International';
+      return false;
+    });
+    if(!market) return;
+    const c=d.chunk;
+    out[market.id]={
+      status:'ok',chunkId:c.id,citation:`${c.reg} ${c.sec}`,title:c.title||d.name,
+      reqs:(c.reqs||[]).slice(0,4),excerpt:(c.excerpts&&c.excerpts[0])||d.meta?.excerpt||'',
+      url:d.meta?.officialUrl||d.meta?.url||'',docClass:d.meta?.documentClass||d.meta?.sourceType||'Ingested',
+      authority:d.meta?.authority||'',ingested:true
+    };
+  });
+  return out;
+}
+function diffMarketCells(cells){
+  const ok=cells.filter(c=>c&&c.status==='ok');
+  if(ok.length<2) return {similarity:ok.length?1:0,deltas:[],highDivergence:false};
+  let minSim=1,deltas=[];
+  for(let i=1;i<ok.length;i++){
+    const sim=qcJaccard(ok[0].reqs.join(' '),ok[i].reqs.join(' '));
+    minSim=Math.min(minSim,sim);
+    const uniqueB=ok[i].reqs.filter(r=>!ok[0].reqs.some(a=>qcJaccard(a,r)>0.55));
+    const uniqueA=ok[0].reqs.filter(r=>!ok[i].reqs.some(b=>qcJaccard(r,b)>0.55));
+    if(uniqueA.length||uniqueB.length) deltas.push({pair:[ok[0].marketLabel,ok[i].marketLabel],similarity:sim,uniqueA,uniqueB});
+  }
+  return {similarity:minSim,deltas,highDivergence:minSim<0.45};
+}
+function buildCompareRows(){
+  const markets=COMPARE_MARKETS.filter(m=>compareMarketSel.has(m.id));
+  const ingested=ingestedCompareCells();
+  return GLOBAL_COMPARE_TOPICS.map(topic=>{
+    const cells={};
+    markets.forEach(m=>{
+      const slot=topic.slots[m.id];
+      let cell=slot?compareSlotCell(slot):null;
+      if(ingested[m.id] && (!cell || cell.status!=='ok')) cell=ingested[m.id];
+      if(cell) cell.marketLabel=m.label;
+      cells[m.id]=cell;
+    });
+    const okCells=markets.map(m=>cells[m.id]).filter(c=>c&&c.status==='ok');
+    const diff=diffMarketCells(okCells);
+    return {topic,cells,diff,markets};
+  });
+}
+function strategicImplication(row){
+  if(row.diff.highDivergence) return 'Material cross-market divergence — plan separate control packages or a phased harmonisation programme.';
+  if(row.diff.deltas.length) return 'Partial overlap — map unique requirements to local SOPs before claiming global standardisation.';
+  const filled=Object.values(row.cells).filter(c=>c&&c.status==='ok').length;
+  if(filled<=1) return 'Single-market citation only — expand library selection or ingest additional official sources for comparison.';
+  return 'Strong textual alignment in demo corpus — still verify with official sources and SME sign-off.';
+}
+function buildGlobalCompare(){
+  const rows=buildCompareRows();
+  const metricsEl=document.getElementById('compare-metrics');
+  if(metricsEl){
+    const covered=rows.filter(r=>Object.values(r.cells).some(c=>c&&c.status==='ok')).length;
+    metricsEl.innerHTML=[
+      {v:GLOBAL_COMPARE_TOPICS.length,l:'Topics'},
+      {v:compareMarketSel.size,l:'Markets'},
+      {v:covered,l:'Topics cited'},
+      {v:rows.filter(r=>r.diff.highDivergence).length,l:'High-divergence'}
+    ].map(m=>`<div class="metric-card"><div class="metric-v">${m.v}</div><div class="metric-l">${m.l}</div></div>`).join('');
+  }
+  const body=document.getElementById('compare-body');
+  if(!body) return;
+  if(coOpMode==='gap') body.innerHTML=renderCompareGap(rows);
+  else if(coOpMode==='briefing') body.innerHTML=renderCompareBriefing(rows);
+  else body.innerHTML=renderCompareMatrix(rows);
+}
+function renderCompareCell(c,row){
+  if(!c) return '<span style="color:var(--ink4)">—</span>';
+  if(c.status==='gated') return `<span class="status-pill status-gate">Licensed gate</span><div class="cmp-cite">${escapeHtml(c.citation||c.label)}</div><div style="font-size:10px;color:var(--ink4)">${escapeHtml(c.title||'')}</div>`;
+  if(c.status!=='ok') return '<span style="color:var(--ink4)">No curated citation</span>';
+  const url=safeExternalUrl(c.url);
+  let h=`<span class="cmp-cite">${escapeHtml(c.citation)}</span><div style="font-size:10px;color:var(--ink3);margin-bottom:3px">${escapeHtml(c.title)}</div><span class="status-pill status-partial">${escapeHtml(c.docClass)}</span>`;
+  c.reqs.forEach(r=>h+=`<div class="cmp-req">• ${escapeHtml(r)}</div>`);
+  if(c.excerpt) h+=`<div class="cmp-req" style="color:var(--ink4);font-style:italic">${escapeHtml(c.excerpt.length>110?c.excerpt.slice(0,107)+'…':c.excerpt)}</div>`;
+  if(url) h+=`<a class="source-url" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">Official source ↗</a>`;
+  if(c.ingested) h+=`<div class="cmp-diff">Ingested · DRIVE gate passed</div>`;
+  const delta=row.diff.deltas.find(d=>d.pair.includes(c.marketLabel));
+  if(delta){
+    const mine=delta.pair[0]===c.marketLabel?delta.uniqueA:delta.uniqueB;
+    if(mine.length) h+=`<div class="cmp-diff">Unique here: ${escapeHtml(mine.slice(0,2).join('; '))}</div>`;
+  }
+  return h;
+}
+function renderCompareMatrix(rows){
+  const markets=COMPARE_MARKETS.filter(m=>compareMarketSel.has(m.id));
+  let h='<div class="cmp-matrix-wrap"><table class="cmp-matrix"><thead><tr><th class="topic-col">Topic</th>';
+  markets.forEach(m=>h+=`<th>${escapeHtml(m.short)}</th>`);
+  h+='</tr></thead><tbody>';
+  rows.forEach(row=>{
+    h+=`<tr><td><b>${escapeHtml(row.topic.label)}</b><div style="font-size:10px;color:var(--ink4);margin-top:3px;line-height:1.35">${escapeHtml(row.topic.consulting)}</div></td>`;
+    markets.forEach(m=>h+=`<td class="cell">${renderCompareCell(row.cells[m.id],row)}</td>`);
+    h+='</tr>';
+  });
+  return h+'</tbody></table></div>';
+}
+function renderCompareGap(rows){
+  return rows.map(row=>{
+    const deltas=row.diff.deltas;
+    const cites=Object.values(row.cells).filter(c=>c&&c.status==='ok').map(c=>c.citation).join(' · ');
+    let body=deltas.length?deltas.map(d=>`
+      <div class="cmp-req"><b>${escapeHtml(d.pair.join(' vs '))}</b> · similarity ${Math.round(d.similarity*100)}%
+        ${d.uniqueA.length?`<div>Only ${escapeHtml(d.pair[0])}: ${escapeHtml(d.uniqueA.join('; '))}</div>`:''}
+        ${d.uniqueB.length?`<div>Only ${escapeHtml(d.pair[1])}: ${escapeHtml(d.uniqueB.join('; '))}</div>`:''}
+      </div>`).join(''):'<div class="cmp-req">No pairwise delta in selected markets — single citation or high overlap.</div>';
+    return `<div class="cmp-gap-card"><div class="cmp-gap-title">${escapeHtml(row.topic.label)}</div>
+      <div class="cmp-gap-meta">${escapeHtml(cites||'No citations')} · ${row.diff.highDivergence?'High divergence':'Aligned / partial'}</div>${body}
+      <div class="cmp-diff">${escapeHtml(strategicImplication(row))}</div></div>`;
+  }).join('');
+}
+function renderCompareBriefing(rows){
+  return rows.map(row=>{
+    const markets=row.markets.filter(m=>row.cells[m.id]&&row.cells[m.id].status==='ok').map(m=>m.short).join(', ');
+    return `<div class="cmp-brief-card"><div class="cmp-gap-title">${escapeHtml(row.topic.label)}</div>
+      <div class="cmp-gap-meta">Markets: ${escapeHtml(markets||'—')} · Similarity ${Math.round(row.diff.similarity*100)}%</div>
+      <div class="cmp-req"><b>Consulting note:</b> ${escapeHtml(row.topic.consulting)}</div>
+      <div class="cmp-req"><b>Strategy implication:</b> ${escapeHtml(strategicImplication(row))}</div>
+      ${row.diff.deltas.slice(0,1).map(d=>`<div class="cmp-diff">Key delta (${escapeHtml(d.pair.join(' vs '))}): ${escapeHtml((d.uniqueA.concat(d.uniqueB)).slice(0,2).join('; ')||'overlap')}</div>`).join('')}
+    </div>`;
+  }).join('');
+}
+function buildCompareExportPayload(){
+  const rows=buildCompareRows();
+  return {
+    schema:'maras.global-regulation-compare.v1',
+    generatedAt:new Date().toISOString(),
+    coOpMode,
+    markets:COMPARE_MARKETS.filter(m=>compareMarketSel.has(m.id)).map(m=>m.label),
+    packageStatus:'DRAFT_NOT_CONTROLLED',
+    positioning:'Consulting co-operations matrix — citations are draft curated summaries, not legal advice.',
+    topics:rows.map(r=>({
+      id:r.topic.id,label:r.topic.label,consulting:r.topic.consulting,
+      similarity:r.diff.similarity,highDivergence:r.diff.highDivergence,
+      strategy:strategicImplication(r),
+      cells:Object.fromEntries(r.markets.map(m=>[m.id,r.cells[m.id]&&r.cells[m.id].status==='ok'?{
+        citation:r.cells[m.id].citation,title:r.cells[m.id].title,docClass:r.cells[m.id].docClass,
+        url:r.cells[m.id].url,requirements:r.cells[m.id].reqs,excerpt:r.cells[m.id].excerpt
+      }:null])),
+      deltas:r.diff.deltas
+    }))
+  };
+}
+function dlCompareJson(){
+  const b=new Blob([JSON.stringify(buildCompareExportPayload(),null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='DRAFT-MARAS-Global-Compare.json';a.click();URL.revokeObjectURL(a.href);
+}
+function dlCompareCsv(){
+  const rows=buildCompareRows();
+  const markets=COMPARE_MARKETS.filter(m=>compareMarketSel.has(m.id));
+  const esc=v=>`"${String(v??'').replace(/"/g,'""')}"`;
+  const header=['Topic',...markets.map(m=>m.label),'Similarity','High divergence','Strategy'].map(esc).join(',');
+  const lines=rows.map(r=>[
+    r.topic.label,
+    ...markets.map(m=>{
+      const c=r.cells[m.id];
+      if(!c||c.status!=='ok') return c&&c.status==='gated'?'Licensed gate':'';
+      return `${c.citation}: ${c.reqs.join('; ')}`;
+    }),
+    Math.round(r.diff.similarity*100)+'%',
+    r.diff.highDivergence?'YES':'NO',
+    strategicImplication(r)
+  ].map(esc).join(','));
+  const b=new Blob([header+'\n'+lines.join('\n')],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='DRAFT-MARAS-Global-Compare-Matrix.csv';a.click();URL.revokeObjectURL(a.href);
+}
+function pushCompareToAssure(){
+  const payload=buildCompareExportPayload();
+  const gaps=payload.topics.filter(t=>t.highDivergence).map(t=>t.label);
+  const ta=document.getElementById('req-ta');
+  if(ta){
+    const block=`Cross-market harmonisation brief (${payload.markets.join(', ')}):\n`+
+      (gaps.length?`Priority gap topics: ${gaps.join('; ')}.\n`:'')+
+      payload.topics.slice(0,4).map(t=>`• ${t.label}: ${t.strategy}`).join('\n');
+    ta.value=(ta.value?ta.value+'\n\n':'')+block;
+  }
+  goTab('gen',document.getElementById('ntab-gen'));
+  setStatus('idle','Global compare gaps pushed to Assure — refine outcome and generate package');
+}
 
 /* ASSURANCE */
 function assuranceStatusClass(st){
