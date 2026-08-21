@@ -658,7 +658,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
       <div class="row3">
         <div class="fld">
           <label for="f-system">System Type <span style="color:var(--red);font-weight:700">*</span></label>
-          <select id="f-system" aria-required="true">
+          <select id="f-system" aria-required="true" onchange="onHealthcareScopeChange()">
             <option value="">Select system type...</option>
             <optgroup label="Laboratory & Manufacturing">
               <option value="LIMS">LIMS — Laboratory Information Management System</option>
@@ -971,7 +971,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
     <div class="assurance-kicker">Co-operations · Consulting &amp; strategy</div>
     <div class="assurance-title">Global regulation comparison engine</div>
     <div class="assurance-sub">Compare the same control topic across markets in a citation-backed matrix. Built for consulting firms and strategy teams harmonising multi-jurisdiction programmes — separate from the Assure delivery workflow. Draft citations only; SME approval still required.</div>
-    <div class="cmp-graph" id="compare-graph">Topic → <b>Market matrix</b> → Diff engine → Co-op deliverable (matrix · gap · briefing)</div>
+    <div class="cmp-graph" id="compare-graph">Topic → <b>US · EU · ICH · HIPAA · GDPR</b> matrix → Diff → Co-op deliverable</div>
     <div class="assurance-actions">
       <button class="assurance-btn" onclick="dlCompareJson()">Download comparison JSON</button>
       <button class="assurance-btn secondary" onclick="dlCompareCsv()">Download matrix CSV</button>
@@ -994,7 +994,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
         <div class="cmp-market-filters" id="compare-market-filters"></div>
       </div>
       <div id="compare-body"></div>
-      <div class="assurance-note">Comparison uses the curated MARAS corpus plus ingested DRIVE sources. Licensed standards appear as gates. Differences are lexical heuristics — not legal equivalence. Use for consulting workshops and harmonisation planning; confirm with qualified regulatory counsel before client commitments.</div>
+      <div class="assurance-note">Comparison uses the curated MARAS corpus plus ingested DRIVE sources. <b>HIPAA</b> and <b>GDPR</b> columns apply across all Healthcare &amp; Life Sciences domains and listed system types when system and domain are selected. Licensed standards appear as gates. Differences are lexical heuristics — not legal equivalence.</div>
     </div>
   </div>
 </div>
@@ -1402,32 +1402,33 @@ const COMPARE_MARKETS=[
   {id:'US',label:'United States',short:'US FDA'},
   {id:'EU',label:'European Union',short:'EU GMP'},
   {id:'INT',label:'International',short:'ICH'},
-  {id:'PRIV',label:'Privacy overlay',short:'GDPR / HIPAA'}
+  {id:'HIPAA',label:'United States HIPAA',short:'HIPAA'},
+  {id:'GDPR',label:'EU GDPR',short:'GDPR'}
 ];
 const GLOBAL_COMPARE_TOPICS=[
   {id:'audit-trail',label:'Audit trail & record changes',consulting:'Harmonise event taxonomy before multi-site LIMS/MES rollout.',
-   slots:{US:'c3',EU:'c4'}},
+   slots:{US:'c3',EU:'c4',HIPAA:'c7',GDPR:'c8'}},
   {id:'e-signature',label:'Electronic signatures',consulting:'Signature meaning and manifestation rules need legal review per market.',
-   slots:{US:'c2'}},
+   slots:{US:'c2',HIPAA:'c7',GDPR:'c8'}},
   {id:'data-integrity',label:'Data integrity (ALCOA+)',consulting:'ALCOA+ is the harmonisation anchor; local guidance depth varies.',
-   slots:{US:'c6',EU:'c4',INT:'c13'}},
+   slots:{US:'c6',EU:'c4',INT:'c13',HIPAA:'c7',GDPR:'c8'}},
   {id:'access-security',label:'Access control & security',consulting:'Password policy and periodic access review cadence often diverge.',
-   slots:{US:'c1',EU:'c5'}},
+   slots:{US:'c1',EU:'c5',HIPAA:'c7',GDPR:'c8'}},
   {id:'validation',label:'Validation & qualification',consulting:'IQ/OQ/PQ vs CSA/risk-based assurance — align CSV strategy early.',
-   slots:{US:'c1',EU:'c15'}},
+   slots:{US:'c1',EU:'c15',HIPAA:'c7',GDPR:'c8'}},
   {id:'quality-risk',label:'Quality risk management',consulting:'QRM rigor scales with ICH Q9 — map to site risk registers.',
-   slots:{INT:'c13'}},
+   slots:{INT:'c13',GDPR:'c8'}},
   {id:'capa-change',label:'CAPA & change control',consulting:'Change-impact analysis spans QMS and IT — single thread for auditors.',
-   slots:{INT:'c16'}},
+   slots:{INT:'c16',GDPR:'c8'}},
   {id:'outsourced',label:'Outsourced activities & vendors',consulting:'Quality agreements and vendor oversight differ by EU Chapter 7 depth.',
-   slots:{EU:'c14'}},
-  {id:'privacy',label:'Privacy & PHI safeguards',consulting:'Privacy overlay sits beside GxP — separate control families in matrix.',
-   slots:{PRIV:'c8',US:'c7'}},
+   slots:{EU:'c14',GDPR:'c8'}},
+  {id:'privacy',label:'Privacy & PHI safeguards',consulting:'HIPAA technical safeguards and GDPR design controls overlay every healthcare system.',
+   slots:{US:'c7',EU:'c8',HIPAA:'c7',GDPR:'c8'}},
   {id:'device-qms',label:'Medical device conformity',consulting:'Device QMS and MDR conformity are market-specific programmes.',
-   slots:{EU:'c11',US:'c10'}}
+   slots:{EU:'c11',US:'c10',GDPR:'c8'}}
 ];
 let coOpMode='matrix';
-const compareMarketSel=new Set(['US','EU','INT']);
+const compareMarketSel=new Set(['US','EU','INT','HIPAA','GDPR']);
 
 /* ─── STATE ─────────────────────────────────────────────────────── */
 let demoMode=true,selItems=new Set(),selCatsSet=new Set(),selDomain='',selApp='';
@@ -1643,6 +1644,14 @@ function toggleChip(el,type){
   document.querySelectorAll(`#ch-${type} .chip`).forEach(c=>c.className='chip');
   if(!on){el.className='chip on teal';selDomain=el.dataset.v;}
   else{selDomain='';}
+  if(type==='domain') onHealthcareScopeChange();
+}
+function onHealthcareScopeChange(){
+  syncCompareMarketsHealthcare();
+  if(document.getElementById('view-compare')?.style.display==='block'){
+    buildCompareMarketFilters();
+    buildGlobalCompare();
+  }
 }
 function applyFramework(fw){
   // Clear all selections first — fresh every time
@@ -1820,7 +1829,12 @@ function goTab(t,btn){
   });
   document.querySelectorAll('.nav-tab').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
-  if(t==='compare') buildGlobalCompare();
+  if(t==='compare'){
+    syncCompareMarketsHealthcare();
+    applyHealthcarePrivacyLibrary();
+    buildCompareMarketFilters();
+    buildGlobalCompare();
+  }
   if(t==='readiness') buildReadinessView();
 }
 
@@ -2103,6 +2117,12 @@ const SYSTEM_AFFINITY = {
   'Serialization': ['traceability','access control','audit trail','data integrity'],
   'Supply Chain': ['vendor','outsourced','traceability','quality agreement'],
 };
+const HEALTHCARE_LS_DOMAINS=['Pharma Mfg','Biotech R&D','Med Devices','Clinical','Gene Therapy','Diagnostics','Consumer Health'];
+const HEALTHCARE_LS_SYSTEMS=Object.keys(SYSTEM_AFFINITY);
+const PRIVACY_AFFINITY=['privacy','HIPAA','GDPR','PHI'];
+HEALTHCARE_LS_SYSTEMS.forEach(s=>{
+  SYSTEM_AFFINITY[s]=[...new Set([...SYSTEM_AFFINITY[s],...PRIVACY_AFFINITY])];
+});
 
 const FDA_CLINICAL_DATA_SCHEMA = {
   schemaVersion: '1.0.0',
@@ -3756,6 +3776,22 @@ function dlFdaClinicalSchema(){
 function dlHealthcareSchema(){ return dlFdaClinicalSchema(); }
 
 /* GLOBAL COMPARE ENGINE */
+function healthcareLifeSciencesContext(){
+  const sys=document.getElementById('f-system')?.value;
+  return sys&&HEALTHCARE_LS_SYSTEMS.includes(sys)&&selDomain&&HEALTHCARE_LS_DOMAINS.includes(selDomain);
+}
+function syncCompareMarketsHealthcare(){
+  if(!healthcareLifeSciencesContext()) return;
+  compareMarketSel.add('HIPAA');
+  compareMarketSel.add('GDPR');
+}
+function applyHealthcarePrivacyLibrary(){
+  if(!healthcareLifeSciencesContext()) return;
+  selItems.add('hipaa');
+  selItems.add('gdpr');
+  renderTree('');
+  updateCount();
+}
 function buildCompareMarketFilters(){
   const el=document.getElementById('compare-market-filters');
   if(!el) return;
@@ -3793,7 +3829,8 @@ function ingestedCompareCells(){
   sbDocs.filter(d=>d.gate?.decision==='DRIVE'&&d.chunk).forEach(d=>{
     const nation=normalizeJurisdictionNation(d.meta?.nation||'');
     const market=COMPARE_MARKETS.find(m=>{
-      if(m.id==='PRIV') return /gdpr|hipaa|privacy|phi/i.test(d.chunk.reg||d.name||'');
+      if(m.id==='HIPAA') return /hipaa|phi|healthcare data/i.test(d.chunk.reg||d.name||'');
+      if(m.id==='GDPR') return /gdpr|privacy|personal data|uk gdpr/i.test(d.chunk.reg||d.name||'');
       if(m.id==='US') return nation==='United States';
       if(m.id==='EU') return nation==='European Union'||nation==='United Kingdom';
       if(m.id==='INT') return nation==='International';
@@ -3966,10 +4003,16 @@ function dlCompareCsv(){
 function pushCompareToAssure(){
   const payload=buildCompareExportPayload();
   const gaps=payload.topics.filter(t=>t.highDivergence).map(t=>t.label);
+  const privGaps=payload.topics.filter(t=>{
+    const h=t.cells.HIPAA,g=t.cells.GDPR;
+    return (h&&g&&h.citation&&g.citation&&qcJaccard((h.requirements||[]).join(' '),(g.requirements||[]).join(' '))<0.45);
+  }).map(t=>t.label);
   const ta=document.getElementById('req-ta');
   if(ta){
     const block=`Cross-market harmonisation brief (${payload.markets.join(', ')}):\n`+
       (gaps.length?`Priority gap topics: ${gaps.join('; ')}.\n`:'')+
+      (privGaps.length?`HIPAA vs GDPR divergence: ${privGaps.join('; ')}.\n`:'')+
+      (healthcareLifeSciencesContext()?'Healthcare & Life Sciences scope — leverage HIPAA and GDPR columns for every listed system type.\n':'')+
       payload.topics.slice(0,4).map(t=>`• ${t.label}: ${t.strategy}`).join('\n');
     ta.value=(ta.value?ta.value+'\n\n':'')+block;
   }

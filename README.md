@@ -51,7 +51,7 @@ MARAS is a stakeholder-review MVP for Pharma and Life Sciences teams. It convert
 | MVP-13 | Validate every supported regulated system | Regression matrix covers LIMS, MES, SCADA/DCS, Serialization, QMS, EDMS, CDS, PV, EDC/eCRF, CTMS, eTMF, Safety Reporting, RIM, ERP/SAP, and Supply Chain |
 | MVP-14 | Keep Saved Package controls usable at the larger type size | Label, inputs, Save button, status and note increase by 2px; flex wrapping and shrink-safe inputs keep every control inside the bordered container |
 | MVP-15 | Align first-time guidance with the assurance workflow | Versioned guide is re-enabled once for existing users, sits directly above the assurance hero, shares its content boundaries, and the Regulatory Library uses a wider responsive panel |
-| MVP-16 | Global regulation comparison for consulting co-operations | **Global Compare** tab renders a citation matrix across US/EU/ICH/privacy markets with gap and briefing modes, JSON/CSV export, and optional push to Assure — does not alter the Assure generation path when unused |
+| MVP-16 | Global regulation comparison for consulting co-operations | **Global Compare** tab renders a citation matrix across US/EU/ICH/**HIPAA/GDPR** markets (all Healthcare & Life Sciences domains and listed system types), gap and briefing modes, JSON/CSV export, and optional push to Assure |
 | MVP-17 | SOP and policy mapper | **Readiness** tab maps regulations to library selections, client delta / audit gap / ingested SOP text; flags true unmapped controls and lexical conflicts |
 | MVP-18 | Inspection readiness assistant | **Readiness** tab generates checklist, per-PBI evidence requests, mock inspection Q&A, and downloadable gap / inspection JSON/CSV |
 

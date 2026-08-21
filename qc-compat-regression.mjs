@@ -287,17 +287,25 @@ check('ingestion production gate holds incomplete sources and drives complete on
 
 check('global compare matrix cites US and EU audit trail with deltas', () => {
   const s = boot({ fw: 'FDA', system: 'LIMS', domain: 'Pharma Mfg' });
-  s.compareMarketSel = new Set(['US', 'EU']);
+  s.compareMarketSel = new Set(['US', 'EU', 'HIPAA', 'GDPR']);
+  s.selDomain = 'Pharma Mfg';
+  s.document.getElementById = (id) => ({
+    value: id === 'f-system' ? 'LIMS' : id === 'f-fw' ? 'FDA' : ''
+  });
   const rows = s.buildCompareRows();
   const audit = rows.find(r => r.topic.id === 'audit-trail');
   assert.ok(audit);
   assert.equal(audit.cells.US.status, 'ok');
   assert.equal(audit.cells.EU.status, 'ok');
-  assert.ok(audit.cells.US.citation.includes('21 CFR'));
-  assert.ok(audit.cells.EU.citation.includes('Annex 11'));
+  assert.equal(audit.cells.HIPAA.status, 'ok');
+  assert.equal(audit.cells.GDPR.status, 'ok');
+  assert.ok(audit.cells.HIPAA.citation.includes('HIPAA'));
+  assert.ok(audit.cells.GDPR.citation.includes('GDPR'));
   const payload = s.buildCompareExportPayload();
   assert.equal(payload.schema, 'maras.global-regulation-compare.v1');
   assert.equal(payload.packageStatus, 'DRAFT_NOT_CONTROLLED');
+  assert.ok(payload.markets.some(m => /HIPAA/.test(m)));
+  assert.ok(payload.markets.some(m => /GDPR/.test(m)));
 });
 
 check('SOP mapper surfaces gaps and inspection pack schema', () => {
