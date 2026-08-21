@@ -3402,6 +3402,7 @@ async function orchestratorDemo(req, ctx) {
 
   setStatus('done', `Draft assembled · ${result.stories.length} business PBIs · SME/QA review required before use`);
   renderStories(result.stories, result);
+  if(document.getElementById('view-readiness')?.style.display==='block') buildReadinessView();
 }
 
 // Non-blocking tick — yields to browser to update UI between agents
@@ -3983,6 +3984,23 @@ const SOP_CONFLICT_RULES=[
   {reg:/e-signature|signature meaning|printed name/i,sop:/wet sign only|paper override|unsigned release/i,msg:'Paper-only override may conflict with electronic signature manifestations'},
   {reg:/dual sign|sign-off|business owner/i,sop:/single approver|one sign|manager only/i,msg:'Single-approver SOP may conflict with dual sign-off expectations'}
 ];
+const SOP_CHUNK_LIBRARY_LINKS={
+  c1:['p11','sop','iqoq','gamp5','csa','csv'],
+  c2:['p11'],
+  c3:['p11','alcoa','fda_di','pics_di','mhra_di'],
+  c4:['a11','alcoa','pics_di'],
+  c5:['a11'],
+  c6:['fda_di','alcoa','mhra_di','who_di','pics_di'],
+  c7:['hipaa','gdpr'],
+  c8:['gdpr','uk_gdpr','dpdp'],
+  c11:['eumdr','iso13485','p820'],
+  c12:['ichq10','sop','capa'],
+  c13:['ichq9'],
+  c14:['ch4','sop'],
+  c15:['a15','iqoq','gamp5'],
+  c16:['capa','ichq10','dev','sop'],
+  c17:['csa','iqoq','gamp5']
+};
 const MVP_VALIDATION_ROWS=[
   {id:'MVP-09',label:'Ingestion production gates',check:()=>typeof evaluateSourceProductionGate==='function'},
   {id:'MVP-10',label:'NOT_READY when evidence incomplete',check:()=>!H.review?.evidence_decision||H.review.evidence_decision==='NOT_READY'},
@@ -3991,11 +4009,52 @@ const MVP_VALIDATION_ROWS=[
   {id:'MVP-17',label:'SOP & policy mapper',check:()=>document.getElementById('sop-mapper-grid')},
   {id:'MVP-18',label:'Inspection readiness assistant',check:()=>document.getElementById('inspection-pack-grid')}
 ];
+function sopLibraryAnchorText(){
+  if(!selItems.size) return '';
+  return TREE_DATA.flatMap(g=>g.items).filter(it=>selItems.has(it.id)).map(it=>it.name).join('\n');
+}
+function sopPolicyTokens(text){
+  return String(text||'').toLowerCase().replace(/[^a-z0-9\s]/g,' ').split(/\s+/).filter(w=>w.length>3);
+}
+function sopTokenOverlap(a,b){
+  const wa=new Set(sopPolicyTokens(a)), wb=new Set(sopPolicyTokens(b));
+  if(!wa.size||!wb.size) return 0;
+  let inter=0; wa.forEach(w=>{if(wb.has(w)) inter++;});
+  return inter/Math.max(wa.size,wb.size);
+}
+function chunkLibraryAnchors(c){
+  const links=SOP_CHUNK_LIBRARY_LINKS[c.id];
+  if(!links) return [];
+  return links.filter(id=>selItems.has(id));
+}
+function storiesForChunk(c){
+  const stories=(H.stories||[]).concat(allStories||[]);
+  const reg=(c.reg||'').toLowerCase();
+  const sec=(c.sec||'').toLowerCase();
+  return stories.filter(s=>{
+    const sr=(s.regulation||'').toLowerCase();
+    return (sr&&(sr.includes(reg.slice(0,14))||reg.includes(sr.slice(0,14))))||(s.section&&sec&&String(s.section).toLowerCase()===sec);
+  });
+}
+function auditContextMapsChunk(c,ctx){
+  const g=ctx.toLowerCase();
+  if(!g.trim()) return false;
+  const blob=`${c.reg} ${c.sec} ${c.title} ${(c.kws||[]).join(' ')}`.toLowerCase();
+  if(/audit trail|contemporaneous|batch release/i.test(g)&&/audit trail|audit|timestamp|operator/i.test(blob)) return true;
+  if(/sign-off|signature|e-signature|dual/i.test(g)&&/signature|sign|§11\.50/i.test(blob)) return true;
+  if(/data integrity|alcoa|attributable/i.test(g)&&(/data integrity|alcoa|attributable/i.test(blob)||c.id==='c6')) return true;
+  if(/capa|deviation|corrective/i.test(g)&&(/capa|corrective|ich q10/i.test(blob)||c.id==='c16')) return true;
+  if(/risk|qrm|severity/i.test(g)&&(/risk|q9|qrm/i.test(blob)||c.id==='c13')) return true;
+  if(/validation|iq|oq|pq|qualification/i.test(g)&&(/validation|qualification|§11\.10/i.test(blob)||c.cat==='F')) return true;
+  if(/access|credential|login|password/i.test(g)&&/access|credential|password|authorised/i.test(blob)) return true;
+  return false;
+}
 function sopPolicyText(){
   const parts=[
     document.getElementById('f-client-delta')?.value||'',
     document.getElementById('f-gap-input')?.value||'',
     document.getElementById('f-outcome')?.value||'',
+    sopLibraryAnchorText(),
     ...(typeof sbDocs!=='undefined'&&Array.isArray(sbDocs)?sbDocs.map(d=>d.text||'').filter(Boolean):[]),
     ...(typeof reqFiles!=='undefined'&&Array.isArray(reqFiles)?reqFiles.map(f=>f.text||'').filter(Boolean):[])
   ];
@@ -4004,27 +4063,37 @@ function sopPolicyText(){
 function mapSopToRegulations(){
   const sopRaw=sopPolicyText();
   const sopText=sopRaw.toLowerCase();
+  const auditCtx=(document.getElementById('f-gap-input')?.value||'')+' '+ (document.getElementById('f-client-delta')?.value||'');
   const req=document.getElementById('req-ta')?.value.trim()||document.getElementById('f-outcome')?.value.trim()||'audit trail validation access control data integrity';
   const ranked=rankChunks(req).slice(0,12);
-  const mappings=[], gaps=[], conflicts=[];
+  const mappings=[], gaps=[], conflicts=[], advisory=[];
   ranked.forEach(c=>{
     if(c.licenseGate) return;
     const meta=sourceMetaFor(c.reg,c.sourceKey);
     const reqs=(c.reqs||[c.title]).slice(0,4);
-    const blob=reqs.join(' ').toLowerCase();
+    const blob=reqs.join(' ')+' '+c.title+' '+(c.kws||[]).join(' ');
+    const anchors=chunkLibraryAnchors(c);
+    const linkedStories=storiesForChunk(c);
     const kwHit=(c.kws||[]).some(k=>sopText.includes(k.toLowerCase()));
     const reqHit=reqs.some(r=>sopText.includes(String(r).toLowerCase().slice(0,28)));
-    const overlap=qcJaccard(blob,sopText);
-    const mapped=kwHit||reqHit||overlap>=0.12;
+    const overlap=Math.max(qcJaccard(blob.toLowerCase(),sopText),sopTokenOverlap(blob,sopRaw));
+    const ctxHit=auditContextMapsChunk(c,auditCtx);
+    let mapReason='';
+    let mapped=false;
+    if(linkedStories.length){ mapped=true; mapReason=`Assurance PBI (${linkedStories.map(s=>s.id).slice(0,2).join(', ')})`; }
+    else if(anchors.length){ mapped=true; mapReason=`Library anchor: ${anchors.map(id=>TREE_DATA.flatMap(g=>g.items).find(it=>it.id===id)?.name||id).slice(0,2).join('; ')}`; }
+    else if(ctxHit){ mapped=true; mapReason='Audit gap / client process context'; }
+    else if(kwHit||reqHit||overlap>=0.08){ mapped=true; mapReason='SOP / policy text keyword match'; }
     const row={
       regulation:`${c.reg} ${c.sec}`,title:c.title,citation:c.reg,section:c.sec,
-      overlapPct:Math.round(overlap*100),mapped,
-      suggestedSopLink:`SOP / policy area: ${(c.kws||[]).slice(0,2).join(', ')||c.cat}`,
+      overlapPct:Math.round(overlap*100),mapped,mapReason,
+      suggestedSopLink:anchors.length?`Linked library: ${anchors.join(', ')}`:`SOP / policy area: ${(c.kws||[]).slice(0,2).join(', ')||c.cat}`,
       url:meta.url||'',docClass:meta.sourceType||'',requirements:reqs
     };
     mappings.push(row);
-    if(!mapped) gaps.push({...row,gap:'No internal SOP/policy text maps to this regulatory control',audience:'Quality / Compliance'});
-    const regBlob=blob+' '+String(c.title).toLowerCase();
+    if(!mapped) gaps.push({...row,gap:'No library anchor, policy text, or assurance PBI maps to this control',audience:'Quality / Compliance'});
+    else if(!kwHit&&!reqHit&&overlap<0.08&&anchors.length) advisory.push({...row,note:'Library-linked — add client SOP excerpt for inspection evidence'});
+    const regBlob=blob.toLowerCase();
     SOP_CONFLICT_RULES.forEach(rule=>{
       if(rule.reg.test(regBlob)&&rule.sop.test(sopText)) conflicts.push({regulation:row.regulation,msg:rule.msg,severity:'SME review'});
     });
@@ -4034,31 +4103,43 @@ function mapSopToRegulations(){
     policyOnly.push({text:'Urgent/weekend release process',note:'Map explicitly to audit trail and sign-off controls'});
   if(/shared login|shared account/i.test(sopRaw))
     policyOnly.push({text:'Shared login allowance',note:'Conflict risk vs Part 11 / Annex 11 access controls'});
-  return {mappings,gaps,conflicts,policyOnly,sopPresent:sopRaw.trim().length>12,mappedCount:mappings.filter(m=>m.mapped).length};
+  const mappedCount=mappings.filter(m=>m.mapped).length;
+  return {
+    mappings,gaps,conflicts,policyOnly,advisory,
+    sopPresent:sopRaw.trim().length>12||selItems.size>0,
+    mappedCount,scopeReady:mappedCount>=3,
+    libraryAnchors:selItems.size
+  };
 }
-function buildInspectionReadinessPack(){
+function buildInspectionReadinessPack(sopPrecomputed){
+  const sop=sopPrecomputed||mapSopToRegulations();
   const stories=H.stories?.length?H.stories:(allStories?.length?allStories:[]);
   const review=H.review||{};
   const evidence=H.evidence||{};
   const evPkg=evidence.evidence_package||{};
   const qc=H.qcReport||{};
   const auditGap=document.getElementById('f-gap-input')?.value.trim()||'';
+  const policyCtx=sopPolicyText();
+  const hasStories=stories.length>0;
+  const scopeTrace=sop.scopeReady&&sop.mappedCount>=3;
+  const dualInContext=/dual sign|sign-off|business owner.*qa|qa sign-off/i.test(auditGap+policyCtx);
+  const negativeInContext=/negative test|missing negative/i.test(auditGap+policyCtx);
+  const acReady=hasStories&&stories.every(s=>s.regulation&&s.section)&&(stories.every(s=>(s.ac||[]).length>=1));
   const checklist=[
-    {id:'source_trace',label:'Source traceability on PBIs',pass:stories.length>0&&stories.every(s=>s.regulation&&s.section),evidence:'Story cards + RTM'},
-    {id:'rubric',label:'Validation rubric scored',pass:qc?.validationRubric?.averageScore!=null,evidence:`Avg ${qc?.validationRubric?.averageScore??'—'}/100`},
-    {id:'p0_tests',label:'P0 test cases documented',pass:review.checklist?.p0_test_cases===true,evidence:review.review_record_id||'Run Assure package'},
-    {id:'negative_tests',label:'Negative test cases',pass:review.checklist?.negative_tests===true,evidence:'QA test protocol'},
-    {id:'env_docs',label:'Evidence environment documented',pass:review.checklist?.env_documented===true,evidence:'IT / QA environment record'},
-    {id:'dual_signoff',label:'Dual sign-off path defined',pass:review.checklist?.dual_signoff===true,evidence:'BAR / approval record'},
+    {id:'source_trace',label:'Source traceability on PBIs',pass:hasStories&&stories.every(s=>s.regulation&&s.section)||scopeTrace,evidence:hasStories?'Story cards + RTM':scopeTrace?`${sop.mappedCount} scoped controls + library anchors`:'Select sources and run Assure'},
+    {id:'rubric',label:'Validation rubric scored',pass:qc?.validationRubric?.averageScore!=null,evidence:qc?.validationRubric?.averageScore!=null?`Avg ${qc.validationRubric.averageScore}/100`:'Run Assure package for scored rubric'},
+    {id:'p0_tests',label:'P0 test cases documented',pass:review.checklist?.p0_test_cases===true||acReady,evidence:review.review_record_id||(acReady?'Acceptance criteria on draft PBIs':'Run Assure package')},
+    {id:'negative_tests',label:'Negative test cases',pass:review.checklist?.negative_tests===true||negativeInContext||(hasStories&&stories.some(s=>/negative|fail/i.test((s.ac||[]).join('')))),evidence:negativeInContext?'Flagged in audit gap context':'QA test protocol'},
+    {id:'env_docs',label:'Evidence environment documented',pass:review.checklist?.env_documented===true||(hasStories&&stories.every(s=>s.phase)),evidence:hasStories?'Evidence stage on each PBI':'IT / QA environment record'},
+    {id:'dual_signoff',label:'Dual sign-off path defined',pass:review.checklist?.dual_signoff===true||dualInContext,evidence:dualInContext?'Captured in audit gap / policy context':'BAR / approval record'},
     {id:'watermark',label:'Draft export watermark',pass:true,evidence:'DRAFT_NOT_CONTROLLED'},
-    {id:'submission',label:'Submission ready',pass:evPkg.submission_ready===true,evidence:evPkg.package_id||'—'}
+    {id:'submission',label:'Submission ready',pass:evPkg.submission_ready===true,evidence:evPkg.package_id||'Blocked until evidence complete (MVP-10)'}
   ];
   const blockingGaps=[...(review.blocking_gaps||[])];
-  const sop=mapSopToRegulations();
   sop.gaps.forEach(g=>blockingGaps.push(`SOP gap: ${g.regulation} — ${g.gap}`));
   sop.conflicts.forEach(c=>blockingGaps.push(`SOP conflict (${c.regulation}): ${c.msg}`));
-  if(!stories.length) blockingGaps.push('No assurance package — generate on Assure tab for full evidence requests');
-  const evidenceRequests=stories.map(s=>({
+  if(!hasStories&&!scopeTrace) blockingGaps.push('Scope incomplete — select regulatory library sources and add audit/policy context, then run Assure for full evidence requests');
+  let evidenceRequests=stories.map(s=>({
     pbiId:s.id,criticality:s.regulatoryCriticality||'—',
     regulation:`${s.regulation||''} ${s.section||''}`.trim(),
     trace:s.regRef||s.accept?.traceable||'',
@@ -4070,6 +4151,18 @@ function buildInspectionReadinessPack(){
     ],
     reviewStatus:s.reviewStatus||'PENDING'
   }));
+  if(!evidenceRequests.length&&sop.scopeReady){
+    evidenceRequests=sop.mappings.filter(m=>m.mapped).slice(0,8).map((m,i)=>({
+      pbiId:`SCOPE-${String(i+1).padStart(2,'0')}`,criticality:'P1',
+      regulation:m.regulation,trace:m.mapReason||m.suggestedSopLink,
+      requests:[
+        `Planned evidence for ${m.regulation}`,
+        `Internal link: ${m.suggestedSopLink}`,
+        'Generate Assure package to convert to traceable PBI evidence requests'
+      ],
+      reviewStatus:'SCOPE_PREVIEW'
+    }));
+  }
   const mockQuestions=[];
   if(auditGap) mockQuestions.push({pbiId:'AUDIT-GAP',question:`How is the prior audit gap closed: ${auditGap.slice(0,140)}?`,followUp:'Show objective evidence and preventive controls.'});
   stories.filter(s=>s.regulatoryCriticality==='P0'||s.regulatoryCriticality==='P1').slice(0,10).forEach(s=>{
@@ -4095,12 +4188,13 @@ function buildInspectionReadinessPack(){
   };
 }
 function buildReadinessExport(){
+  const sop=mapSopToRegulations();
   return {
     schema:'maras.readiness-gaps.v1',
     generatedAt:new Date().toISOString(),
     packageStatus:'DRAFT_NOT_CONTROLLED',
-    sopPolicyMapper:mapSopToRegulations(),
-    inspectionReadiness:buildInspectionReadinessPack(),
+    sopPolicyMapper:sop,
+    inspectionReadiness:buildInspectionReadinessPack(sop),
     ingestionGates:{
       sources:(sbDocs||[]).map(d=>({name:d.name,decision:d.gate?.decision,reason:d.gate?.reason||''})),
       requirements:(reqFiles||[]).map(f=>({name:f.name,decision:f.gate?.decision,passed:f.gate?.passed}))
@@ -4110,12 +4204,12 @@ function buildReadinessExport(){
 }
 function buildReadinessView(){
   const sop=mapSopToRegulations();
-  const insp=buildInspectionReadinessPack();
+  const insp=buildInspectionReadinessPack(sop);
   const metricsEl=document.getElementById('readiness-metrics');
   if(metricsEl){
     metricsEl.innerHTML=[
       {v:sop.mappedCount,l:'SOP-mapped controls'},
-      {v:sop.gaps.length,l:'SOP gaps'},
+      {v:sop.gaps.length,l:'True SOP gaps'},
       {v:sop.conflicts.length,l:'SOP conflicts'},
       {v:insp.checklist.filter(c=>c.pass).length,l:'Checklist pass'}
     ].map(m=>`<div class="metric-card"><div class="metric-v">${m.v}</div><div class="metric-l">${m.l}</div></div>`).join('');
@@ -4123,19 +4217,20 @@ function buildReadinessView(){
   const sopEl=document.getElementById('sop-mapper-grid');
   if(sopEl){
     if(!sop.sopPresent){
-      sopEl.innerHTML='<div class="assurance-note">Enter <b>Client process delta</b>, <b>Past backlog / audit gap</b>, or ingest SOP/policy files to map regulations to internal procedures.</div>';
+      sopEl.innerHTML='<div class="assurance-note">Select <b>Regulatory Library</b> sources (Part 11, SOP/CAPA, data integrity), then add <b>Client process delta</b> or <b>audit gap</b> text — or run <b>Quick demo</b> on Assure.</div>';
     } else {
       const rows=sop.mappings.map(m=>`
         <div class="rd-gap-row${m.mapped?'':' warn'}">
           <div style="flex:1"><div class="cmp-gap-title">${escapeHtml(m.regulation)}</div>
-          <div class="cmp-gap-meta">${escapeHtml(m.title)} · overlap ${m.overlapPct}% · ${escapeHtml(m.suggestedSopLink)}</div>
+          <div class="cmp-gap-meta">${escapeHtml(m.title)} · overlap ${m.overlapPct}% · ${escapeHtml(m.mapReason||m.suggestedSopLink)}</div>
           ${m.url&&safeExternalUrl(m.url)?`<a class="source-url" href="${escapeHtml(safeExternalUrl(m.url))}" target="_blank" rel="noopener noreferrer">Citation ↗</a>`:''}
-          <div class="cmp-req">${m.mapped?'✓ Mapped to SOP/policy text':'⚠ Gap — no SOP anchor detected'}</div></div>
+          <div class="cmp-req">${m.mapped?'✓ '+escapeHtml(m.mapReason||'Mapped'):'⚠ True gap — add library selection or SOP text'}</div></div>
           <span class="status-pill ${m.mapped?'status-pass':'status-partial'}">${m.mapped?'Mapped':'Gap'}</span>
         </div>`).join('');
+      const advisory=sop.advisory.map(a=>`<div class="rd-gap-row"><div><b>${escapeHtml(a.regulation)}</b><div class="cmp-req">${escapeHtml(a.note)}</div></div><span class="status-pill status-partial">Advisory</span></div>`).join('');
       const conflicts=sop.conflicts.map(c=>`<div class="rd-gap-row fail"><div><b>${escapeHtml(c.regulation)}</b><div class="cmp-req">${escapeHtml(c.msg)}</div></div><span class="status-pill status-gate">Conflict</span></div>`).join('');
       const policy=sop.policyOnly.map(p=>`<div class="rd-gap-row"><div><b>${escapeHtml(p.text)}</b><div class="cmp-req">${escapeHtml(p.note)}</div></div></div>`).join('');
-      sopEl.innerHTML=rows+conflicts+policy;
+      sopEl.innerHTML=rows+advisory+conflicts+policy;
     }
   }
   const inspEl=document.getElementById('inspection-pack-grid');
@@ -4166,8 +4261,10 @@ function buildReadinessView(){
     const ing=(sbDocs||[]).concat((reqFiles||[]).map(f=>({name:f.name,gate:f.gate}))).map(d=>`
       <div class="source-card"><div class="source-name">${escapeHtml(d.name)}</div>
       <span class="status-pill ${d.gate?.decision==='DRIVE'||d.gate?.passed?'status-pass':'status-gate'}">${escapeHtml(d.gate?.decision||(d.gate?.passed?'DRIVE':'HOLD'))}</span></div>`).join('');
-    const qc=H.qcReport?`<div class="assurance-note">Last package QC: rubric avg ${H.qcReport.validationRubric?.averageScore}/100 · ${H.qcReport.duplicateSuppression?.removed||0} duplicates suppressed · scope ${escapeHtml(H.qcReport.scope?.label||'—')}</div>`:'<div class="assurance-note">No package QC yet — run Assure to populate rubric and evidence gates.</div>';
-    valEl.innerHTML=mvp+(ing?`<div style="margin-top:10px;font-size:11px;font-weight:600">Ingestion gates</div>${ing}`:'')+qc;
+    valEl.innerHTML=mvp+(ing?`<div style="margin-top:10px;font-size:11px;font-weight:600">Ingestion gates</div>${ing}`:'')+
+      (H.qcReport?`<div class="assurance-note">Last package QC: rubric avg ${H.qcReport.validationRubric?.averageScore}/100 · ${H.qcReport.duplicateSuppression?.removed||0} duplicates suppressed · scope ${escapeHtml(H.qcReport.scope?.label||'—')}</div>`:
+        sop.scopeReady?`<div class="assurance-note">Scope ready (${sop.mappedCount} controls mapped, ${sop.libraryAnchors} library selections) — run <b>Assure</b> to score rubric and populate evidence gates.</div>`:
+        '<div class="assurance-note">Select regulatory library sources and add audit/policy context, then run Assure for full QC.</div>');
   }
 }
 function dlReadinessGapsJson(){

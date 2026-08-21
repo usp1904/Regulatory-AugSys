@@ -41,6 +41,7 @@ check('global compare engine is wired', html.includes('GLOBAL_COMPARE_TOPICS') &
 check('co-operations modes exist', html.includes('setCoOpMode') && html.includes('renderCompareGap') && html.includes('renderCompareBriefing'));
 check('readiness tab with SOP mapper', html.includes('id="view-readiness"') && html.includes('function mapSopToRegulations') && html.includes('sop-mapper-grid'));
 check('inspection readiness assistant', html.includes('function buildInspectionReadinessPack') && html.includes('maras.inspection-readiness.v1') && html.includes('dlInspectionPackJson'));
+check('SOP mapper uses library anchors', html.includes('SOP_CHUNK_LIBRARY_LINKS') && html.includes('auditContextMapsChunk'));
 check('readiness gap downloads', html.includes('maras.readiness-gaps.v1') && html.includes('dlReadinessGapsCsv'));
 check('Agents.md default instructions', fs.existsSync('Agents.md') && fs.readFileSync('Agents.md','utf8').includes('CRS Mode') && fs.readFileSync('Agents.md','utf8').includes('Graphiffy'));
 
