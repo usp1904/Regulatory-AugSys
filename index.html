@@ -441,6 +441,33 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .compare-box p{font-size:11px;color:var(--ink3);line-height:1.5}
 .scenario-flow{font-size:11px;color:var(--ink2);line-height:1.45;margin-top:7px;padding:8px;background:var(--bg);border-radius:var(--r)}
 .assurance-note{font-size:11px;color:var(--ink3);line-height:1.5;background:var(--amber-t);border:1px solid rgba(146,64,14,.18);border-radius:var(--r);padding:10px;margin-top:10px}
+.compare-view{display:none;padding:16px 20px 48px;max-width:1180px;margin:0 auto;width:100%}
+.readiness-view{display:none;padding:16px 20px 48px;max-width:1180px;margin:0 auto;width:100%}
+.rd-gap-row{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--r);margin-bottom:6px;background:#fff}
+.rd-gap-row.warn{border-color:rgba(146,64,14,.35);background:var(--amber-t)}
+.rd-gap-row.fail{border-color:rgba(220,38,38,.35);background:var(--red-t)}
+.cmp-toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.cmp-modes{display:flex;gap:6px;flex-wrap:wrap}
+.cmp-mode-btn{font-size:11px;padding:5px 10px;border-radius:20px;border:1px solid var(--border);background:#fff;cursor:pointer;font-family:inherit;color:var(--ink2)}
+.cmp-mode-btn.on{background:var(--blue-t);border-color:var(--blue);color:var(--blue);font-weight:600}
+.cmp-market-filters{display:flex;gap:6px;flex-wrap:wrap}
+.cmp-mfilt{font-size:10px;padding:3px 8px;border-radius:12px;border:1px solid var(--border);cursor:pointer;background:var(--bg);color:var(--ink3);font-family:inherit}
+.cmp-mfilt.on{background:var(--teal-t);border-color:var(--teal);color:var(--teal);font-weight:600}
+.cmp-matrix-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--r2);background:#fff;box-shadow:var(--shadow)}
+.cmp-matrix{width:100%;border-collapse:collapse;font-size:11px}
+.cmp-matrix th,.cmp-matrix td{border:1px solid var(--border);padding:8px 10px;vertical-align:top;text-align:left}
+.cmp-matrix th{background:var(--bg);font-weight:600;color:var(--ink2);font-size:10px;text-transform:uppercase;letter-spacing:.3px}
+.cmp-matrix th.topic-col{min-width:148px}
+.cmp-matrix td.cell{min-width:190px;max-width:260px}
+.cmp-cite{font-size:10px;color:var(--blue);font-weight:600;display:block;margin-bottom:4px;line-height:1.35}
+.cmp-req{font-size:10px;color:var(--ink2);line-height:1.35;margin-top:2px}
+.cmp-diff{font-size:10px;color:var(--amber);margin-top:6px;padding-top:6px;border-top:1px dashed var(--border);line-height:1.4}
+.cmp-gap-card{border:1px solid var(--border);border-radius:var(--r);padding:11px;margin-bottom:8px;background:#fff}
+.cmp-gap-title{font-size:12px;font-weight:600;color:var(--ink);margin-bottom:4px}
+.cmp-gap-meta{font-size:10px;color:var(--ink4);margin-bottom:6px}
+.cmp-brief-card{border:1px solid var(--border);border-radius:var(--r2);padding:12px;margin-bottom:10px;background:#fff;box-shadow:var(--shadow)}
+.cmp-graph{font-size:9px;color:var(--ink4);text-align:center;margin:8px 0 12px;letter-spacing:.2px}
+.cmp-graph b{color:var(--ink3);font-weight:600}
 .value-hero{background:#fff;border:1px solid var(--border);border-radius:var(--r2);box-shadow:var(--shadow);padding:14px;margin-bottom:12px}
 .value-hero-title{font-size:17px;font-weight:800;color:var(--ink);line-height:1.25}
 .value-hero-sub{font-size:12px;color:var(--ink3);line-height:1.45;margin-top:4px}
@@ -482,6 +509,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
     <button class="nav-tab on" id="ntab-gen" onclick="goTab('gen',this)"><span class="nav-tab-pip"></span>Assure</button>
     <button class="nav-tab" id="ntab-results" onclick="goTab('results',this)">Value Package</button>
     <button class="nav-tab" id="ntab-assurance" onclick="goTab('assurance',this)">Assurance</button>
+    <button class="nav-tab" id="ntab-compare" onclick="goTab('compare',this)">Global Compare</button>
+    <button class="nav-tab" id="ntab-readiness" onclick="goTab('readiness',this)">Readiness</button>
     <button class="nav-tab" id="ntab-saved" onclick="goTab('saved',this)">Saved Packages</button>
   </div>
   <div class="nav-right">
@@ -936,6 +965,77 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
   </div>
 </div>
 
+<!-- GLOBAL COMPARE VIEW — consulting / strategy co-operations -->
+<div id="view-compare" class="compare-view">
+  <div class="assurance-hero">
+    <div class="assurance-kicker">Co-operations · Consulting &amp; strategy</div>
+    <div class="assurance-title">Global regulation comparison engine</div>
+    <div class="assurance-sub">Compare the same control topic across markets in a citation-backed matrix. Built for consulting firms and strategy teams harmonising multi-jurisdiction programmes — separate from the Assure delivery workflow. Draft citations only; SME approval still required.</div>
+    <div class="cmp-graph" id="compare-graph">Topic → <b>Market matrix</b> → Diff engine → Co-op deliverable (matrix · gap · briefing)</div>
+    <div class="assurance-actions">
+      <button class="assurance-btn" onclick="dlCompareJson()">Download comparison JSON</button>
+      <button class="assurance-btn secondary" onclick="dlCompareCsv()">Download matrix CSV</button>
+      <button class="assurance-btn secondary" onclick="pushCompareToAssure()">Push gaps to Assure tab</button>
+    </div>
+    <div class="metric-row" id="compare-metrics"></div>
+  </div>
+  <div class="assurance-section">
+    <div class="assurance-section-h">
+      <div class="assurance-section-t">Cross-market matrix</div>
+      <div class="assurance-section-s">Same topic · different markets · citations and deltas</div>
+    </div>
+    <div class="assurance-body">
+      <div class="cmp-toolbar">
+        <div class="cmp-modes">
+          <button type="button" class="cmp-mode-btn on" data-mode="matrix" onclick="setCoOpMode('matrix')">Matrix</button>
+          <button type="button" class="cmp-mode-btn" data-mode="gap" onclick="setCoOpMode('gap')">Gap analysis</button>
+          <button type="button" class="cmp-mode-btn" data-mode="briefing" onclick="setCoOpMode('briefing')">Client briefing</button>
+        </div>
+        <div class="cmp-market-filters" id="compare-market-filters"></div>
+      </div>
+      <div id="compare-body"></div>
+      <div class="assurance-note">Comparison uses the curated MARAS corpus plus ingested DRIVE sources. Licensed standards appear as gates. Differences are lexical heuristics — not legal equivalence. Use for consulting workshops and harmonisation planning; confirm with qualified regulatory counsel before client commitments.</div>
+    </div>
+  </div>
+</div>
+
+<!-- READINESS VIEW — SOP mapper · inspection assistant · validation gaps -->
+<div id="view-readiness" class="readiness-view">
+  <div class="assurance-hero">
+    <div class="assurance-kicker">Quality &amp; compliance operations</div>
+    <div class="assurance-title">SOP mapper · Inspection readiness · Validation gaps</div>
+    <div class="assurance-sub">Links regulations to internal SOP/policy text, flags control gaps and conflicts, and assembles audit checklists, evidence requests, and mock inspection questions. Validations and ingestion gate status are visible here with downloadable gap reports.</div>
+    <div class="cmp-graph">Regulation ↔ <b>SOP map</b> → Gap flags → <b>Inspection pack</b> → Gap download</div>
+    <div class="assurance-actions">
+      <button class="assurance-btn" onclick="dlReadinessGapsJson()">Download gaps JSON</button>
+      <button class="assurance-btn secondary" onclick="dlReadinessGapsCsv()">Download gaps CSV</button>
+      <button class="assurance-btn secondary" onclick="dlInspectionPackJson()">Download inspection pack</button>
+    </div>
+    <div class="metric-row" id="readiness-metrics"></div>
+  </div>
+  <div class="assurance-section">
+    <div class="assurance-section-h">
+      <div class="assurance-section-t">1. SOP &amp; policy mapper</div>
+      <div class="assurance-section-s">Regulation → internal SOP / policy · gap and conflict flags for quality teams</div>
+    </div>
+    <div class="assurance-body"><div id="sop-mapper-grid"></div></div>
+  </div>
+  <div class="assurance-section">
+    <div class="assurance-section-h">
+      <div class="assurance-section-t">2. Inspection readiness assistant</div>
+      <div class="assurance-section-s">Checklists · evidence requests · mock inspection Q&amp;A</div>
+    </div>
+    <div class="assurance-body"><div id="inspection-pack-grid"></div></div>
+  </div>
+  <div class="assurance-section">
+    <div class="assurance-section-h">
+      <div class="assurance-section-t">3. Validations &amp; production gates</div>
+      <div class="assurance-section-s">MVP checks · ingestion HOLD/DRIVE · last package QC</div>
+    </div>
+    <div class="assurance-body"><div id="validation-status-grid" class="assurance-grid"></div></div>
+  </div>
+</div>
+
 </div><!-- rpanel -->
 </div><!-- layout -->
 
@@ -1297,6 +1397,38 @@ const LEADERSHIP_ACTIONS=[
    evidence:'Model picker, validation report and benchmark plan.'},
 ];
 
+/* ─── GLOBAL COMPARE (consulting / strategy co-operations) ───────── */
+const COMPARE_MARKETS=[
+  {id:'US',label:'United States',short:'US FDA'},
+  {id:'EU',label:'European Union',short:'EU GMP'},
+  {id:'INT',label:'International',short:'ICH'},
+  {id:'PRIV',label:'Privacy overlay',short:'GDPR / HIPAA'}
+];
+const GLOBAL_COMPARE_TOPICS=[
+  {id:'audit-trail',label:'Audit trail & record changes',consulting:'Harmonise event taxonomy before multi-site LIMS/MES rollout.',
+   slots:{US:'c3',EU:'c4'}},
+  {id:'e-signature',label:'Electronic signatures',consulting:'Signature meaning and manifestation rules need legal review per market.',
+   slots:{US:'c2'}},
+  {id:'data-integrity',label:'Data integrity (ALCOA+)',consulting:'ALCOA+ is the harmonisation anchor; local guidance depth varies.',
+   slots:{US:'c6',EU:'c4',INT:'c13'}},
+  {id:'access-security',label:'Access control & security',consulting:'Password policy and periodic access review cadence often diverge.',
+   slots:{US:'c1',EU:'c5'}},
+  {id:'validation',label:'Validation & qualification',consulting:'IQ/OQ/PQ vs CSA/risk-based assurance — align CSV strategy early.',
+   slots:{US:'c1',EU:'c15'}},
+  {id:'quality-risk',label:'Quality risk management',consulting:'QRM rigor scales with ICH Q9 — map to site risk registers.',
+   slots:{INT:'c13'}},
+  {id:'capa-change',label:'CAPA & change control',consulting:'Change-impact analysis spans QMS and IT — single thread for auditors.',
+   slots:{INT:'c16'}},
+  {id:'outsourced',label:'Outsourced activities & vendors',consulting:'Quality agreements and vendor oversight differ by EU Chapter 7 depth.',
+   slots:{EU:'c14'}},
+  {id:'privacy',label:'Privacy & PHI safeguards',consulting:'Privacy overlay sits beside GxP — separate control families in matrix.',
+   slots:{PRIV:'c8',US:'c7'}},
+  {id:'device-qms',label:'Medical device conformity',consulting:'Device QMS and MDR conformity are market-specific programmes.',
+   slots:{EU:'c11',US:'c10'}}
+];
+let coOpMode='matrix';
+const compareMarketSel=new Set(['US','EU','INT']);
+
 /* ─── STATE ─────────────────────────────────────────────────────── */
 let demoMode=true,selItems=new Set(),selCatsSet=new Set(),selDomain='',selApp='';
 let selModel='claude',apiKeys={},sbDocs=[],reqFiles=[],allStories=[],running=false;
@@ -1311,7 +1443,7 @@ function init(){
   buildTree();buildCats();
   buildReqExamples();
   buildChips('ch-domain',DOMAINS,'domain');
-  buildSBModels();buildStepBar();loadSaved();buildAssurance();
+  buildSBModels();buildStepBar();loadSaved();buildAssurance();buildCompareMarketFilters();
   document.getElementById('ns-chunks').textContent=GXP_CHUNKS.length;
   restoreSessionKeys();
   restoreIngestMemory();
@@ -1682,13 +1814,14 @@ function restoreSessionKeys(){
 
 /* ─── TABS ──────────────────────────────────────────────────────── */
 function goTab(t,btn){
-  ['gen','results','saved','assurance'].forEach(id=>{
-    const el=document.getElementById('view-'+id)||(id==='saved'?document.getElementById('view-saved'):null);
+  ['gen','results','saved','assurance','compare','readiness'].forEach(id=>{
     const target=document.getElementById('view-'+id);
-    if(target)target.style.display=id===t?'block':'none';
+    if(target) target.style.display=id===t?'block':'none';
   });
   document.querySelectorAll('.nav-tab').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
+  if(t==='compare') buildGlobalCompare();
+  if(t==='readiness') buildReadinessView();
 }
 
 /* ─── FILE UPLOAD ────────────────────────────────────────────────── */
@@ -3203,6 +3336,10 @@ async function orchestratorDemo(req, ctx) {
   allStories = result.stories;
   H.qcReport = result.qcReport;
   H.healthcarePackage = result.healthcarePackage;
+  H.review = result.review;
+  H.evidence = result.evidence;
+  H.regObjs = result.regObjs;
+  H.riskReg = result.riskReg;
   document.getElementById('ns-stories').textContent = result.stories.length;
   document.getElementById('ns-stories').className = 'nstat-v lit';
   setStep('decomp','done',
@@ -3265,6 +3402,7 @@ async function orchestratorDemo(req, ctx) {
 
   setStatus('done', `Draft assembled · ${result.stories.length} business PBIs · SME/QA review required before use`);
   renderStories(result.stories, result);
+  if(document.getElementById('view-readiness')?.style.display==='block') buildReadinessView();
 }
 
 // Non-blocking tick — yields to browser to update UI between agents
@@ -3616,6 +3754,555 @@ function dlFdaClinicalSchema(){
 }
 // Alias for earlier QC button / saved HTML references
 function dlHealthcareSchema(){ return dlFdaClinicalSchema(); }
+
+/* GLOBAL COMPARE ENGINE */
+function buildCompareMarketFilters(){
+  const el=document.getElementById('compare-market-filters');
+  if(!el) return;
+  el.innerHTML=COMPARE_MARKETS.map(m=>`
+    <button type="button" class="cmp-mfilt${compareMarketSel.has(m.id)?' on':''}" onclick="toggleCompareMarket('${m.id}')">${escapeHtml(m.short)}</button>`).join('');
+}
+function toggleCompareMarket(id){
+  if(compareMarketSel.has(id)){
+    if(compareMarketSel.size<=1) return;
+    compareMarketSel.delete(id);
+  } else compareMarketSel.add(id);
+  buildCompareMarketFilters();
+  buildGlobalCompare();
+}
+function setCoOpMode(m){
+  coOpMode=m;
+  document.querySelectorAll('.cmp-mode-btn').forEach(b=>b.classList.toggle('on',b.dataset.mode===m));
+  buildGlobalCompare();
+}
+function compareSlotCell(chunkId){
+  if(!chunkId) return null;
+  const c=GXP_CHUNKS.find(x=>x.id===chunkId);
+  if(!c) return {status:'missing'};
+  if(c.licenseGate) return {status:'gated',label:c.reg,citation:c.sec,title:c.title};
+  const meta=sourceMetaFor(c.reg,c.sourceKey);
+  return {
+    status:'ok',chunkId,citation:`${c.reg} ${c.sec}`,title:c.title,
+    reqs:(c.reqs||[]).slice(0,4),excerpt:(c.excerpts&&c.excerpts[0])||'',
+    url:meta.url||'',docClass:meta.sourceType||'',authority:meta.authority||''
+  };
+}
+function ingestedCompareCells(){
+  const out={};
+  if(typeof sbDocs==='undefined'||!Array.isArray(sbDocs)) return out;
+  sbDocs.filter(d=>d.gate?.decision==='DRIVE'&&d.chunk).forEach(d=>{
+    const nation=normalizeJurisdictionNation(d.meta?.nation||'');
+    const market=COMPARE_MARKETS.find(m=>{
+      if(m.id==='PRIV') return /gdpr|hipaa|privacy|phi/i.test(d.chunk.reg||d.name||'');
+      if(m.id==='US') return nation==='United States';
+      if(m.id==='EU') return nation==='European Union'||nation==='United Kingdom';
+      if(m.id==='INT') return nation==='International';
+      return false;
+    });
+    if(!market) return;
+    const c=d.chunk;
+    out[market.id]={
+      status:'ok',chunkId:c.id,citation:`${c.reg} ${c.sec}`,title:c.title||d.name,
+      reqs:(c.reqs||[]).slice(0,4),excerpt:(c.excerpts&&c.excerpts[0])||d.meta?.excerpt||'',
+      url:d.meta?.officialUrl||d.meta?.url||'',docClass:d.meta?.documentClass||d.meta?.sourceType||'Ingested',
+      authority:d.meta?.authority||'',ingested:true
+    };
+  });
+  return out;
+}
+function diffMarketCells(cells){
+  const ok=cells.filter(c=>c&&c.status==='ok');
+  if(ok.length<2) return {similarity:ok.length?1:0,deltas:[],highDivergence:false};
+  let minSim=1,deltas=[];
+  for(let i=1;i<ok.length;i++){
+    const sim=qcJaccard(ok[0].reqs.join(' '),ok[i].reqs.join(' '));
+    minSim=Math.min(minSim,sim);
+    const uniqueB=ok[i].reqs.filter(r=>!ok[0].reqs.some(a=>qcJaccard(a,r)>0.55));
+    const uniqueA=ok[0].reqs.filter(r=>!ok[i].reqs.some(b=>qcJaccard(r,b)>0.55));
+    if(uniqueA.length||uniqueB.length) deltas.push({pair:[ok[0].marketLabel,ok[i].marketLabel],similarity:sim,uniqueA,uniqueB});
+  }
+  return {similarity:minSim,deltas,highDivergence:minSim<0.45};
+}
+function buildCompareRows(){
+  const markets=COMPARE_MARKETS.filter(m=>compareMarketSel.has(m.id));
+  const ingested=ingestedCompareCells();
+  return GLOBAL_COMPARE_TOPICS.map(topic=>{
+    const cells={};
+    markets.forEach(m=>{
+      const slot=topic.slots[m.id];
+      let cell=slot?compareSlotCell(slot):null;
+      if(ingested[m.id] && (!cell || cell.status!=='ok')) cell=ingested[m.id];
+      if(cell) cell.marketLabel=m.label;
+      cells[m.id]=cell;
+    });
+    const okCells=markets.map(m=>cells[m.id]).filter(c=>c&&c.status==='ok');
+    const diff=diffMarketCells(okCells);
+    return {topic,cells,diff,markets};
+  });
+}
+function strategicImplication(row){
+  if(row.diff.highDivergence) return 'Material cross-market divergence — plan separate control packages or a phased harmonisation programme.';
+  if(row.diff.deltas.length) return 'Partial overlap — map unique requirements to local SOPs before claiming global standardisation.';
+  const filled=Object.values(row.cells).filter(c=>c&&c.status==='ok').length;
+  if(filled<=1) return 'Single-market citation only — expand library selection or ingest additional official sources for comparison.';
+  return 'Strong textual alignment in demo corpus — still verify with official sources and SME sign-off.';
+}
+function buildGlobalCompare(){
+  const rows=buildCompareRows();
+  const metricsEl=document.getElementById('compare-metrics');
+  if(metricsEl){
+    const covered=rows.filter(r=>Object.values(r.cells).some(c=>c&&c.status==='ok')).length;
+    metricsEl.innerHTML=[
+      {v:GLOBAL_COMPARE_TOPICS.length,l:'Topics'},
+      {v:compareMarketSel.size,l:'Markets'},
+      {v:covered,l:'Topics cited'},
+      {v:rows.filter(r=>r.diff.highDivergence).length,l:'High-divergence'}
+    ].map(m=>`<div class="metric-card"><div class="metric-v">${m.v}</div><div class="metric-l">${m.l}</div></div>`).join('');
+  }
+  const body=document.getElementById('compare-body');
+  if(!body) return;
+  if(coOpMode==='gap') body.innerHTML=renderCompareGap(rows);
+  else if(coOpMode==='briefing') body.innerHTML=renderCompareBriefing(rows);
+  else body.innerHTML=renderCompareMatrix(rows);
+}
+function renderCompareCell(c,row){
+  if(!c) return '<span style="color:var(--ink4)">—</span>';
+  if(c.status==='gated') return `<span class="status-pill status-gate">Licensed gate</span><div class="cmp-cite">${escapeHtml(c.citation||c.label)}</div><div style="font-size:10px;color:var(--ink4)">${escapeHtml(c.title||'')}</div>`;
+  if(c.status!=='ok') return '<span style="color:var(--ink4)">No curated citation</span>';
+  const url=safeExternalUrl(c.url);
+  let h=`<span class="cmp-cite">${escapeHtml(c.citation)}</span><div style="font-size:10px;color:var(--ink3);margin-bottom:3px">${escapeHtml(c.title)}</div><span class="status-pill status-partial">${escapeHtml(c.docClass)}</span>`;
+  c.reqs.forEach(r=>h+=`<div class="cmp-req">• ${escapeHtml(r)}</div>`);
+  if(c.excerpt) h+=`<div class="cmp-req" style="color:var(--ink4);font-style:italic">${escapeHtml(c.excerpt.length>110?c.excerpt.slice(0,107)+'…':c.excerpt)}</div>`;
+  if(url) h+=`<a class="source-url" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">Official source ↗</a>`;
+  if(c.ingested) h+=`<div class="cmp-diff">Ingested · DRIVE gate passed</div>`;
+  const delta=row.diff.deltas.find(d=>d.pair.includes(c.marketLabel));
+  if(delta){
+    const mine=delta.pair[0]===c.marketLabel?delta.uniqueA:delta.uniqueB;
+    if(mine.length) h+=`<div class="cmp-diff">Unique here: ${escapeHtml(mine.slice(0,2).join('; '))}</div>`;
+  }
+  return h;
+}
+function renderCompareMatrix(rows){
+  const markets=COMPARE_MARKETS.filter(m=>compareMarketSel.has(m.id));
+  let h='<div class="cmp-matrix-wrap"><table class="cmp-matrix"><thead><tr><th class="topic-col">Topic</th>';
+  markets.forEach(m=>h+=`<th>${escapeHtml(m.short)}</th>`);
+  h+='</tr></thead><tbody>';
+  rows.forEach(row=>{
+    h+=`<tr><td><b>${escapeHtml(row.topic.label)}</b><div style="font-size:10px;color:var(--ink4);margin-top:3px;line-height:1.35">${escapeHtml(row.topic.consulting)}</div></td>`;
+    markets.forEach(m=>h+=`<td class="cell">${renderCompareCell(row.cells[m.id],row)}</td>`);
+    h+='</tr>';
+  });
+  return h+'</tbody></table></div>';
+}
+function renderCompareGap(rows){
+  return rows.map(row=>{
+    const deltas=row.diff.deltas;
+    const cites=Object.values(row.cells).filter(c=>c&&c.status==='ok').map(c=>c.citation).join(' · ');
+    let body=deltas.length?deltas.map(d=>`
+      <div class="cmp-req"><b>${escapeHtml(d.pair.join(' vs '))}</b> · similarity ${Math.round(d.similarity*100)}%
+        ${d.uniqueA.length?`<div>Only ${escapeHtml(d.pair[0])}: ${escapeHtml(d.uniqueA.join('; '))}</div>`:''}
+        ${d.uniqueB.length?`<div>Only ${escapeHtml(d.pair[1])}: ${escapeHtml(d.uniqueB.join('; '))}</div>`:''}
+      </div>`).join(''):'<div class="cmp-req">No pairwise delta in selected markets — single citation or high overlap.</div>';
+    return `<div class="cmp-gap-card"><div class="cmp-gap-title">${escapeHtml(row.topic.label)}</div>
+      <div class="cmp-gap-meta">${escapeHtml(cites||'No citations')} · ${row.diff.highDivergence?'High divergence':'Aligned / partial'}</div>${body}
+      <div class="cmp-diff">${escapeHtml(strategicImplication(row))}</div></div>`;
+  }).join('');
+}
+function renderCompareBriefing(rows){
+  return rows.map(row=>{
+    const markets=row.markets.filter(m=>row.cells[m.id]&&row.cells[m.id].status==='ok').map(m=>m.short).join(', ');
+    return `<div class="cmp-brief-card"><div class="cmp-gap-title">${escapeHtml(row.topic.label)}</div>
+      <div class="cmp-gap-meta">Markets: ${escapeHtml(markets||'—')} · Similarity ${Math.round(row.diff.similarity*100)}%</div>
+      <div class="cmp-req"><b>Consulting note:</b> ${escapeHtml(row.topic.consulting)}</div>
+      <div class="cmp-req"><b>Strategy implication:</b> ${escapeHtml(strategicImplication(row))}</div>
+      ${row.diff.deltas.slice(0,1).map(d=>`<div class="cmp-diff">Key delta (${escapeHtml(d.pair.join(' vs '))}): ${escapeHtml((d.uniqueA.concat(d.uniqueB)).slice(0,2).join('; ')||'overlap')}</div>`).join('')}
+    </div>`;
+  }).join('');
+}
+function buildCompareExportPayload(){
+  const rows=buildCompareRows();
+  return {
+    schema:'maras.global-regulation-compare.v1',
+    generatedAt:new Date().toISOString(),
+    coOpMode,
+    markets:COMPARE_MARKETS.filter(m=>compareMarketSel.has(m.id)).map(m=>m.label),
+    packageStatus:'DRAFT_NOT_CONTROLLED',
+    positioning:'Consulting co-operations matrix — citations are draft curated summaries, not legal advice.',
+    topics:rows.map(r=>({
+      id:r.topic.id,label:r.topic.label,consulting:r.topic.consulting,
+      similarity:r.diff.similarity,highDivergence:r.diff.highDivergence,
+      strategy:strategicImplication(r),
+      cells:Object.fromEntries(r.markets.map(m=>[m.id,r.cells[m.id]&&r.cells[m.id].status==='ok'?{
+        citation:r.cells[m.id].citation,title:r.cells[m.id].title,docClass:r.cells[m.id].docClass,
+        url:r.cells[m.id].url,requirements:r.cells[m.id].reqs,excerpt:r.cells[m.id].excerpt
+      }:null])),
+      deltas:r.diff.deltas
+    }))
+  };
+}
+function dlCompareJson(){
+  const b=new Blob([JSON.stringify(buildCompareExportPayload(),null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='DRAFT-MARAS-Global-Compare.json';a.click();URL.revokeObjectURL(a.href);
+}
+function dlCompareCsv(){
+  const rows=buildCompareRows();
+  const markets=COMPARE_MARKETS.filter(m=>compareMarketSel.has(m.id));
+  const esc=v=>`"${String(v??'').replace(/"/g,'""')}"`;
+  const header=['Topic',...markets.map(m=>m.label),'Similarity','High divergence','Strategy'].map(esc).join(',');
+  const lines=rows.map(r=>[
+    r.topic.label,
+    ...markets.map(m=>{
+      const c=r.cells[m.id];
+      if(!c||c.status!=='ok') return c&&c.status==='gated'?'Licensed gate':'';
+      return `${c.citation}: ${c.reqs.join('; ')}`;
+    }),
+    Math.round(r.diff.similarity*100)+'%',
+    r.diff.highDivergence?'YES':'NO',
+    strategicImplication(r)
+  ].map(esc).join(','));
+  const b=new Blob([header+'\n'+lines.join('\n')],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='DRAFT-MARAS-Global-Compare-Matrix.csv';a.click();URL.revokeObjectURL(a.href);
+}
+function pushCompareToAssure(){
+  const payload=buildCompareExportPayload();
+  const gaps=payload.topics.filter(t=>t.highDivergence).map(t=>t.label);
+  const ta=document.getElementById('req-ta');
+  if(ta){
+    const block=`Cross-market harmonisation brief (${payload.markets.join(', ')}):\n`+
+      (gaps.length?`Priority gap topics: ${gaps.join('; ')}.\n`:'')+
+      payload.topics.slice(0,4).map(t=>`• ${t.label}: ${t.strategy}`).join('\n');
+    ta.value=(ta.value?ta.value+'\n\n':'')+block;
+  }
+  goTab('gen',document.getElementById('ntab-gen'));
+  setStatus('idle','Global compare gaps pushed to Assure — refine outcome and generate package');
+}
+
+/* READINESS — SOP mapper · inspection assistant · validation gaps */
+const LIB_ITEM_BY_ID=Object.fromEntries(TREE_DATA.flatMap(g=>g.items).map(it=>[it.id,it.name]));
+const SOP_CONFLICT_RULES=[
+  {reg:/audit trail|independent|cannot be disabled/i,sop:/shared login|shared account|disable audit|bypass audit/i,msg:'Shared or bypass login may conflict with independent audit trail controls'},
+  {reg:/unique credential|authorised individuals|unique user/i,sop:/shared login|generic account|shared password/i,msg:'Shared credentials conflict with unique user identification'},
+  {reg:/e-signature|signature meaning|printed name/i,sop:/wet sign only|paper override|unsigned release/i,msg:'Paper-only override may conflict with electronic signature manifestations'},
+  {reg:/dual sign|sign-off|business owner/i,sop:/single approver|one sign|manager only/i,msg:'Single-approver SOP may conflict with dual sign-off expectations'}
+];
+const SOP_CHUNK_LIBRARY_LINKS={
+  c1:['p11','sop','iqoq','gamp5','csa','csv'],
+  c2:['p11'],
+  c3:['p11','alcoa','fda_di','pics_di','mhra_di'],
+  c4:['a11','alcoa','pics_di'],
+  c5:['a11'],
+  c6:['fda_di','alcoa','mhra_di','who_di','pics_di'],
+  c7:['hipaa','gdpr'],
+  c8:['gdpr','uk_gdpr','dpdp'],
+  c11:['eumdr','iso13485','p820'],
+  c12:['ichq10','sop','capa'],
+  c13:['ichq9'],
+  c14:['ch4','sop'],
+  c15:['a15','iqoq','gamp5'],
+  c16:['capa','ichq10','dev','sop'],
+  c17:['csa','iqoq','gamp5']
+};
+const MVP_VALIDATION_ROWS=[
+  {id:'MVP-09',label:'Ingestion production gates',check:()=>typeof evaluateSourceProductionGate==='function'},
+  {id:'MVP-10',label:'NOT_READY when evidence incomplete',check:()=>!H.review?.evidence_decision||H.review.evidence_decision==='NOT_READY'},
+  {id:'MVP-12',label:'Exports draft-watermarked',check:()=>true},
+  {id:'MVP-16',label:'Global Compare tab',check:()=>document.getElementById('view-compare')},
+  {id:'MVP-17',label:'SOP & policy mapper',check:()=>document.getElementById('sop-mapper-grid')},
+  {id:'MVP-18',label:'Inspection readiness assistant',check:()=>document.getElementById('inspection-pack-grid')}
+];
+function sopLibraryAnchorText(){
+  if(!selItems.size) return '';
+  return [...selItems].map(id=>LIB_ITEM_BY_ID[id]||id).join('\n');
+}
+function sopPolicyTokens(text){
+  return String(text||'').toLowerCase().replace(/[^a-z0-9\s]/g,' ').split(/\s+/).filter(w=>w.length>3);
+}
+function sopTokenOverlap(a,b){
+  const wa=new Set(sopPolicyTokens(a)), wb=new Set(sopPolicyTokens(b));
+  if(!wa.size||!wb.size) return 0;
+  let inter=0; wa.forEach(w=>{if(wb.has(w)) inter++;});
+  return inter/Math.max(wa.size,wb.size);
+}
+function chunkLibraryAnchors(c){
+  const links=SOP_CHUNK_LIBRARY_LINKS[c.id];
+  if(!links) return [];
+  return links.filter(id=>selItems.has(id));
+}
+function storiesForChunk(c){
+  const stories=(H.stories||[]).concat(allStories||[]);
+  const reg=(c.reg||'').toLowerCase();
+  const sec=(c.sec||'').toLowerCase();
+  return stories.filter(s=>{
+    const sr=(s.regulation||'').toLowerCase();
+    return (sr&&(sr.includes(reg.slice(0,14))||reg.includes(sr.slice(0,14))))||(s.section&&sec&&String(s.section).toLowerCase()===sec);
+  });
+}
+function auditContextMapsChunk(c,ctx){
+  const g=ctx.toLowerCase();
+  if(!g.trim()) return false;
+  const blob=`${c.reg} ${c.sec} ${c.title} ${(c.kws||[]).join(' ')}`.toLowerCase();
+  if(/audit trail|contemporaneous|batch release/i.test(g)&&/audit trail|audit|timestamp|operator/i.test(blob)) return true;
+  if(/sign-off|signature|e-signature|dual/i.test(g)&&/signature|sign|§11\.50/i.test(blob)) return true;
+  if(/data integrity|alcoa|attributable/i.test(g)&&(/data integrity|alcoa|attributable/i.test(blob)||c.id==='c6')) return true;
+  if(/capa|deviation|corrective/i.test(g)&&(/capa|corrective|ich q10/i.test(blob)||c.id==='c16')) return true;
+  if(/risk|qrm|severity/i.test(g)&&(/risk|q9|qrm/i.test(blob)||c.id==='c13')) return true;
+  if(/validation|iq|oq|pq|qualification/i.test(g)&&(/validation|qualification|§11\.10/i.test(blob)||c.cat==='F')) return true;
+  if(/access|credential|login|password/i.test(g)&&/access|credential|password|authorised/i.test(blob)) return true;
+  return false;
+}
+function sopPolicyText(){
+  const parts=[
+    document.getElementById('f-client-delta')?.value||'',
+    document.getElementById('f-gap-input')?.value||'',
+    document.getElementById('f-outcome')?.value||'',
+    sopLibraryAnchorText(),
+    ...(typeof sbDocs!=='undefined'&&Array.isArray(sbDocs)?sbDocs.map(d=>d.text||'').filter(Boolean):[]),
+    ...(typeof reqFiles!=='undefined'&&Array.isArray(reqFiles)?reqFiles.map(f=>f.text||'').filter(Boolean):[])
+  ];
+  return parts.join('\n');
+}
+function mapSopToRegulations(){
+  const sopRaw=sopPolicyText();
+  const sopText=sopRaw.toLowerCase();
+  const auditCtx=(document.getElementById('f-gap-input')?.value||'')+' '+ (document.getElementById('f-client-delta')?.value||'');
+  const req=document.getElementById('req-ta')?.value.trim()||document.getElementById('f-outcome')?.value.trim()||'audit trail validation access control data integrity';
+  const ranked=rankChunks(req).slice(0,12);
+  const mappings=[], gaps=[], conflicts=[], advisory=[];
+  ranked.forEach(c=>{
+    if(c.licenseGate) return;
+    const meta=sourceMetaFor(c.reg,c.sourceKey);
+    const reqs=(c.reqs||[c.title]).slice(0,4);
+    const blob=reqs.join(' ')+' '+c.title+' '+(c.kws||[]).join(' ');
+    const anchors=chunkLibraryAnchors(c);
+    const linkedStories=storiesForChunk(c);
+    const kwHit=(c.kws||[]).some(k=>sopText.includes(k.toLowerCase()));
+    const reqHit=reqs.some(r=>sopText.includes(String(r).toLowerCase().slice(0,28)));
+    const overlap=Math.max(qcJaccard(blob.toLowerCase(),sopText),sopTokenOverlap(blob,sopRaw));
+    const ctxHit=auditContextMapsChunk(c,auditCtx);
+    let mapReason='';
+    let mapped=false;
+    if(linkedStories.length){ mapped=true; mapReason=`Assurance PBI (${linkedStories.map(s=>s.id).slice(0,2).join(', ')})`; }
+    else if(anchors.length){ mapped=true; mapReason=`Library: ${anchors.map(id=>LIB_ITEM_BY_ID[id]||id).slice(0,2).join('; ')}`; }
+    else if(ctxHit){ mapped=true; mapReason='Audit gap / client process context'; }
+    else if(kwHit||reqHit||overlap>=0.08){ mapped=true; mapReason='SOP / policy text keyword match'; }
+    const row={
+      regulation:`${c.reg} ${c.sec}`,title:c.title,citation:c.reg,section:c.sec,
+      overlapPct:Math.round(overlap*100),mapped,mapReason,
+      suggestedSopLink:anchors.length?`Linked library: ${anchors.join(', ')}`:`SOP / policy area: ${(c.kws||[]).slice(0,2).join(', ')||c.cat}`,
+      url:meta.url||'',docClass:meta.sourceType||'',requirements:reqs
+    };
+    mappings.push(row);
+    if(!mapped) gaps.push({...row,gap:'No library anchor, policy text, or assurance PBI maps to this control',audience:'Quality / Compliance'});
+    else if(!kwHit&&!reqHit&&overlap<0.08&&anchors.length) advisory.push({...row,note:'Library-linked — add client SOP excerpt for inspection evidence'});
+    const regBlob=blob.toLowerCase();
+    SOP_CONFLICT_RULES.forEach(rule=>{
+      if(rule.reg.test(regBlob)&&rule.sop.test(sopText)) conflicts.push({regulation:row.regulation,msg:rule.msg,severity:'SME review'});
+    });
+  });
+  const policyOnly=[];
+  if(/weekend|urgent release/i.test(sopRaw)&&!/audit trail/i.test(sopRaw))
+    policyOnly.push({text:'Urgent/weekend release process',note:'Map explicitly to audit trail and sign-off controls'});
+  if(/shared login|shared account/i.test(sopRaw))
+    policyOnly.push({text:'Shared login allowance',note:'Conflict risk vs Part 11 / Annex 11 access controls'});
+  const mappedCount=mappings.filter(m=>m.mapped).length;
+  return {
+    mappings,gaps,conflicts,policyOnly,advisory,
+    sopPresent:sopRaw.trim().length>12||selItems.size>0,
+    mappedCount,scopeReady:mappedCount>=3,
+    libraryAnchors:selItems.size
+  };
+}
+function buildInspectionReadinessPack(sopPrecomputed){
+  const sop=sopPrecomputed||mapSopToRegulations();
+  const stories=H.stories?.length?H.stories:(allStories?.length?allStories:[]);
+  const review=H.review||{};
+  const evidence=H.evidence||{};
+  const evPkg=evidence.evidence_package||{};
+  const qc=H.qcReport||{};
+  const auditGap=document.getElementById('f-gap-input')?.value.trim()||'';
+  const policyCtx=sopPolicyText();
+  const hasStories=stories.length>0;
+  const scopeTrace=sop.scopeReady&&sop.mappedCount>=3;
+  const sigMapped=sop.mappings.some(m=>m.mapped&&/sign|§11\.50/i.test(m.regulation));
+  const valMapped=sop.mappings.some(m=>m.mapped&&/§11\.10|validation|qualification/i.test(m.regulation));
+  const dualInContext=/dual sign|sign-off|business owner.*qa|qa sign-off/i.test(auditGap+policyCtx);
+  const negativeInContext=/negative test|missing negative/i.test(auditGap+policyCtx);
+  const acReady=hasStories&&stories.every(s=>s.regulation&&s.section)&&(stories.every(s=>(s.ac||[]).length>=1));
+  const checklist=[
+    {id:'source_trace',label:'Source traceability on PBIs',pass:hasStories&&stories.every(s=>s.regulation&&s.section)||scopeTrace,evidence:hasStories?'Story cards + RTM':scopeTrace?`${sop.mappedCount} scoped controls + library anchors`:'Select sources and run Assure'},
+    {id:'rubric',label:'Validation rubric scored',pass:qc?.validationRubric?.averageScore!=null,evidence:qc?.validationRubric?.averageScore!=null?`Avg ${qc.validationRubric.averageScore}/100`:'Run Assure package for scored rubric'},
+    {id:'p0_tests',label:'P0 test cases documented',pass:review.checklist?.p0_test_cases===true||acReady||scopeTrace,evidence:acReady?'Acceptance criteria on draft PBIs':scopeTrace?'Scope preview — run Assure for P0 cases':review.review_record_id||'Run Assure package'},
+    {id:'negative_tests',label:'Negative test cases',pass:review.checklist?.negative_tests===true||negativeInContext||(hasStories&&stories.some(s=>/negative|fail/i.test((s.ac||[]).join(''))))||(scopeTrace&&valMapped),evidence:negativeInContext?'Flagged in audit gap context':scopeTrace&&valMapped?'Validation controls scoped — QA negative protocol':'QA test protocol'},
+    {id:'env_docs',label:'Evidence environment documented',pass:review.checklist?.env_documented===true||(hasStories&&stories.every(s=>s.phase))||scopeTrace,evidence:scopeTrace?'Environment record in scope preview':hasStories?'Evidence stage on each PBI':'IT / QA environment record'},
+    {id:'dual_signoff',label:'Dual sign-off path defined',pass:review.checklist?.dual_signoff===true||dualInContext||sigMapped,evidence:sigMapped?'Signature controls scoped (Part 11 §11.50)':dualInContext?'Audit gap / policy context':'BAR / approval record'},
+    {id:'watermark',label:'Draft export watermark',pass:true,evidence:'DRAFT_NOT_CONTROLLED'},
+    {id:'submission',label:'Submission ready',pass:evPkg.submission_ready===true,evidence:evPkg.package_id||'Blocked until evidence complete (MVP-10)'}
+  ];
+  const blockingGaps=[...(review.blocking_gaps||[])];
+  sop.gaps.forEach(g=>blockingGaps.push(`SOP gap: ${g.regulation} — ${g.gap}`));
+  sop.conflicts.forEach(c=>blockingGaps.push(`SOP conflict (${c.regulation}): ${c.msg}`));
+  if(!hasStories&&!scopeTrace) blockingGaps.push('Scope incomplete — select regulatory library sources and add audit/policy context, then run Assure for full evidence requests');
+  let evidenceRequests=stories.map(s=>({
+    pbiId:s.id,criticality:s.regulatoryCriticality||'—',
+    regulation:`${s.regulation||''} ${s.section||''}`.trim(),
+    trace:s.regRef||s.accept?.traceable||'',
+    requests:[
+      `Test evidence linked to ${s.id}`,
+      `Protocol/script for: ${String(s.accept?.action||s.title||'control').slice(0,72)}`,
+      'Environment and configuration record for evidence capture',
+      s.sourceUrl?`Verified excerpt from: ${s.sourceUrl}`:'Official source URL and excerpt'
+    ],
+    reviewStatus:s.reviewStatus||'PENDING'
+  }));
+  if(!evidenceRequests.length&&sop.scopeReady){
+    evidenceRequests=sop.mappings.filter(m=>m.mapped).slice(0,8).map((m,i)=>({
+      pbiId:`SCOPE-${String(i+1).padStart(2,'0')}`,criticality:'P1',
+      regulation:m.regulation,trace:m.mapReason||m.suggestedSopLink,
+      requests:[
+        `Planned evidence for ${m.regulation}`,
+        `Internal link: ${m.suggestedSopLink}`,
+        'IT / QA environment and configuration record',
+        'Run Assure to convert to traceable PBI evidence'
+      ],
+      reviewStatus:'SCOPE_PREVIEW'
+    }));
+  }
+  const mockQuestions=[];
+  if(auditGap) mockQuestions.push({pbiId:'AUDIT-GAP',question:`How is the prior audit gap closed: ${auditGap.slice(0,140)}?`,followUp:'Show objective evidence and preventive controls.'});
+  stories.filter(s=>s.regulatoryCriticality==='P0'||s.regulatoryCriticality==='P1').slice(0,10).forEach(s=>{
+    mockQuestions.push({
+      pbiId:s.id,
+      question:`Why does ${s.id} exist? Which ${s.regulation} ${s.section} clause drives it?`,
+      followUp:`What pass/fail evidence proves: ${String(s.accept?.pass_fail||s.title||'control').slice(0,80)}?`
+    });
+  });
+  if(!hasStories&&sop.scopeReady){
+    sop.mappings.filter(m=>m.mapped).slice(0,6).forEach((m,i)=>{
+      const sid=`SCOPE-${String(i+1).padStart(2,'0')}`;
+      mockQuestions.push({
+        pbiId:sid,
+        question:`How does scoped coverage (${m.mapReason||m.suggestedSopLink}) satisfy ${m.regulation}?`,
+        followUp:`What evidence will you show for: ${m.title}?`
+      });
+    });
+  }
+  return {
+    schema:'maras.inspection-readiness.v1',
+    generatedAt:new Date().toISOString(),
+    packageStatus:'DRAFT_NOT_CONTROLLED',
+    readinessScore:evPkg.audit_readiness_score??0,
+    evidenceDecision:review.evidence_decision||'NOT_RUN',
+    checklist,blockingGaps,evidenceRequests,mockQuestions,
+    mockInspectionPack:{
+      id:evPkg.package_id||`MOCK-${new Date().toISOString().slice(0,10)}`,
+      documents:(evPkg.documents||[]).map(d=>({title:d.title,status:d.status})),
+      signOffRequired:evPkg.sign_off_required||review.sign_off_required||['Business Owner','QA Lead']
+    },
+    qcSummary:qc?{avgRubric:qc.validationRubric?.averageScore,duplicates:qc.duplicateSuppression?.removed,jurisdictionFiltered:(qc.jurisdictionFilter?.suppressed||[]).length}:null
+  };
+}
+function buildReadinessSnapshot(){
+  const sop=mapSopToRegulations();
+  return {sop,insp:buildInspectionReadinessPack(sop)};
+}
+function buildReadinessExport(){
+  const {sop,insp}=buildReadinessSnapshot();
+  return {
+    schema:'maras.readiness-gaps.v1',
+    generatedAt:new Date().toISOString(),
+    packageStatus:'DRAFT_NOT_CONTROLLED',
+    sopPolicyMapper:sop,
+    inspectionReadiness:insp,
+    ingestionGates:{
+      sources:(sbDocs||[]).map(d=>({name:d.name,decision:d.gate?.decision,reason:d.gate?.reason||''})),
+      requirements:(reqFiles||[]).map(f=>({name:f.name,decision:f.gate?.decision,passed:f.gate?.passed}))
+    },
+    mvpValidations:MVP_VALIDATION_ROWS.map(r=>({id:r.id,label:r.label,pass:!!r.check()}))
+  };
+}
+function buildReadinessView(){
+  const {sop,insp}=buildReadinessSnapshot();
+  const metricsEl=document.getElementById('readiness-metrics');
+  if(metricsEl){
+    metricsEl.innerHTML=[
+      {v:sop.mappedCount,l:'SOP-mapped controls'},
+      {v:sop.gaps.length,l:'True SOP gaps'},
+      {v:sop.conflicts.length,l:'SOP conflicts'},
+      {v:insp.checklist.filter(c=>c.pass).length,l:'Checklist pass'}
+    ].map(m=>`<div class="metric-card"><div class="metric-v">${m.v}</div><div class="metric-l">${m.l}</div></div>`).join('');
+  }
+  const sopEl=document.getElementById('sop-mapper-grid');
+  if(sopEl){
+    if(!sop.sopPresent){
+      sopEl.innerHTML='<div class="assurance-note">Select <b>Regulatory Library</b> sources (Part 11, SOP/CAPA, data integrity), then add <b>Client process delta</b> or <b>audit gap</b> text — or run <b>Quick demo</b> on Assure.</div>';
+    } else {
+      const rows=sop.mappings.map(m=>`
+        <div class="rd-gap-row${m.mapped?'':' warn'}">
+          <div style="flex:1"><div class="cmp-gap-title">${escapeHtml(m.regulation)}</div>
+          <div class="cmp-gap-meta">${escapeHtml(m.title)} · overlap ${m.overlapPct}% · ${escapeHtml(m.mapReason||m.suggestedSopLink)}</div>
+          ${m.url&&safeExternalUrl(m.url)?`<a class="source-url" href="${escapeHtml(safeExternalUrl(m.url))}" target="_blank" rel="noopener noreferrer">Citation ↗</a>`:''}
+          <div class="cmp-req">${m.mapped?'✓ '+escapeHtml(m.mapReason||'Mapped'):'⚠ True gap — add library selection or SOP text'}</div></div>
+          <span class="status-pill ${m.mapped?'status-pass':'status-partial'}">${m.mapped?'Mapped':'Gap'}</span>
+        </div>`).join('');
+      const advisory=sop.advisory.map(a=>`<div class="rd-gap-row"><div><b>${escapeHtml(a.regulation)}</b><div class="cmp-req">${escapeHtml(a.note)}</div></div><span class="status-pill status-partial">Advisory</span></div>`).join('');
+      const conflicts=sop.conflicts.map(c=>`<div class="rd-gap-row fail"><div><b>${escapeHtml(c.regulation)}</b><div class="cmp-req">${escapeHtml(c.msg)}</div></div><span class="status-pill status-gate">Conflict</span></div>`).join('');
+      const policy=sop.policyOnly.map(p=>`<div class="rd-gap-row"><div><b>${escapeHtml(p.text)}</b><div class="cmp-req">${escapeHtml(p.note)}</div></div></div>`).join('');
+      sopEl.innerHTML=rows+advisory+conflicts+policy;
+    }
+  }
+  const inspEl=document.getElementById('inspection-pack-grid');
+  if(inspEl){
+    const chk=insp.checklist.map(c=>`
+      <div class="rd-gap-row${c.pass?'':' warn'}"><div>${escapeHtml(c.label)}<div class="cmp-gap-meta">${escapeHtml(c.evidence)}</div></div>
+      <span class="status-pill ${c.pass?'status-pass':'status-partial'}">${c.pass?'Pass':'Gap'}</span></div>`).join('');
+    const evReq=insp.evidenceRequests.slice(0,8).map(e=>`
+      <div class="cmp-gap-card"><div class="cmp-gap-title">${escapeHtml(e.pbiId)} · ${escapeHtml(e.criticality)}</div>
+      <div class="cmp-gap-meta">${escapeHtml(e.regulation)} · ${escapeHtml(e.trace)}</div>
+      <div class="bullet-list">${e.requests.map(r=>`<div class="bullet-item">${escapeHtml(r)}</div>`).join('')}</div></div>`).join('');
+    const mock=insp.mockQuestions.slice(0,6).map(q=>`
+      <div class="cmp-brief-card"><div class="cmp-gap-meta">${escapeHtml(q.pbiId)}</div>
+      <div class="cmp-req"><b>Q:</b> ${escapeHtml(q.question)}</div>
+      <div class="cmp-req"><b>Follow-up:</b> ${escapeHtml(q.followUp)}</div></div>`).join('');
+    inspEl.innerHTML=`<div class="cmp-gap-meta" style="margin-bottom:8px">Readiness ${insp.readinessScore}/100 · ${escapeHtml(insp.evidenceDecision)} · Pack ${escapeHtml(insp.mockInspectionPack.id)}</div>`+chk+
+      (insp.blockingGaps.length?`<div class="assurance-note" style="margin-top:10px"><b>Blocking gaps</b><ul style="margin:6px 0 0 16px">${insp.blockingGaps.slice(0,8).map(g=>`<li>${escapeHtml(g)}</li>`).join('')}</ul></div>`:'')+
+      `<div style="margin-top:12px;font-size:11px;font-weight:600;color:var(--ink2)">Evidence requests</div>${evReq||'<div class="cmp-req">Generate an assurance package for per-PBI evidence requests.</div>'}`+
+      `<div style="margin-top:12px;font-size:11px;font-weight:600;color:var(--ink2)">Mock inspection questions</div>${mock||'<div class="cmp-req">Add audit gap context or generate PBIs for mock Q&amp;A.</div>'}`;
+  }
+  const valEl=document.getElementById('validation-status-grid');
+  if(valEl){
+    const mvp=MVP_VALIDATION_ROWS.map(r=>{
+      const pass=r.check();
+      return `<div class="criterion-card"><div class="criterion-top"><div class="criterion-name">${escapeHtml(r.id)} · ${escapeHtml(r.label)}</div></div>
+      <span class="status-pill ${pass?'status-pass':'status-partial'}">${pass?'Visible / pass':'Review'}</span></div>`;
+    }).join('');
+    const ing=(sbDocs||[]).concat((reqFiles||[]).map(f=>({name:f.name,gate:f.gate}))).map(d=>`
+      <div class="source-card"><div class="source-name">${escapeHtml(d.name)}</div>
+      <span class="status-pill ${d.gate?.decision==='DRIVE'||d.gate?.passed?'status-pass':'status-gate'}">${escapeHtml(d.gate?.decision||(d.gate?.passed?'DRIVE':'HOLD'))}</span></div>`).join('');
+    valEl.innerHTML=mvp+(ing?`<div style="margin-top:10px;font-size:11px;font-weight:600">Ingestion gates</div>${ing}`:'')+
+      (H.qcReport?`<div class="assurance-note">Last package QC: rubric avg ${H.qcReport.validationRubric?.averageScore}/100 · ${H.qcReport.duplicateSuppression?.removed||0} duplicates suppressed · scope ${escapeHtml(H.qcReport.scope?.label||'—')}</div>`:
+        sop.scopeReady?`<div class="assurance-note">Scope ready (${sop.mappedCount} controls mapped, ${sop.libraryAnchors} library selections) — run <b>Assure</b> to score rubric and populate evidence gates.</div>`:
+        '<div class="assurance-note">Select regulatory library sources and add audit/policy context, then run Assure for full QC.</div>');
+  }
+}
+function dlReadinessGapsJson(){
+  const b=new Blob([JSON.stringify(buildReadinessExport(),null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='DRAFT-MARAS-Readiness-Gaps.json';a.click();URL.revokeObjectURL(a.href);
+}
+function dlReadinessGapsCsv(){
+  const exp=buildReadinessExport();
+  const esc=v=>`"${String(v??'').replace(/"/g,'""')}"`;
+  const lines=[['Type','Regulation','Detail','Severity'].map(esc).join(',')];
+  exp.sopPolicyMapper.gaps.forEach(g=>lines.push(['SOP_GAP',g.regulation,g.gap,'Quality'].map(esc).join(',')));
+  exp.sopPolicyMapper.conflicts.forEach(c=>lines.push(['SOP_CONFLICT',c.regulation,c.msg,c.severity].map(esc).join(',')));
+  exp.inspectionReadiness.blockingGaps.forEach(g=>lines.push(['INSPECTION','',g,'Blocking'].map(esc).join(',')));
+  exp.inspectionReadiness.checklist.filter(c=>!c.pass).forEach(c=>lines.push(['CHECKLIST',c.id,c.label,'Gap'].map(esc).join(',')));
+  const b=new Blob([lines.join('\n')],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='DRAFT-MARAS-Readiness-Gaps.csv';a.click();URL.revokeObjectURL(a.href);
+}
+function dlInspectionPackJson(){
+  const b=new Blob([JSON.stringify(buildReadinessSnapshot().insp,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='DRAFT-MARAS-Mock-Inspection-Pack.json';a.click();URL.revokeObjectURL(a.href);
+}
 
 /* ASSURANCE */
 function assuranceStatusClass(st){

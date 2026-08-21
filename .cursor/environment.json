@@ -1,8 +1,11 @@
 {
-  "name": "MARAS MVP",
+  "name": "MARAS New development",
   "install": "node p0-regression.mjs\nnode qc-compat-regression.mjs",
-  "terminals": {
-    "dev-server": "python3 -m http.server 8080 --bind 0.0.0.0"
-  },
+  "terminals": [
+    {
+      "name": "static-preview",
+      "command": "python3 -m http.server 8080 --bind 127.0.0.1"
+    }
+  ],
   "ports": [8080]
 }

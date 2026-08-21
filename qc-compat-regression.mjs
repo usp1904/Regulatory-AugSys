@@ -56,6 +56,10 @@ function boot(values = {}, cats = [], items = []) {
     GXP_CHUNKS: [],
     CONTROLLED_SOURCES: {},
     sbDocs: [],
+    reqFiles: [],
+    allStories: [],
+    H: { stories: [], review: {}, evidence: {}, qcReport: null },
+    selItems: new Set(items),
     INGESTED_SOURCE_META: {},
   };
   vm.createContext(sandbox);
@@ -65,6 +69,18 @@ function boot(values = {}, cats = [], items = []) {
   vm.runInContext(qcSrc, sandbox);
   vm.runInContext(sm[0], sandbox);
   vm.runInContext(`function autoPrefix(){ return 'GXP'; }`, sandbox);
+  const cmpDataStart = html.indexOf('const COMPARE_MARKETS');
+  const cmpDataEnd = html.indexOf('/* ─── STATE ─────────────────────────────────────────────────────── */');
+  const cmpFnStart = html.indexOf('/* GLOBAL COMPARE ENGINE */');
+  const cmpFnEnd = html.indexOf('function dlCompareJson');
+  if (cmpDataStart < 0 || cmpDataEnd < 0 || cmpFnStart < 0 || cmpFnEnd < 0) throw new Error('compare block bounds not found');
+  vm.runInContext(html.slice(cmpDataStart, cmpDataEnd), sandbox);
+  vm.runInContext(html.slice(cmpFnStart, cmpFnEnd), sandbox);
+  sandbox.compareMarketSel = new Set(['US', 'EU', 'INT']);
+  sandbox.coOpMode = 'matrix';
+  const rdStart = html.indexOf('/* READINESS — SOP mapper');
+  const rdEnd = html.indexOf('/* ASSURANCE */', rdStart);
+  if (rdStart >= 0 && rdEnd > rdStart) vm.runInContext(html.slice(rdStart, rdEnd), sandbox);
   sandbox.QC_CONFIG = vm.runInContext('QC_CONFIG', sandbox);
   sandbox.FDA_CLINICAL_DATA_SCHEMA = vm.runInContext('FDA_CLINICAL_DATA_SCHEMA', sandbox);
   return sandbox;
@@ -269,6 +285,42 @@ check('ingestion production gate holds incomplete sources and drives complete on
   assert.match(parsed.text, /Prove Part 11/);
 });
 
+check('global compare matrix cites US and EU audit trail with deltas', () => {
+  const s = boot({ fw: 'FDA', system: 'LIMS', domain: 'Pharma Mfg' });
+  s.compareMarketSel = new Set(['US', 'EU']);
+  const rows = s.buildCompareRows();
+  const audit = rows.find(r => r.topic.id === 'audit-trail');
+  assert.ok(audit);
+  assert.equal(audit.cells.US.status, 'ok');
+  assert.equal(audit.cells.EU.status, 'ok');
+  assert.ok(audit.cells.US.citation.includes('21 CFR'));
+  assert.ok(audit.cells.EU.citation.includes('Annex 11'));
+  const payload = s.buildCompareExportPayload();
+  assert.equal(payload.schema, 'maras.global-regulation-compare.v1');
+  assert.equal(payload.packageStatus, 'DRAFT_NOT_CONTROLLED');
+});
+
+check('SOP mapper surfaces gaps and inspection pack schema', () => {
+  const s = boot({ fw: 'FDA', system: 'LIMS', domain: 'Pharma Mfg' });
+  s.document.getElementById = (id) => ({
+    value: id === 'f-client-delta' ? '' : id === 'req-ta' ? 'Part 11 audit trail LIMS' : id === 'f-gap-input' ? 'missing dual sign-off' : ''
+  });
+  const sop = s.mapSopToRegulations();
+  assert.ok(sop.gaps.length >= 1, 'expected true gaps without library anchors');
+  const sopLib = boot({ fw: 'FDA', system: 'LIMS', domain: 'Pharma Mfg' }, [], ['p11', 'sop', 'fda_di', 'ichq10', 'ichq9', 'capa']);
+  sopLib.selItems = new Set(['p11', 'sop', 'fda_di', 'ichq10', 'ichq9', 'capa']);
+  sopLib.document.getElementById = (id) => ({
+    value: id === 'f-gap-input' ? 'audit trail dual sign-off' : id === 'req-ta' ? 'Part 11 audit trail' : ''
+  });
+  const mapped = sopLib.mapSopToRegulations();
+  assert.ok(mapped.mappedCount >= 5, 'library anchors should map Part 11 and ICH controls');
+  assert.equal(mapped.gaps.filter(g => /21 CFR Part 11/.test(g.regulation)).length, 0);
+  const insp = sopLib.buildInspectionReadinessPack(mapped);
+  assert.equal(insp.schema, 'maras.inspection-readiness.v1');
+  assert.ok(insp.checklist.length >= 6);
+  assert.ok(insp.evidenceRequests.length >= 1);
+});
+
 if (failures.length) throw new Error(failures.join('\n'));
 
-export const result = { status: 'PASS', checks: 8, systemsValidated: 15 };
+export const result = { status: 'PASS', checks: 11, systemsValidated: 15 };
