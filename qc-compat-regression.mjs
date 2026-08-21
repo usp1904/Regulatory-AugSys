@@ -46,7 +46,7 @@ function makeDom(values = {}) {
 function boot(values = {}, cats = [], items = []) {
   const sandbox = {
     console,
-    Set, Map, Array, Object, String, Math, Date, JSON, Number, Boolean,
+    Set, Map, Array, Object, String, Math, Date, JSON, Number, Boolean, URL, TextDecoder,
     document: makeDom(values),
     selCatsSet: new Set(cats),
     selItems: new Set(items),
@@ -55,6 +55,8 @@ function boot(values = {}, cats = [], items = []) {
     TREE_DATA: [],
     GXP_CHUNKS: [],
     CONTROLLED_SOURCES: {},
+    sbDocs: [],
+    INGESTED_SOURCE_META: {},
   };
   vm.createContext(sandbox);
   vm.runInContext(`TREE_DATA = ${treeDataSrc};`, sandbox);
@@ -216,6 +218,57 @@ check('every supported system returns a safe, relevant source set', () => {
   assert.deepEqual(Object.keys(matrix).sort(), Object.keys(vm.runInContext('SYSTEM_AFFINITY', boot({}))).sort());
 });
 
+check('ingestion production gate holds incomplete sources and drives complete ones', () => {
+  const s = boot({ fw: 'FDA', system: 'LIMS', domain: 'Pharma Mfg' });
+  const held = s.evaluateSourceProductionGate({
+    officialUrl: '', authority: '', documentClass: '', effectiveDate: '', capturedAt: '',
+    fileHash: '', licenseTag: '', sourceApprovalStatus: 'SME_PENDING', parseStatus: 'PARSED', excerpt: 'x'
+  });
+  assert.equal(held.decision, 'HOLD');
+  assert.ok(held.missing.includes('officialUrl'));
+  const hash = 'a'.repeat(64);
+  const drive = s.evaluateSourceProductionGate({
+    officialUrl: 'https://www.ecfr.gov/current/title-21/chapter-I/subchapter-A/part-11',
+    authority: 'US FDA / eCFR',
+    documentClass: 'Regulation',
+    effectiveDate: '1997-08-20',
+    capturedAt: '2026-08-21',
+    fileHash: hash,
+    licenseTag: 'PUBLIC_US_GOVERNMENT',
+    sourceApprovalStatus: 'SME_APPROVED',
+    parseStatus: 'PARSED',
+    excerpt: 'Use of secure, computer-generated, time-stamped audit trails.'
+  });
+  assert.equal(drive.decision, 'DRIVE');
+  const licensed = s.evaluateSourceProductionGate({
+    officialUrl: 'https://ispe.org/publications/guidance-documents/gamp-5',
+    authority: 'ISPE', documentClass: 'Licensed industry standard', effectiveDate: '2022-01-01',
+    capturedAt: '2026-08-21', fileHash: hash, licenseTag: 'LICENSE_REQUIRED',
+    sourceApprovalStatus: 'SME_APPROVED', parseStatus: 'PARSED', excerpt: 'IQ/OQ/PQ'
+  });
+  assert.equal(licensed.decision, 'HOLD');
+  assert.equal(licensed.licenseBlocked, true);
+  const before = s.rankChunks('audit trail LIMS Part 11').map(c => c.id);
+  s.sbDocs.push({
+    gate: { decision: 'HOLD' },
+    chunk: { id: 'ing-held', cat: 'B', ingested: true, licenseGate: false, reg: 'Held', sec: 'x', title: 'Held', reqs: ['held'], kws: ['audit trail'] }
+  });
+  assert.deepEqual(s.rankChunks('audit trail LIMS Part 11').map(c => c.id), before);
+  s.sbDocs[0] = {
+    gate: { decision: 'DRIVE' },
+    chunk: { id: 'ing-drive', cat: 'B', ingested: true, licenseGate: false, sourceKey: 'INGEST_test', reg: 'Customer SOP', sec: 'SOP-1', title: 'Batch release SOP', reqs: ['retain audit trail records'], excerpts: ['retain audit trail records'], kws: ['audit trail'] }
+  };
+  const after = s.rankChunks('audit trail LIMS Part 11');
+  assert.ok(after.some(c => c.id === 'ing-drive'));
+  const reqHold = s.evaluateRequirementIngestionGate({ name: 'spec.pdf', size: 12, parseStatus: 'UNSUPPORTED_BINARY', fileHash: hash, text: '' });
+  assert.equal(reqHold.decision, 'HOLD');
+  const reqDrive = s.evaluateRequirementIngestionGate({ name: 'spec.txt', size: 12, parseStatus: 'PARSED', fileHash: hash, text: 'Prove Part 11 audit trail' });
+  assert.equal(reqDrive.decision, 'DRIVE');
+  const parsed = s.parseRequirementPayload('json', '{"requirement":"Prove Part 11 audit trail for LIMS batch release"}');
+  assert.equal(parsed.parseStatus, 'PARSED');
+  assert.match(parsed.text, /Prove Part 11/);
+});
+
 if (failures.length) throw new Error(failures.join('\n'));
 
-export const result = { status: 'PASS', checks: 7, systemsValidated: 15 };
+export const result = { status: 'PASS', checks: 8, systemsValidated: 15 };

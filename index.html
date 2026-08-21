@@ -99,9 +99,15 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .sb-upl-ico{font-size:14px;margin-bottom:2px}
 .sb-upl-t{font-size:11px;font-weight:500;color:var(--ink2)}
 .sb-upl-s{font-size:10px;color:var(--ink4);margin-top:1px}
-.sb-docs{margin-top:5px;display:flex;flex-direction:column;gap:2px;max-height:60px;overflow-y:auto}
-.sd-row{display:flex;align-items:center;gap:5px;padding:3px 7px;background:#fff;border-radius:4px;border:1px solid var(--border)}
+.sb-docs{margin-top:5px;display:flex;flex-direction:column;gap:2px;max-height:132px;overflow-y:auto}
+.sb-gate-flow{margin-top:6px;font-size:9px;color:var(--ink4);letter-spacing:.2px;text-align:center;line-height:1.35}
+.sb-gate-flow b{color:var(--ink3);font-weight:600}
+.sd-row{display:flex;align-items:flex-start;gap:5px;padding:4px 7px;background:#fff;border-radius:4px;border:1px solid var(--border)}
 .sd-name{font-size:10px;color:var(--ink2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sd-meta{font-size:9px;color:var(--ink4);margin-top:1px;line-height:1.3}
+.sd-gate{font-size:9px;font-weight:600;padding:1px 5px;border-radius:8px;flex-shrink:0;margin-top:1px}
+.sd-gate.drive{background:#d1fae5;color:#065f46}
+.sd-gate.hold{background:#fef3c7;color:#92400e}
 .sd-rm{font-size:11px;color:var(--ink4);border:none;background:none;cursor:pointer;padding:0;line-height:1;flex-shrink:0}
 .sd-rm:hover{color:var(--red)}
 .sb-sel{font-size:10px;color:var(--ink3);text-align:center;margin-top:5px}
@@ -520,11 +526,12 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
   <div class="sb-tree" id="tree"></div>
   <div class="sb-upload">
     <div class="sb-upl-zone">
-      <input type="file" multiple accept=".pdf,.docx,.doc,.xlsx,.xls,.txt,.csv,.json" disabled aria-disabled="true">
+      <input type="file" id="sb-source-input" multiple accept=".pdf,.docx,.doc,.xlsx,.xls,.txt,.csv,.json" onchange="handleSBDocs(this.files)" aria-label="Ingest controlled regulatory source files">
       <div class="sb-upl-ico">📄</div>
-      <div class="sb-upl-t">Controlled source ingestion — production gate</div>
-      <div class="sb-upl-s">Disabled until document parsing, versioning, hashing, licensing and approval are validated</div>
+      <div class="sb-upl-t">Controlled source ingestion</div>
+      <div class="sb-upl-s">Production gate: URL · authority · class · dates · SHA-256 · license · SME approval</div>
     </div>
+    <div class="sb-gate-flow" id="sb-ingest-graph">File → Hash → Parse → Gate → <b>Hold</b> or Drive</div>
     <div class="sb-docs" id="sb-docs"></div>
     <div class="sb-sel" id="sb-sel">0 of 64 selected</div>
   </div>
@@ -783,11 +790,12 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
         <div class="try-chips" id="req-examples"></div>
       </div>
       <div class="upload-row" id="req-upload-row">
-        <input type="file" multiple accept=".pdf,.docx,.xlsx,.txt,.csv" disabled aria-disabled="true">
+        <input type="file" id="req-file-input" multiple accept=".pdf,.docx,.xlsx,.txt,.csv,.json" onchange="handleReqFiles(this.files)" aria-label="Ingest requirement files">
         <div class="ur-ico">📎</div>
-        <span class="ur-txt" id="req-upload-lbl">Requirement-file ingestion — production gate</span>
-        <span class="ur-types">Disabled until file parsing and validation are implemented</span>
+        <span class="ur-txt" id="req-upload-lbl">Upload requirement files</span>
+        <span class="ur-types">TXT · CSV · JSON parsed · PDF/XLSX held until parser</span>
       </div>
+      <div id="req-ingest-status" class="sb-gate-flow" style="text-align:left;margin-top:6px"></div>
       <!-- Model config moved to sidebar -->
       <div id="ms-key-wrap" style="display:none"></div>
     </div>
@@ -864,7 +872,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
     </div>
     <div class="assurance-body">
       <div id="source-trust-grid" class="assurance-grid"></div>
-      <div class="assurance-note">Production rule: every ingested regulatory document must carry official URL, authority, document class, effective date, capture date, file hash, license tag, and SME approval before it is allowed to drive generated outputs. This demo includes source metadata and guardrails; live re-validation and hashing require a connected ingestion service.</div>
+      <div class="assurance-note">Production rule: every ingested regulatory document must carry official URL, authority, document class, effective date, capture date, file hash, license tag, and SME approval before it is allowed to drive generated outputs. Browser ingestion now hashes files and parses TXT/CSV/JSON; missing fields hold the file. Live official re-validation and malware scanning still require a connected ingestion service.</div>
     </div>
   </div>
 
@@ -1149,8 +1157,8 @@ const SOURCE_TRUST=[
 
 const ASSURANCE_CRITERIA=[
   {name:'Validated source of truth before generation',status:'partial',
-   validation:'Assurance tab now exposes source authority, document class, URL, and license posture. Production ingestion must add hash, capture date, and version check.',
-   proof:'Source Trust cards plus source-gated generation policy.'},
+   validation:'Browser ingestion hashes files, parses TXT/CSV/JSON, and holds any source missing official URL, authority, document class, effective date, capture date, SHA-256, license tag, or SME approval. Held files never enter generation.',
+   proof:'evaluateSourceProductionGate + rankChunks ingestedGenerationChunks filter.'},
   {name:'Law vs guidance vs standard separation',status:'pass',
    validation:'Sources are classified as Regulation, Guidance, Guideline, or Licensed Standard so MARAS does not present nonbinding guidance as law.',
    proof:'SOURCE_TRUST docClass and usage rules.'},
@@ -1292,6 +1300,10 @@ const LEADERSHIP_ACTIONS=[
 /* ─── STATE ─────────────────────────────────────────────────────── */
 let demoMode=true,selItems=new Set(),selCatsSet=new Set(),selDomain='',selApp='';
 let selModel='claude',apiKeys={},sbDocs=[],reqFiles=[],allStories=[],running=false;
+const INGESTED_SOURCE_META={};
+const INGEST_MAX_BYTES=2*1024*1024;
+const INGEST_MAX_SOURCES=8;
+const INGEST_MAX_REQS=4;
 
 /* ─── INIT ──────────────────────────────────────────────────────── */
 function init(){
@@ -1302,6 +1314,7 @@ function init(){
   buildSBModels();buildStepBar();loadSaved();buildAssurance();
   document.getElementById('ns-chunks').textContent=GXP_CHUNKS.length;
   restoreSessionKeys();
+  restoreIngestMemory();
   ensureValidModel();
   // Auto-select FDA on first load
   applyFramework('FDA');
@@ -1679,18 +1692,196 @@ function goTab(t,btn){
 }
 
 /* ─── FILE UPLOAD ────────────────────────────────────────────────── */
-function handleSBDocs(files){
-  Array.from(files).forEach(f=>{if(!sbDocs.find(d=>d.name===f.name))sbDocs.push({name:f.name,size:f.size});});
+async function handleSBDocs(files){
+  const incoming=Array.from(files||[]);
+  for(const f of incoming){
+    if(sbDocs.length>=INGEST_MAX_SOURCES) break;
+    const rec=await ingestControlledSourceFile(f);
+    if(!rec) continue;
+    const i=sbDocs.findIndex(d=>d.fileHash===rec.fileHash || d.name===rec.name);
+    if(i>=0) sbDocs[i]=rec; else sbDocs.push(rec);
+    if(rec.sourceKey) INGESTED_SOURCE_META[rec.sourceKey]=rec.meta;
+  }
+  const inp=document.getElementById('sb-source-input');
+  if(inp) inp.value='';
   renderSBDocs();
+  persistIngestMemory();
+}
+function removeSBDoc(i){
+  const rec=sbDocs[i];
+  if(rec?.sourceKey) delete INGESTED_SOURCE_META[rec.sourceKey];
+  sbDocs.splice(i,1);
+  renderSBDocs();
+  persistIngestMemory();
 }
 function renderSBDocs(){
-  document.getElementById('sb-docs').innerHTML=sbDocs.map((d,i)=>`
-    <div class="sd-row"><span class="sd-name">📄 ${d.name}</span><button class="sd-rm" onclick="sbDocs.splice(${i},1);renderSBDocs()">✕</button></div>`).join('');
+  const el=document.getElementById('sb-docs');
+  if(!el) return;
+  el.innerHTML=sbDocs.map((d,i)=>{
+    const gate=d.gate||{decision:'HOLD'};
+    const why=gate.decision==='DRIVE'?'May drive draft generation':(gate.missing||[]).slice(0,4).join(', ')||gate.reason||'Held';
+    return `<div class="sd-row"><div style="flex:1;min-width:0"><div class="sd-name">📄 ${escapeHtml(d.name)}</div><div class="sd-meta">${escapeHtml((d.fileHash||'').slice(0,12))} · ${escapeHtml(why)}</div></div><span class="sd-gate ${gate.decision==='DRIVE'?'drive':'hold'}">${escapeHtml(gate.decision)}</span><button type="button" class="sd-rm" aria-label="Remove ${escapeHtml(d.name)}" onclick="removeSBDoc(${i})">✕</button></div>`;
+  }).join('');
+  const graph=document.getElementById('sb-ingest-graph');
+  if(graph){
+    const drive=sbDocs.filter(d=>d.gate?.decision==='DRIVE').length;
+    const hold=sbDocs.length-drive;
+    graph.innerHTML=`File → Hash → Parse → Gate → <b>Hold ${hold}</b> · Drive ${drive}`;
+  }
 }
-function handleReqFiles(files){
-  reqFiles=Array.from(files);
+async function handleReqFiles(files){
+  const incoming=Array.from(files||[]);
+  for(const f of incoming){
+    if(reqFiles.length>=INGEST_MAX_REQS) break;
+    const rec=await ingestRequirementFile(f);
+    if(!rec) continue;
+    const i=reqFiles.findIndex(d=>d.fileHash===rec.fileHash || d.name===rec.name);
+    if(i>=0){
+      stripReqMarker(reqFiles[i]);
+      reqFiles[i]=rec;
+    } else reqFiles.push(rec);
+    if(rec.gate?.passed) appendReqMarker(rec);
+  }
+  const inp=document.getElementById('req-file-input');
+  if(inp) inp.value='';
+  renderReqFiles();
+  persistIngestMemory();
+}
+function removeReqFile(i){
+  stripReqMarker(reqFiles[i]);
+  reqFiles.splice(i,1);
+  renderReqFiles();
+  persistIngestMemory();
+}
+function renderReqFiles(){
   const lbl=document.getElementById('req-upload-lbl');
-  lbl.innerHTML=reqFiles.length?reqFiles.map(f=>f.name).join(', ')+' <span style="color:var(--ink4)">(attached)</span>':'Upload your requirements file';
+  const st=document.getElementById('req-ingest-status');
+  if(lbl) lbl.textContent=reqFiles.length?`${reqFiles.length} requirement file(s) ingested`:'Upload requirement files';
+  if(st){
+    if(!reqFiles.length){ st.innerHTML=''; return; }
+    const rows=reqFiles.map((f,i)=>`<div class="sd-row" style="margin-top:4px"><div style="flex:1;min-width:0"><div class="sd-name">${escapeHtml(f.name)}</div><div class="sd-meta">${escapeHtml(f.gate?.reason||f.gate?.decision||'')} · ${(f.fileHash||'').slice(0,12)}</div></div><span class="sd-gate ${f.gate?.passed?'drive':'hold'}">${escapeHtml(f.gate?.decision||'HOLD')}</span><button type="button" class="sd-rm" aria-label="Remove ${escapeHtml(f.name)}" onclick="removeReqFile(${i})">✕</button></div>`).join('');
+    st.innerHTML=rows;
+  }
+}
+function reqMarker(rec){
+  return `\n\n--- Ingested requirement: ${rec.name} · sha256:${(rec.fileHash||'').slice(0,12)} ---\n${rec.text||''}`;
+}
+function appendReqMarker(rec){
+  const ta=document.getElementById('req-ta');
+  if(!ta || !rec?.text) return;
+  const marker=reqMarker(rec);
+  if(ta.value.includes(`sha256:${(rec.fileHash||'').slice(0,12)}`)) return;
+  ta.value=(ta.value?ta.value+marker:marker.replace(/^\n\n/,'')).trim();
+}
+function stripReqMarker(rec){
+  const ta=document.getElementById('req-ta');
+  if(!ta || !rec) return;
+  const needle=`--- Ingested requirement: ${rec.name} · sha256:${(rec.fileHash||'').slice(0,12)} ---`;
+  const i=ta.value.indexOf(needle);
+  if(i<0) return;
+  const rest=ta.value.slice(i+needle.length);
+  const next=rest.search(/\n\n--- Ingested requirement:/);
+  ta.value=(ta.value.slice(0,i)+(next>=0?rest.slice(next):'')).replace(/\n{3,}/g,'\n\n').trim();
+}
+async function sha256Hex(buffer){
+  if(!crypto?.subtle) return '';
+  const digest=await crypto.subtle.digest('SHA-256', buffer);
+  return [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function readIngestBuffer(file){
+  const buf=await file.arrayBuffer();
+  if(buf.byteLength>INGEST_MAX_BYTES) return { error:'TOO_LARGE', bytes:new Uint8Array(0), hash:'', size:buf.byteLength };
+  const bytes=new Uint8Array(buf);
+  const hash=await sha256Hex(buf);
+  return { bytes, hash, size:buf.byteLength, error:'' };
+}
+function chunkFromSourceParse(parsed, hash, name){
+  const sourceKey='INGEST_'+(hash||name).replace(/[^a-f0-9]/gi,'').slice(0,16);
+  const reqs=(parsed.requirements&&parsed.requirements.length)?parsed.requirements:[parsed.excerpt||parsed.title||name];
+  return {
+    id:'ing-'+(hash||name).slice(0,12),
+    cat:parsed.category||'C',
+    sourceKey,
+    ingested:true,
+    licenseGate:parsed.licenseTag==='LICENSE_REQUIRED'||parsed.licenseGate===true,
+    medicalDeviceOnly:!!parsed.medicalDeviceOnly,
+    reg:parsed.regulation||parsed.title||name,
+    sec:parsed.section||'Ingested',
+    title:parsed.title||name,
+    reqs:reqs.slice(0,3),
+    excerpts:(parsed.excerpts&&parsed.excerpts.length?parsed.excerpts:[parsed.excerpt]).filter(Boolean).slice(0,3),
+    kws:parsed.keywords||[]
+  };
+}
+async function ingestControlledSourceFile(file){
+  const ext=fileExt(file.name);
+  const raw=await readIngestBuffer(file);
+  const capturedAt=new Date().toISOString().slice(0,10);
+  if(raw.error==='TOO_LARGE'){
+    const gate=evaluateSourceProductionGate({ parseStatus:'TOO_LARGE', capturedAt, fileHash:'' });
+    return { name:file.name, size:raw.size, ext, parseStatus:'TOO_LARGE', gate, fileHash:'', text:'' };
+  }
+  const binary=looksBinaryBytes(raw.bytes) || ['pdf','docx','doc','xlsx','xls'].includes(ext);
+  const text=binary?'':cleanExtractedText(decodeUtf8Bytes(raw.bytes));
+  const parsed=binary?{ parseStatus:'UNSUPPORTED_BINARY', excerpt:'', requirements:[], excerpts:[] }:parseControlledSourcePayload(ext, text, file.name);
+  const meta={
+    officialUrl:parsed.officialUrl||'',
+    url:parsed.officialUrl||'',
+    authority:parsed.authority||'',
+    documentClass:parsed.documentClass||'',
+    sourceType:parsed.documentClass||'Customer ingested source',
+    effectiveDate:parsed.effectiveDate||'',
+    capturedAt,
+    fileHash:raw.hash,
+    licenseTag:parsed.licenseTag||'',
+    sourceApprovalStatus:parsed.sourceApprovalStatus||'SME_PENDING',
+    nation:parsed.nation||'International',
+    sourceVersion:parsed.sourceVersion||'ingested',
+    parseStatus:parsed.parseStatus,
+    excerpt:parsed.excerpt||'',
+    excerpts:parsed.excerpts||[],
+    licenseGate:parsed.licenseTag==='LICENSE_REQUIRED'
+  };
+  const gate=evaluateSourceProductionGate(meta);
+  const chunk=chunkFromSourceParse(parsed, raw.hash, file.name);
+  const rec={ name:file.name, size:file.size, ext, fileHash:raw.hash, parseStatus:parsed.parseStatus, gate, chunk, sourceKey:chunk.sourceKey, meta, text:text.slice(0,8000) };
+  return rec;
+}
+async function ingestRequirementFile(file){
+  const ext=fileExt(file.name);
+  const raw=await readIngestBuffer(file);
+  if(raw.error==='TOO_LARGE'){
+    const rec={ name:file.name, size:raw.size, ext, fileHash:'', parseStatus:'TOO_LARGE', text:'' };
+    rec.gate=evaluateRequirementIngestionGate(rec);
+    return rec;
+  }
+  const binary=looksBinaryBytes(raw.bytes) || ['pdf','docx','xlsx'].includes(ext);
+  const text=binary?'':decodeUtf8Bytes(raw.bytes);
+  const parsed=binary?{ parseStatus:'UNSUPPORTED_BINARY', text:'' }:parseRequirementPayload(ext, text);
+  const rec={ name:file.name, size:file.size, ext, fileHash:raw.hash, parseStatus:parsed.parseStatus, text:parsed.text||'' };
+  rec.gate=evaluateRequirementIngestionGate(rec);
+  return rec;
+}
+function persistIngestMemory(){
+  try{
+    const slim={
+      sbDocs:sbDocs.map(d=>({ name:d.name, size:d.size, ext:d.ext, fileHash:d.fileHash, parseStatus:d.parseStatus, gate:d.gate, chunk:d.chunk, sourceKey:d.sourceKey, meta:d.meta, text:(d.text||'').slice(0,4000) })),
+      reqFiles:reqFiles.map(d=>({ name:d.name, size:d.size, ext:d.ext, fileHash:d.fileHash, parseStatus:d.parseStatus, gate:d.gate, text:(d.text||'').slice(0,4000) }))
+    };
+    sessionStorage.setItem('maras_ingest_v641', JSON.stringify(slim));
+  }catch(_){}
+}
+function restoreIngestMemory(){
+  try{
+    const raw=sessionStorage.getItem('maras_ingest_v641');
+    if(!raw) return;
+    const slim=JSON.parse(raw);
+    sbDocs=Array.isArray(slim.sbDocs)?slim.sbDocs:[];
+    reqFiles=Array.isArray(slim.reqFiles)?slim.reqFiles:[];
+    sbDocs.forEach(d=>{ if(d.sourceKey && d.meta) INGESTED_SOURCE_META[d.sourceKey]=d.meta; });
+    renderSBDocs();
+    renderReqFiles();
+  }catch(_){}
 }
 
 /* ─── STEP BAR ───────────────────────────────────────────────────── */
@@ -1946,9 +2137,9 @@ function scoreSourceRelevance(chunk, req, scope) {
     sourceType: meta.sourceType,
     domainMismatch: domainMismatch || deviceMismatch,
     inJurisdiction,
-    inScopeCategory: (!scope.activeCats || scope.activeCats.has(chunk.cat)) &&
+    inScopeCategory: !!chunk.ingested || ((!scope.activeCats || scope.activeCats.has(chunk.cat)) &&
                      (!scope.treeCats || scope.treeCats.has(chunk.cat)) &&
-                     !(domainMismatch || deviceMismatch)
+                     !(domainMismatch || deviceMismatch))
   };
 }
 
@@ -2222,11 +2413,131 @@ function applyQualityControls(rawStories, rankedChunks, req, pipelineExtras) {
   return { stories, qcReport, healthcarePackage, fdaClinicalPackage: healthcarePackage, scope };
 }
 
+/* ─── PRODUCTION INGESTION GATES ───
+graph TD
+  F[File] --> H[SHA-256]
+  H --> P[Parse TXT/CSV/JSON]
+  P --> G{Production gate}
+  G -->|missing metadata/license/SME| HOLD[HOLD not in corpus]
+  G -->|all required fields| DRIVE[DRIVE draft generation]
+*/
+function fileExt(name){ return String(name||'').split('.').pop().toLowerCase(); }
+function looksBinaryBytes(bytes){
+  const n=Math.min(bytes.length,800);
+  let weird=0;
+  for(let i=0;i<n;i++){ const b=bytes[i]; if(b===0) return true; if(b<9||(b>13&&b<32)) weird++; }
+  return n>0 && (weird/n)>0.30;
+}
+function decodeUtf8Bytes(bytes){
+  try{ return new TextDecoder('utf-8',{fatal:false}).decode(bytes); }catch{ return ''; }
+}
+function cleanExtractedText(s){
+  return String(s||'').replace(/\r\n/g,'\n').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,'').replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n').trim().slice(0,80000);
+}
+function isHttpUrl(v){ try{ const u=new URL(String(v||'')); return u.protocol==='http:'||u.protocol==='https:'; }catch{ return false; } }
+function evaluateSourceProductionGate(meta){
+  const m=meta||{};
+  const missing=[];
+  const officialUrl=m.officialUrl||m.url||'';
+  if(!isHttpUrl(officialUrl)) missing.push('officialUrl');
+  if(!String(m.authority||'').trim()) missing.push('authority');
+  const docClass=m.documentClass||m.sourceType||'';
+  if(!String(docClass).trim()) missing.push('documentClass');
+  if(!String(m.effectiveDate||'').trim()) missing.push('effectiveDate');
+  if(!String(m.capturedAt||'').trim()) missing.push('capturedAt');
+  if(!/^[a-f0-9]{64}$/i.test(m.fileHash||'')) missing.push('fileHash');
+  if(!String(m.licenseTag||'').trim()) missing.push('licenseTag');
+  if(m.sourceApprovalStatus!=='SME_APPROVED') missing.push('sourceApprovalStatus');
+  const licenseBlocked=m.licenseTag==='LICENSE_REQUIRED'||m.licenseGate===true;
+  const parseOk=m.parseStatus==='PARSED';
+  const excerptOk=!!(String(m.excerpt||'').trim()||(m.excerpts&&m.excerpts[0]));
+  const passed=missing.length===0 && !licenseBlocked && parseOk && excerptOk;
+  return {
+    passed, missing, licenseBlocked, parseOk, excerptOk,
+    decision: passed?'DRIVE':'HOLD',
+    reason: licenseBlocked?'LICENSE_REQUIRED':(!parseOk?'PARSE_UNAVAILABLE':(missing[0]||(!excerptOk?'excerpt':'')))
+  };
+}
+function evaluateRequirementIngestionGate(doc){
+  const d=doc||{};
+  const ext=fileExt(d.name||d.ext||'');
+  const allowed=['txt','csv','json'];
+  const sizeOk=d.size>0 && d.size<=(typeof INGEST_MAX_BYTES==='number'?INGEST_MAX_BYTES:2097152);
+  const parseOk=d.parseStatus==='PARSED' && String(d.text||'').trim().length>0;
+  const hashOk=/^[a-f0-9]{64}$/i.test(d.fileHash||'');
+  const typeOk=allowed.includes(ext);
+  const passed=!!(sizeOk && parseOk && hashOk && typeOk);
+  return { passed, typeOk, sizeOk, parseOk, hashOk, decision: passed?'DRIVE':'HOLD', reason: !typeOk?'UNSUPPORTED_TYPE':(!parseOk?'PARSE_UNAVAILABLE':(!hashOk?'fileHash':(!sizeOk?'size':''))) };
+}
+function parseRequirementPayload(ext, text){
+  const cleaned=cleanExtractedText(text);
+  if(!cleaned) return { parseStatus:'EMPTY', text:'' };
+  if(ext==='json'){
+    try{
+      const j=JSON.parse(cleaned);
+      if(typeof j==='string') return { parseStatus:'PARSED', text:cleanExtractedText(j) };
+      if(Array.isArray(j)) return { parseStatus:'PARSED', text:cleanExtractedText(j.map(x=>typeof x==='string'?x:(x.requirement||x.text||x.description||'')).filter(Boolean).join('\n')) };
+      if(j && typeof j==='object'){
+        const fromOkf=(j.nodes||[]).filter(n=>n && n.type==='requirement').map(n=>n.text).filter(Boolean);
+        const blob=j.requirement||j.text||j.outcome||(Array.isArray(j.requirements)?j.requirements.join('\n'):'')||fromOkf.join('\n');
+        return { parseStatus:'PARSED', text:cleanExtractedText(blob||cleaned) };
+      }
+    }catch{ return { parseStatus:'INVALID_JSON', text:'' }; }
+  }
+  if(ext==='csv'){
+    const rows=cleaned.split('\n').map(l=>l.split(/,|\t/).map(c=>c.replace(/^"|"$/g,'').trim()).filter(Boolean)).filter(r=>r.length);
+    const body=rows.slice(rows.length>1?1:0).map(r=>r.join(' — ')).join('\n');
+    return { parseStatus:'PARSED', text:cleanExtractedText(body) };
+  }
+  return { parseStatus:'PARSED', text:cleaned };
+}
+function parseControlledSourcePayload(ext, text, name){
+  const cleaned=cleanExtractedText(text);
+  const base={ title:name, regulation:'', section:'Ingested', documentClass:'', authority:'', officialUrl:'', effectiveDate:'', licenseTag:'', sourceApprovalStatus:'SME_PENDING', nation:'International', category:'C', requirements:[], excerpts:[], keywords:[], excerpt:'', parseStatus:'EMPTY' };
+  if(!cleaned) return base;
+  if(ext!=='json'){
+    const lines=cleaned.split('\n').map(l=>l.trim()).filter(Boolean);
+    return { ...base, parseStatus:'PARSED', excerpt:lines[0]||cleaned.slice(0,400), requirements:lines.slice(0,3), keywords:[] };
+  }
+  try{
+    const j=JSON.parse(cleaned);
+    const nodes=Array.isArray(j.nodes)?j.nodes:[];
+    const reqNodes=nodes.filter(n=>n&&n.type==='requirement');
+    const requirements=(j.requirements||reqNodes.map(n=>n.text).filter(Boolean)).slice(0,6);
+    const excerpts=(j.excerpts||reqNodes.map(n=>n.text).filter(Boolean)).slice(0,6);
+    return {
+      ...base,
+      parseStatus:'PARSED',
+      title:j.title||name,
+      regulation:j.regulation||j.authority||j.title||name,
+      section:j.section||j.citation||'Ingested',
+      documentClass:j.documentClass||j.sourceType||(j.okfVersion?'Regulation':''),
+      authority:j.authority||'',
+      officialUrl:j.officialUrl||j.url||'',
+      effectiveDate:j.effectiveDate||'',
+      licenseTag:j.licenseTag||'',
+      sourceApprovalStatus:j.sourceApprovalStatus||'SME_PENDING',
+      nation:j.nation||((j.jurisdiction&&j.jurisdiction[0])||'International'),
+      category:j.category||'C',
+      licenseGate:j.licenseTag==='LICENSE_REQUIRED',
+      medicalDeviceOnly:!!j.medicalDeviceOnly,
+      requirements,
+      excerpts,
+      excerpt:j.excerpt||excerpts[0]||'',
+      keywords:j.keywords||j.kws||[]
+    };
+  }catch{ return { ...base, parseStatus:'INVALID_JSON' }; }
+}
+function ingestedGenerationChunks(){
+  const docs=(typeof sbDocs!=='undefined' && Array.isArray(sbDocs))?sbDocs:[];
+  return docs.filter(d=>d && d.gate && d.gate.decision==='DRIVE' && d.chunk && !d.chunk.licenseGate).map(d=>d.chunk);
+}
+
 /* ─── CHUNK RANKING (+ scope, relevance, jurisdiction) ───────────── */
 function rankChunks(req) {
   const scope = resolveScopeControls();
   // 1. Scope control — identical category/tree filter semantics to main
-  const scoped = GXP_CHUNKS.filter(c => !c.licenseGate).map(c => {
+  const scoped = GXP_CHUNKS.concat(ingestedGenerationChunks()).filter(c => !c.licenseGate).map(c => {
     const _qc = scoreSourceRelevance(c, req, scope);
     return { ...c, _qc };
   }).filter(c => c._qc.inScopeCategory);
@@ -2824,6 +3135,8 @@ async function doGenerate() {
     document.getElementById('f-client-delta').value,
     document.getElementById('f-gap-input').value,
     selItems.size ? `${selItems.size} regulations selected` : 'All regulations',
+    sbDocs.length ? `ingested sources ${sbDocs.filter(d=>d.gate?.decision==='DRIVE').length} drive / ${sbDocs.length} total` : '',
+    reqFiles.length ? `requirement files ${reqFiles.filter(d=>d.gate?.passed).length} parsed / ${reqFiles.length} total` : '',
   ].filter(Boolean).join(' | ');
 
   // Reset harness state
@@ -3404,7 +3717,7 @@ function dlAssuranceReport(){
     customerScenarios:ASSURANCE_SCENARIOS,
     productivityCriteria:PRODUCTIVITY_CRITERIA,
     leadershipActions:LEADERSHIP_ACTIONS,
-    currentGapStatement:'This single-file demo contains source metadata, guardrails, traceable business PBI/evidence generation, and customer scenarios. Production source freshness, file hashing, online document diffing, and licensed-standard full-text use require a controlled ingestion service and documented source approvals.',
+    currentGapStatement:'Browser ingestion now hashes and parses TXT/CSV/JSON under a production gate. PDF/Office binaries, live official-source freshness, malware scanning, and licensed-standard full-text use still require a controlled backend service and documented source approvals.',
   };
   const b=new Blob([JSON.stringify(report,null,2)],{type:'application/json'});
   const a=document.createElement('a');
@@ -3448,6 +3761,7 @@ function loadProductGradeSample(){
 
 function sourceMetaFor(reg,sourceKey){
   if(sourceKey && CONTROLLED_SOURCES[sourceKey]) return {...CONTROLLED_SOURCES[sourceKey]};
+  if(sourceKey && typeof INGESTED_SOURCE_META!=='undefined' && INGESTED_SOURCE_META[sourceKey]) return {...INGESTED_SOURCE_META[sourceKey]};
   const r=(reg||'').toLowerCase();
   if(r.includes('21 cfr')) return {...CONTROLLED_SOURCES.PART11};
   if(r.includes('fda csa')) return {...CONTROLLED_SOURCES.FDA_CSA};
