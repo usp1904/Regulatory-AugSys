@@ -9,10 +9,12 @@ function check(name, condition) {
 }
 
 check('version is v6.4.1', html.includes('MARAS v6.4.1 MVP'));
-check('regulatory upload is disabled', /<input type="file"[^>]+disabled aria-disabled="true">[\s\S]{0,250}Controlled source ingestion/.test(html));
-check('requirement upload is disabled', /<input type="file"[^>]+disabled aria-disabled="true">[\s\S]{0,250}Requirement-file ingestion/.test(html));
-check('no active fake-upload handlers', !html.includes('onchange="handleSBDocs(this.files)"') && !html.includes('onchange="handleReqFiles(this.files)"'));
-check('licensed sources excluded from generation', html.includes('GXP_CHUNKS.filter(c => !c.licenseGate)'));
+check('regulatory source upload is enabled', /<input type="file"[^>]*id="sb-source-input"[^>]*onchange="handleSBDocs\(this\.files\)"/.test(html));
+check('requirement upload is enabled', /<input type="file"[^>]*id="req-file-input"[^>]*onchange="handleReqFiles\(this\.files\)"/.test(html));
+check('source production gate is enforced', html.includes('function evaluateSourceProductionGate') && html.includes("decision: passed?'DRIVE':'HOLD'"));
+check('requirement ingestion gate is enforced', html.includes('function evaluateRequirementIngestionGate'));
+check('held ingested sources cannot drive generation', html.includes("d.gate.decision==='DRIVE'") && html.includes('ingestedGenerationChunks()'));
+check('licensed sources excluded from generation', html.includes('GXP_CHUNKS.concat(ingestedGenerationChunks()).filter(c => !c.licenseGate)'));
 check('FDA CSA mapping is precise', html.includes("reg:'FDA CSA Guidance'") && html.includes('computer-software-assurance-production-and-quality-management-system-software'));
 check('medical-device-only sources are scoped', html.includes('!!chunk.medicalDeviceOnly'));
 check('source metadata and excerpts are carried', ['sourceVersion','sourceCapturedAt','sourceLicenseTag','sourceApprovalStatus','sourceExcerpt'].every(v => html.includes(v)));
