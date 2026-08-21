@@ -36,5 +36,8 @@ check('Saved Package controls use the requested two-pixel font increase', html.i
 check('Saved Package controls are wrap-safe', html.includes('display:flex;flex-wrap:wrap;align-items:center') && html.includes('overflow-wrap:anywhere') && !html.includes('<span style="font-size:10px;color:var(--ink4)">Draft only.'));
 check('first-time guide is enabled and aligned with the assurance hero', /<div id="view-gen" class="gv">\s*<!-- FIRST-TIME USER GUIDE[\s\S]*?<div class="value-hero">/.test(html) && html.includes("maras_guide_dismissed_v641_alignment") && html.includes('.onboard-bar{background:linear-gradient') && html.includes('margin-bottom:12px;position:relative'));
 check('Regulatory Library uses the extended responsive width', html.includes('.sidebar{width:280px;') && html.includes('@media(max-width:860px){\n  .sidebar{width:232px}'));
+check('global compare tab is present', html.includes('id="view-compare"') && html.includes('ntab-compare') && html.includes('Global Compare'));
+check('global compare engine is wired', html.includes('GLOBAL_COMPARE_TOPICS') && html.includes('function buildGlobalCompare') && html.includes('maras.global-regulation-compare.v1'));
+check('co-operations modes exist', html.includes('setCoOpMode') && html.includes('renderCompareGap') && html.includes('renderCompareBriefing'));
 
 export const result = { status: 'PASS', checks: checks.length, systemsValidated: 15, names: checks };
