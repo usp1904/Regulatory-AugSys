@@ -139,6 +139,17 @@ check('FDA jurisdiction filters EU when US alternatives exist', () => {
   assert.ok(ranked.some(c => (c.reg||'').includes('21 CFR')));
 });
 
+check('FDA+EMA multi-select unions US and EU allowed nations', () => {
+  const s = boot({ fw: 'FDA, EMA / EU GMP', system: 'LIMS', region: 'United States, European Union', domain: 'Pharma Mfg' });
+  const scope = s.resolveScopeControls();
+  assert.ok(scope.allowedNations, 'expected unioned allowedNations');
+  assert.ok(scope.allowedNations.has('United States'));
+  assert.ok(scope.allowedNations.has('European Union'));
+  const ranked = s.rankChunks('21 CFR Part 11 audit trail');
+  assert.ok(ranked.some(c => (c.reg||'').includes('21 CFR')));
+  assert.ok(ranked.some(c => (c.reg||'').includes('EU GMP')), 'EU sources should remain when EMA/EU is also selected');
+});
+
 check('nation normalization for GDPR under EMA', () => {
   const s = boot({ fw: 'EMA / EU GMP' });
   const meta = s.sourceMetaFor('EU GDPR Art.32');

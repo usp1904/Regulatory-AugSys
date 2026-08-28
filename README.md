@@ -55,6 +55,7 @@ MARAS is a stakeholder-review MVP for Pharma and Life Sciences teams. It convert
 | MVP-17 | SOP and policy mapper | **Readiness** tab maps regulations to library selections, client delta / audit gap / ingested SOP text; flags true unmapped controls and lexical conflicts |
 | MVP-18 | Inspection readiness assistant | **Readiness** tab generates checklist, per-PBI evidence requests, mock inspection Q&A, and downloadable gap / inspection JSON/CSV |
 | MVP-19 | Library and outcome example accessibility | Regulatory Library uses **one** scrollbar for the full library (tree is not a nested scroller). A 20px gap sits between that scrollbar and the resize handle so they do not read as overlapping slivers at 80–100% zoom. Every **Define the business compliance outcome** example is selectable from the dropdown and Try chips |
+| MVP-20 | Multi-select regulatory framework and jurisdiction | **Regulatory Framework** and **Jurisdiction** are chip groups (click several). Selected frameworks union library sources; selected markets union QC `allowedNations`. Graph: `Frameworks → union library → Jurisdictions → QC nation filter → PBI (DRAFT_NOT_CONTROLLED)`. Verified in `p0-regression.mjs` and `qc-compat-regression.mjs` |
 
 ## Stakeholder demo script
 

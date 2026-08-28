@@ -144,7 +144,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 /* Chips within cards */
 .chip-section{margin-bottom:0}
 .cs-lbl{font-size:10px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px}
-.chips{display:flex;flex-wrap:wrap;gap:4px}
+.multi-chips{display:flex;flex-wrap:wrap;gap:4px;align-items:center;max-height:132px;overflow-y:auto;padding:2px 0 4px}
+.chip-g{font-size:9px;font-weight:700;color:var(--ink4);text-transform:uppercase;letter-spacing:.3px;width:100%;margin:6px 0 2px}
+.chip-g:first-child{margin-top:0}
+.fld-hint{font-size:10px;color:var(--ink4);margin-top:4px;line-height:1.4}
 .chip{font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:#fff;color:var(--ink2);cursor:pointer;transition:all .12s;white-space:nowrap;user-select:none}
 .chip:hover{border-color:rgba(0,0,0,.2);color:var(--ink)}
 .chip.on{background:var(--blue-t);border-color:var(--blue);color:var(--blue)}
@@ -696,68 +699,24 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
           </select>
         </div>
         <div class="fld">
-          <label>Regulatory Framework <span style="color:var(--ink4);font-weight:400;text-transform:none;font-size:10px">— auto-selects regulations on left</span></label>
-          <select id="f-fw" onchange="applyFramework(this.value)">
-            <optgroup label="North America">
-              <option>FDA</option>
-              <option>Health Canada</option>
-            </optgroup>
-            <optgroup label="Europe">
-              <option>EMA / EU GMP</option>
-              <option>MHRA</option>
-            </optgroup>
-            <optgroup label="International">
-              <option>ICH</option>
-              <option>WHO</option>
-            </optgroup>
-            <optgroup label="Asia-Pacific">
-              <option>PMDA</option>
-              <option>TGA</option>
-              <option>HSA (Singapore)</option>
-            </optgroup>
-            <optgroup label="BRICS &amp; Emerging Markets">
-              <option>CDSCO (India)</option>
-              <option>NMPA (China)</option>
-              <option>EAEU (Russia)</option>
-              <option>ANVISA (Brazil)</option>
-            </optgroup>
-            <optgroup label="Africa &amp; Middle East">
-              <option>SAHPRA (South Africa)</option>
-            </optgroup>
-            <optgroup label="Global">
-              <option>Multi-Regional</option>
-            </optgroup>
-          </select>
-        </div>
-
-        <div class="fld">
           <label for="f-outcome">Business Outcome <span style="color:var(--red);font-weight:700">*</span></label>
           <input type="text" id="f-outcome" list="outcome-presets" aria-required="true" placeholder="Reduce batch-release risk; prevent audit observations">
           <datalist id="outcome-presets"></datalist>
         </div>
       </div>
+      <div class="fld" style="margin-top:8px">
+        <label id="fw-lbl">Regulatory Framework <span style="color:var(--ink4);font-weight:400;text-transform:none;font-size:10px">— click one or more; unions library sources</span></label>
+        <div class="multi-chips" id="ch-framework" role="group" aria-labelledby="fw-lbl"></div>
+        <select id="f-fw" multiple hidden aria-hidden="true" tabindex="-1"></select>
+        <div class="fld-hint">Graph: Frameworks → union library sources → jurisdictions → QC filter</div>
+      </div>
+      <div class="fld" style="margin-top:8px">
+        <label id="jur-lbl">Jurisdiction <span style="color:var(--red);font-weight:700">*</span> <span style="color:var(--ink4);font-weight:400;text-transform:none;font-size:10px">— click every market that applies</span></label>
+        <div class="multi-chips" id="ch-jurisdiction" role="group" aria-labelledby="jur-lbl"></div>
+        <select id="f-jurisdiction" multiple hidden aria-hidden="true" tabindex="-1" aria-required="true"></select>
+        <div class="fld-hint">Graph: Markets → allowed nations → source filter (DRAFT_NOT_CONTROLLED)</div>
+      </div>
       <div class="row3" style="margin-top:8px">
-        <div class="fld">
-          <label for="f-jurisdiction">Jurisdiction <span style="color:var(--red);font-weight:700">*</span></label>
-          <select id="f-jurisdiction" aria-required="true" onchange="syncJurisdictionField()">
-            <option value="">Select jurisdiction...</option>
-            <option value="United States">United States</option>
-            <option value="European Union">European Union</option>
-            <option value="United Kingdom">United Kingdom</option>
-            <option value="Canada">Canada</option>
-            <option value="Japan">Japan</option>
-            <option value="Australia">Australia</option>
-            <option value="China">China</option>
-            <option value="India">India</option>
-            <option value="Brazil">Brazil</option>
-            <option value="Singapore">Singapore</option>
-            <option value="South Africa">South Africa</option>
-            <option value="Russia">Russia</option>
-            <option value="Saudi Arabia">Saudi Arabia / UAE</option>
-            <option value="Multi-Regional">Multi-Regional</option>
-            <option value="International">International</option>
-          </select>
-        </div>
         <div class="fld">
           <label>Client Operating Region <span style="color:var(--ink4);font-weight:400;text-transform:none">(detail)</span></label>
           <input type="text" id="f-client-region" placeholder="e.g. US + Belgium dual-market release" oninput="syncJurisdictionFromRegion()">
@@ -1179,6 +1138,40 @@ const CATS=[
   {id:'H',lbl:'Device QMS (MDR/ISO)',col:'#4f46e5',bg:'#eef2ff',sub:'ISO 13485 · EU MDR Annex IX/X · Conformity · PMS/Vigilance',n:5},
 ];
 const DOMAINS=['Pharma Mfg','Biotech R&D','Med Devices','Clinical','Gene Therapy','Diagnostics','Consumer Health'];
+const FRAMEWORK_GROUPS=[
+  {label:'North America',items:['FDA','Health Canada']},
+  {label:'Europe',items:['EMA / EU GMP','MHRA']},
+  {label:'International',items:['ICH','WHO']},
+  {label:'Asia-Pacific',items:['PMDA','TGA','HSA (Singapore)']},
+  {label:'BRICS & Emerging Markets',items:['CDSCO (India)','NMPA (China)','EAEU (Russia)','ANVISA (Brazil)']},
+  {label:'Africa & Middle East',items:['SAHPRA (South Africa)']},
+  {label:'Global',items:['Multi-Regional']}
+];
+const JURISDICTION_OPTIONS=['United States','European Union','United Kingdom','Canada','Japan','Australia','China','India','Brazil','Singapore','South Africa','Russia','Saudi Arabia','Multi-Regional','International'];
+const FW_LIBRARY_MAP={
+  'FDA':['p11','p211','p210','p820','alcoa','fda_di','gamp5','iqoq','csa','sop','capa','dev'],
+  'Health Canada':['p11','a11','alcoa','gamp5','iqoq','hc','sop','capa','pics_di'],
+  'EMA / EU GMP':['a11','a22','ch4','a1','a15','alcoa','mhra_di','gamp5','iqoq','sop','capa','dev','pics_di'],
+  'MHRA':['a11','ch4','mhra_di','uk_gdpr','alcoa','pics_di','gamp5','iqoq','sop','mhra_uk'],
+  'ICH':['ichq10','ichq9','ichq8','ichq2','iche6','iche9','gamp5','iqoq','sop','capa'],
+  'WHO':['who_di','alcoa','ichq10','gamp5','iqoq','sop','capa','pics_di'],
+  'TGA':['a11','alcoa','gamp5','iqoq','csa','sop','capa','tga'],
+  'PMDA':['a11','ichq10','ichq9','ichq2','alcoa','gamp5','iqoq','pmda','sop','pics_di'],
+  'CDSCO (India)':['p11','alcoa','fda_di','gamp5','iqoq','csa','sop','capa','cdsco','dpdp','who_di'],
+  'NMPA (China)':['nmpa','a11','iso13485','alcoa','gamp5','iqoq','sop','capa','ichq10'],
+  'EAEU (Russia)':['eaeu','a11','alcoa','gamp5','iqoq','sop','capa','ichq10','who_di'],
+  'ANVISA (Brazil)':['anvisa','a11','alcoa','gamp5','iqoq','sop','capa','ichq10','who_di'],
+  'HSA (Singapore)':['hsa','a11','alcoa','gamp5','iqoq','sop','capa','ichq10','hc','tga'],
+  'SAHPRA (South Africa)':['sahpra','who_di','alcoa','gamp5','iqoq','sop','ichq10'],
+  'Multi-Regional':null
+};
+const FW_JUR={
+  'FDA':'United States','Health Canada':'Canada','EMA / EU GMP':'European Union',
+  'MHRA':'United Kingdom','ICH':'International','WHO':'International',
+  'TGA':'Australia','PMDA':'Japan','HSA (Singapore)':'Singapore',
+  'CDSCO (India)':'India','NMPA (China)':'China','EAEU (Russia)':'Russia',
+  'ANVISA (Brazil)':'Brazil','SAHPRA (South Africa)':'South Africa','Multi-Regional':'Multi-Regional'
+};
 DOMAINS.push('Food & Chocolate Mfg');
 /* Commercial LLMs that require an API key — open-source / local-only models excluded */
 const MODELS=[
@@ -1447,6 +1440,8 @@ const compareMarketSel=new Set(['US','EU','INT','HIPAA','GDPR']);
 
 /* ─── STATE ─────────────────────────────────────────────────────── */
 let demoMode=true,selItems=new Set(),selCatsSet=new Set(),selDomain='',selApp='';
+let selFrameworks=new Set(['FDA']);
+let selJurisdictions=new Set(['United States']);
 let selModel='claude',apiKeys={},sbDocs=[],reqFiles=[],allStories=[],running=false;
 const INGESTED_SOURCE_META={};
 const INGEST_MAX_BYTES=2*1024*1024;
@@ -1459,6 +1454,8 @@ function init(){
   buildTree();buildCats();
   buildReqExamples();
   buildChips('ch-domain',DOMAINS,'domain');
+  buildFrameworkChips();
+  buildJurisdictionChips();
   initSidebarResize();
   buildSBModels();buildStepBar();loadSaved();buildAssurance();buildCompareMarketFilters();
   document.getElementById('ns-chunks').textContent=GXP_CHUNKS.length;
@@ -1574,7 +1571,7 @@ function validateMvpInputs(){
   const fields=[
     {ok:!!document.getElementById('f-system')?.value, message:'Select the regulated system type.', id:'f-system'},
     {ok:!!selDomain, message:'Select the Pharma or Life Sciences industry domain.', id:'ch-domain'},
-    {ok:!!document.getElementById('f-jurisdiction')?.value, message:'Select the governing jurisdiction.', id:'f-jurisdiction'},
+    {ok:getSelectedJurisdictions().length>0, message:'Select at least one governing jurisdiction.', id:'ch-jurisdiction'},
     {ok:!!document.getElementById('f-outcome')?.value.trim(), message:'Describe the measurable business outcome.', id:'f-outcome'},
     {ok:selItems.size>0, message:'Select at least one controlled regulatory source.', id:'tree'},
     {ok:!!document.getElementById('req-ta')?.value.trim(), message:'Describe the compliance requirement or assurance outcome.', id:'req-ta'}
@@ -1585,25 +1582,99 @@ function validateMvpInputs(){
   return errors.length===0;
 }
 
+function parseMultiField(el){
+  if(!el) return [];
+  if(el.selectedOptions && el.multiple) return [...el.selectedOptions].map(o=>o.value).filter(Boolean);
+  const v=String(el.value||'').trim();
+  return v ? v.split(/\s*,\s*/).filter(Boolean) : [];
+}
+function getSelectedFrameworks(){
+  if(typeof selFrameworks!=='undefined' && selFrameworks instanceof Set) return [...selFrameworks];
+  return parseMultiField(document.getElementById('f-fw'));
+}
+function getFrameworkValue(){ return getSelectedFrameworks().join(', '); }
+function getSelectedJurisdictions(){
+  if(typeof selJurisdictions!=='undefined' && selJurisdictions instanceof Set) return [...selJurisdictions];
+  return parseMultiField(document.getElementById('f-jurisdiction'));
+}
 function getJurisdictionValue(){
-  const j=document.getElementById('f-jurisdiction')?.value?.trim();
+  const j=getSelectedJurisdictions();
   const r=document.getElementById('f-client-region')?.value?.trim();
-  return j || r || '';
+  return j.join(', ') || r || '';
+}
+function syncHiddenSelect(id, values){
+  const el=document.getElementById(id);
+  if(!el) return;
+  const set=new Set(values);
+  if(!el.options.length){
+    values.forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=v; o.selected=true; el.appendChild(o); });
+    return;
+  }
+  [...el.options].forEach(o=>{ o.selected=set.has(o.value); });
 }
 function syncJurisdictionField(){
-  const j=document.getElementById('f-jurisdiction')?.value||'';
+  const j=getJurisdictionValue();
   const region=document.getElementById('f-client-region');
   if(region && j && !region.value) region.value=j;
 }
 function syncJurisdictionFromRegion(){
   const region=document.getElementById('f-client-region')?.value||'';
-  const sel=document.getElementById('f-jurisdiction');
-  if(!sel || sel.value) return;
-  const nations=['United States','European Union','United Kingdom','Canada','Japan','Australia','China','India','Brazil','Singapore','South Africa','Russia','Multi-Regional','International'];
+  if(!region || selJurisdictions.size) return;
   const lower=region.toLowerCase();
-  for(const n of nations){
-    if(lower.includes(n.toLowerCase().split(' ')[0])){ sel.value=n; break; }
+  for(const n of JURISDICTION_OPTIONS){
+    if(lower.includes(n.toLowerCase().split(' ')[0])){ selJurisdictions.add(n); }
   }
+  renderJurisdictionChips();
+}
+function buildFrameworkChips(){
+  const el=document.getElementById('ch-framework');
+  const sel=document.getElementById('f-fw');
+  if(sel && !sel.options.length){
+    FRAMEWORK_GROUPS.forEach(g=>g.items.forEach(n=>{
+      const o=document.createElement('option'); o.value=n; o.textContent=n; sel.appendChild(o);
+    }));
+  }
+  if(!el) return;
+  el.innerHTML=FRAMEWORK_GROUPS.map(g=>`<span class="chip-g">${g.label}</span>`+g.items.map(n=>
+    `<button type="button" class="chip${selFrameworks.has(n)?' on teal':''}" aria-pressed="${selFrameworks.has(n)}" onclick="toggleFramework('${n.replace(/'/g,"\\'")}')">${n}</button>`
+  ).join('')).join('');
+  syncHiddenSelect('f-fw',[...selFrameworks]);
+}
+function buildJurisdictionChips(){
+  renderJurisdictionChips();
+}
+function renderJurisdictionChips(){
+  const el=document.getElementById('ch-jurisdiction');
+  const sel=document.getElementById('f-jurisdiction');
+  if(sel && !sel.options.length){
+    JURISDICTION_OPTIONS.forEach(n=>{ const o=document.createElement('option'); o.value=n; o.textContent=n; sel.appendChild(o); });
+  }
+  if(!el) return;
+  el.innerHTML=JURISDICTION_OPTIONS.map(n=>
+    `<button type="button" class="chip${selJurisdictions.has(n)?' on teal':''}" aria-pressed="${selJurisdictions.has(n)}" onclick="toggleJurisdiction('${n.replace(/'/g,"\\'")}')">${n==='Saudi Arabia'?'Saudi Arabia / UAE':n}</button>`
+  ).join('');
+  syncHiddenSelect('f-jurisdiction',[...selJurisdictions]);
+}
+function toggleFramework(name){
+  if(selFrameworks.has(name)){
+    if(selFrameworks.size===1) return;
+    selFrameworks.delete(name);
+  } else selFrameworks.add(name);
+  applySelectedFrameworks();
+}
+function toggleJurisdiction(name){
+  if(name==='Multi-Regional'){
+    if(selJurisdictions.has('Multi-Regional')) selJurisdictions=new Set(['United States']);
+    else { selJurisdictions=new Set(JURISDICTION_OPTIONS); }
+  } else {
+    if(selJurisdictions.has(name)){
+      if(selJurisdictions.size===1) return;
+      selJurisdictions.delete(name);
+    } else selJurisdictions.add(name);
+    selJurisdictions.delete('Multi-Regional');
+  }
+  renderJurisdictionChips();
+  syncJurisdictionField();
 }
 function syncMainApiKey(){
   const v=document.getElementById('main-key-inp')?.value||'';
@@ -1730,54 +1801,32 @@ function toggleChip(el,type){
 function onHealthcareScopeChange(){
   refreshCompareView(document.getElementById('view-compare')?.style.display==='block');
 }
-function applyFramework(fw){
-  // Clear all selections first — fresh every time
+function applySelectedFrameworks(opts){
+  const resetJur=opts&&opts.resetJurisdictions;
+  const fws=getSelectedFrameworks();
   selItems.clear();
-  // Map framework → tree item IDs (research-grounded, current 2025)
-  const FW_MAP={
-    // North America
-    'FDA':          ['p11','p211','p210','p820','alcoa','fda_di','gamp5','iqoq','csa','sop','capa','dev'],
-    'Health Canada':['p11','a11','alcoa','gamp5','iqoq','hc','sop','capa','pics_di'],
-    // Europe
-    'EMA / EU GMP': ['a11','a22','ch4','a1','a15','alcoa','mhra_di','gamp5','iqoq','sop','capa','dev','pics_di'],
-    'MHRA':         ['a11','ch4','mhra_di','uk_gdpr','alcoa','pics_di','gamp5','iqoq','sop','mhra_uk'],
-    // International
-    'ICH':          ['ichq10','ichq9','ichq8','ichq2','iche6','iche9','gamp5','iqoq','sop','capa'],
-    'WHO':          ['who_di','alcoa','ichq10','gamp5','iqoq','sop','capa','pics_di'],
-    // Asia-Pacific
-    'TGA':          ['a11','alcoa','gamp5','iqoq','csa','sop','capa','tga'],
-    'PMDA':         ['a11','ichq10','ichq9','ichq2','alcoa','gamp5','iqoq','pmda','sop','pics_di'],
-    // BRICS & Emerging
-    'CDSCO (India)':['p11','alcoa','fda_di','gamp5','iqoq','csa','sop','capa','cdsco','dpdp','who_di'],
-    'NMPA (China)': ['nmpa','a11','iso13485','alcoa','gamp5','iqoq','sop','capa','ichq10'],
-    'EAEU (Russia)':['eaeu','a11','alcoa','gamp5','iqoq','sop','capa','ichq10','who_di'],
-    'ANVISA (Brazil)':['anvisa','a11','alcoa','gamp5','iqoq','sop','capa','ichq10','who_di'],
-    // Singapore & Access Consortium
-    'HSA (Singapore)':['hsa','a11','alcoa','gamp5','iqoq','sop','capa','ichq10','hc','tga'],
-    // Africa & Middle East
-    'SAHPRA (South Africa)':['sahpra','who_di','alcoa','gamp5','iqoq','sop','ichq10'],
-    // Multi-regional
-    'Multi-Regional':null, // null = select everything
-  };
-  const ids = FW_MAP[fw];
-  if(ids===null){
-    // Multi-Regional = check all
-    TREE_DATA.forEach(g=>g.items.forEach(it=>selItems.add(it.id)));
-  } else if(ids){
-    ids.forEach(id=>selItems.add(id));
-  }
-  // Re-render tree so checkboxes reflect new state
+  let all=false;
+  fws.forEach(fw=>{
+    const ids=FW_LIBRARY_MAP[fw];
+    if(ids===null) all=true;
+    else if(ids) ids.forEach(id=>selItems.add(id));
+  });
+  if(all) TREE_DATA.forEach(g=>g.items.forEach(it=>selItems.add(it.id)));
   renderTree('');
   updateCount();
-  const FW_JUR={
-    'FDA':'United States','Health Canada':'Canada','EMA / EU GMP':'European Union',
-    'MHRA':'United Kingdom','ICH':'International','WHO':'International',
-    'TGA':'Australia','PMDA':'Japan','HSA (Singapore)':'Singapore',
-    'CDSCO (India)':'India','NMPA (China)':'China','EAEU (Russia)':'Russia',
-    'ANVISA (Brazil)':'Brazil','SAHPRA (South Africa)':'South Africa','Multi-Regional':'Multi-Regional'
-  };
-  const jurSel=document.getElementById('f-jurisdiction');
-  if(jurSel && FW_JUR[fw]) jurSel.value=FW_JUR[fw];
+  const jurUnion=new Set(resetJur?[]:[...selJurisdictions]);
+  fws.forEach(fw=>{
+    const j=FW_JUR[fw];
+    if(j==='Multi-Regional') JURISDICTION_OPTIONS.forEach(o=>jurUnion.add(o));
+    else if(j) jurUnion.add(j);
+  });
+  if(jurUnion.size) selJurisdictions=jurUnion;
+  buildFrameworkChips();
+  renderJurisdictionChips();
+}
+function applyFramework(fw){
+  selFrameworks=new Set([fw]);
+  applySelectedFrameworks({resetJurisdictions:true});
 }
 function setReq(el){document.getElementById('req-ta').value=el.textContent;}
 
@@ -2266,10 +2315,18 @@ function qcJaccard(a, b) {
   return inter / (A.size + B.size - inter);
 }
 
+function qcParseMulti(el) {
+  if (!el) return [];
+  if (el.selectedOptions && el.multiple) return [...el.selectedOptions].map(o => o.value).filter(Boolean);
+  const v = String(el.value || '').trim();
+  return v ? v.split(/\s*,\s*/).filter(Boolean) : [];
+}
 function resolveScopeControls() {
-  const fw = document.getElementById('f-fw')?.value || '';
+  const fws = qcParseMulti(document.getElementById('f-fw'));
+  const fw = fws.join(', ');
   const sys = document.getElementById('f-system')?.value || '';
-  const region = document.getElementById('f-jurisdiction')?.value?.trim()
+  const jurList = qcParseMulti(document.getElementById('f-jurisdiction'));
+  const region = jurList.join(', ')
     || document.getElementById('f-client-region')?.value?.trim() || '';
   const activeCats = selCatsSet.size ? new Set(selCatsSet) : null;
   const selectedRegs = selItems.size
@@ -2278,25 +2335,32 @@ function resolveScopeControls() {
   const treeCats = selectedRegs.length
     ? new Set(selectedRegs.map(it => it.cat))
     : null;
-  const allowedNations = (!fw || fw === 'Multi-Regional' || JURISDICTION_BY_FRAMEWORK[fw] === null)
-    ? null
-    : (JURISDICTION_BY_FRAMEWORK[fw]
-        ? new Set(JURISDICTION_BY_FRAMEWORK[fw])
-        : null); // unknown/empty framework → no jurisdiction filter (main-compatible)
-  if (region) {
+  const openScope = !fws.length || fws.includes('Multi-Regional') || fws.some(f => JURISDICTION_BY_FRAMEWORK[f] === null);
+  let allowedNations = null;
+  if (!openScope) {
+    allowedNations = new Set();
+    fws.forEach(f => {
+      const nations = JURISDICTION_BY_FRAMEWORK[f];
+      if (nations) nations.forEach(n => allowedNations.add(n));
+    });
+    if (!allowedNations.size) allowedNations = null; // unknown/empty framework → no jurisdiction filter (main-compatible)
+  }
+  if (jurList.includes('Multi-Regional')) allowedNations = null;
+  else jurList.forEach(n => allowedNations?.add(n));
+  if (region && allowedNations) {
     const r = region.toLowerCase();
-    if (r.includes('us') || r.includes('united states') || r.includes('america')) allowedNations?.add('United States');
-    if (r.includes('eu') || r.includes('europe') || r.includes('belgium') || r.includes('germany')) allowedNations?.add('European Union');
-    if (r.includes('uk') || r.includes('britain') || r.includes('england')) allowedNations?.add('United Kingdom');
-    if (r.includes('japan')) allowedNations?.add('Japan');
-    if (r.includes('canada')) allowedNations?.add('Canada');
-    if (r.includes('china')) allowedNations?.add('China');
-    if (r.includes('india')) allowedNations?.add('India');
-    if (r.includes('australia')) allowedNations?.add('Australia');
-    if (r.includes('brazil')) allowedNations?.add('Brazil');
-    if (r.includes('singapore')) allowedNations?.add('Singapore');
-    if (r.includes('south africa')) allowedNations?.add('South Africa');
-    if (r.includes('russia') || r.includes('eaeu')) allowedNations?.add('Russia');
+    if (r.includes('us') || r.includes('united states') || r.includes('america')) allowedNations.add('United States');
+    if (r.includes('eu') || r.includes('europe') || r.includes('belgium') || r.includes('germany')) allowedNations.add('European Union');
+    if (r.includes('uk') || r.includes('britain') || r.includes('england')) allowedNations.add('United Kingdom');
+    if (r.includes('japan')) allowedNations.add('Japan');
+    if (r.includes('canada')) allowedNations.add('Canada');
+    if (r.includes('china')) allowedNations.add('China');
+    if (r.includes('india')) allowedNations.add('India');
+    if (r.includes('australia')) allowedNations.add('Australia');
+    if (r.includes('brazil')) allowedNations.add('Brazil');
+    if (r.includes('singapore')) allowedNations.add('Singapore');
+    if (r.includes('south africa')) allowedNations.add('South Africa');
+    if (r.includes('russia') || r.includes('eaeu')) allowedNations.add('Russia');
   }
   return {
     framework: fw,
@@ -2785,7 +2849,8 @@ function rankChunks(req) {
 /* ─── AUTO PREFIX ────────────────────────────────────────────────── */
 function autoPrefix() {
   const sys = document.getElementById('f-system').value;
-  const fw  = document.getElementById('f-fw').value;
+  const fws = typeof getSelectedFrameworks==='function' ? getSelectedFrameworks() : [];
+  const fw  = fws[0] || '';
   const sysMap = {
     'LIMS':'LIMS','MES':'MES','QMS':'QMS','EDMS':'EDMS','CDS':'CDS',
     'EDC / eCRF':'EDC','ERP / SAP':'ERP','SCADA / DCS':'SCADA',
@@ -2818,11 +2883,11 @@ function autoPrefix() {
 
 /* ─── BILINGUAL ──────────────────────────────────────────────────── */
 function needsBilingual() {
-  const fw = document.getElementById('f-fw').value;
+  const fws = typeof getSelectedFrameworks==='function' ? getSelectedFrameworks() : [];
   return {
-    japanese: fw === 'PMDA',
-    chinese:  fw === 'NMPA (China)',
-    russian:  fw === 'EAEU (Russia)',
+    japanese: fws.includes('PMDA'),
+    chinese:  fws.includes('NMPA (China)'),
+    russian:  fws.includes('EAEU (Russia)'),
   };
 }
 
@@ -3007,7 +3072,7 @@ OUTPUT (JSON in \`\`\`json\`\`\` block):
 function runDemoEngine(req, ctx) {
   const pfx   = autoPrefix();
   const sys   = document.getElementById('f-system').value || 'GxP system';
-  const fw    = document.getElementById('f-fw').value;
+  const fw    = getFrameworkValue();
   const businessOutcome = document.getElementById('f-outcome').value || `defensible ${sys} regulated operations`;
   const clientRegion = getJurisdictionValue() || fw || 'selected operating region';
   const clientDelta = document.getElementById('f-client-delta').value || 'standard client process';
@@ -3354,7 +3419,7 @@ async function doGenerate() {
     document.getElementById('f-proj').value,
     document.getElementById('f-system').value,
     selDomain,
-    document.getElementById('f-fw').value,
+    getFrameworkValue(),
     document.getElementById('f-outcome').value,
     getJurisdictionValue(),
     document.getElementById('f-client-delta').value,
@@ -3366,7 +3431,7 @@ async function doGenerate() {
 
   // Reset harness state
   Object.assign(H, {ctx:{},req,regObjs:[],riskReg:[],gateLog:[],stories:[],backlog:{},analytics:{},review:{},evidence:{},qcReport:null,healthcarePackage:null,blocked:false,blockReason:''});
-  H.ctx = {req, ctx, fw:document.getElementById('f-fw').value, sys:document.getElementById('f-system').value||'GxP system', outcome:document.getElementById('f-outcome').value, clientRegion:getJurisdictionValue(), jurisdiction:document.getElementById('f-jurisdiction')?.value||'', clientDelta:document.getElementById('f-client-delta').value, auditGap:document.getElementById('f-gap-input').value, pfx:autoPrefix()};
+  H.ctx = {req, ctx, fw:getFrameworkValue(), sys:document.getElementById('f-system').value||'GxP system', outcome:document.getElementById('f-outcome').value, clientRegion:getJurisdictionValue(), jurisdiction:getJurisdictionValue(), clientDelta:document.getElementById('f-client-delta').value, auditGap:document.getElementById('f-gap-input').value, pfx:autoPrefix()};
 
   buildStepBar();
   setStatus('run', 'Orchestrator initialising pipeline…');
@@ -3747,7 +3812,7 @@ function markFtr(btn,st,index){
 function savePackage(){
   if(!allStories.length){alert('Create an assurance package first.');return;}
   const name=document.getElementById('package-name-inp').value.trim()||'Assurance Package — '+new Date().toLocaleDateString();
-  const fw=document.getElementById('f-fw').value;
+  const fw=getFrameworkValue();
   const sys=document.getElementById('f-system').value||selApp;
   const ctx=[sys,selDomain,fw].filter(Boolean).join(' · ');
   const reviewed=allStories.filter(s=>s.reviewStatus==='SME_REVIEW_ATTESTED_DRAFT').length;
@@ -3819,7 +3884,7 @@ function dlJSON(){
     packageStatus:'DRAFT_NOT_CONTROLLED',
     reviewSummary:{draftAttestations:allStories.filter(s=>s.reviewStatus==='SME_REVIEW_ATTESTED_DRAFT').length,total:allStories.length,electronicSignature:false,immutableAuditRecord:false},
     context:{org:document.getElementById('f-org').value,project:document.getElementById('f-proj').value,
-             system:document.getElementById('f-system').value,framework:document.getElementById('f-fw').value,
+             system:document.getElementById('f-system').value,framework:getFrameworkValue(),
              businessOutcome:document.getElementById('f-outcome').value},
     pipeline:{gateLog:H.gateLog},
     stories:allStories,
@@ -4553,7 +4618,6 @@ function loadProductGradeSample(){
   document.getElementById('f-site').value = 'Ghent QC Laboratory';
   document.getElementById('f-proj').value = 'LIMS Part 11 Assurance · FY26 Release';
   document.getElementById('f-system').value = 'LIMS';
-  document.getElementById('f-fw').value = 'FDA';
   applyFramework('FDA');
   selCatsSet.clear();
   ['B','C','F'].forEach(c => selCatsSet.add(c));
@@ -4561,8 +4625,6 @@ function loadProductGradeSample(){
   updateCatFooter();
   document.getElementById('f-outcome').value = 'Defensible batch-release decisions with inspection-ready audit trail and e-signature evidence';
   document.getElementById('f-client-region').value = 'United States / Belgium dual-market release';
-  const jur=document.getElementById('f-jurisdiction');
-  if(jur) jur.value='United States';
   document.getElementById('f-client-delta').value = 'Plant SOP still allows shared lab logins for urgent weekend release; CAPA open for audit-trail review lag';
   document.getElementById('f-gap-input').value = '2025 FDA observation: incomplete contemporaneous audit-trail review for batch-release records; missing dual Business Owner + QA sign-off on e-signature meaning';
   document.querySelectorAll('#ch-domain .chip').forEach(c => {
@@ -4592,7 +4654,8 @@ function sourceMetaFor(reg,sourceKey){
   if(r.includes('hipaa')) return {authority:'HHS / eCFR',nation:'United States',sourceType:'Regulation',url:'https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-C/part-164/subpart-C'};
   if(r.includes('mdr')) return {authority:'European Union',nation:'European Union',sourceType:'Regulation',url:'https://eur-lex.europa.eu/eli/reg/2017/745/oj'};
   const nation = normalizeJurisdictionNation(
-    document.getElementById('f-jurisdiction')?.value?.trim()
+    (typeof getJurisdictionValue==='function' ? getJurisdictionValue() : '')
+    || document.getElementById('f-jurisdiction')?.value?.trim()
     || document.getElementById('f-client-region')?.value?.trim() || ''
   ) || 'International';
   return {authority:'Curated regulatory library',nation,sourceType:'Curated source summary',url:'',sourceVersion:'',effectiveDate:'',capturedAt:'2026-08-14',licenseTag:'REVIEW_REQUIRED',sourceApprovalStatus:'SME_PENDING'};
