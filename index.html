@@ -1647,11 +1647,7 @@ function toggleChip(el,type){
   if(type==='domain') onHealthcareScopeChange();
 }
 function onHealthcareScopeChange(){
-  syncCompareMarketsHealthcare();
-  if(document.getElementById('view-compare')?.style.display==='block'){
-    buildCompareMarketFilters();
-    buildGlobalCompare();
-  }
+  refreshCompareView(document.getElementById('view-compare')?.style.display==='block');
 }
 function applyFramework(fw){
   // Clear all selections first — fresh every time
@@ -1829,12 +1825,7 @@ function goTab(t,btn){
   });
   document.querySelectorAll('.nav-tab').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
-  if(t==='compare'){
-    syncCompareMarketsHealthcare();
-    applyHealthcarePrivacyLibrary();
-    buildCompareMarketFilters();
-    buildGlobalCompare();
-  }
+  if(t==='compare') refreshCompareView(true);
   if(t==='readiness') buildReadinessView();
 }
 
@@ -3563,7 +3554,7 @@ function renderStories(stories, pipelineResult) {
       <div class="qc-chip"><b>Relevance</b>${(qc.sourceRelevanceRanking||[]).length} ranked sources</div>
       <div class="qc-chip"><b>Jurisdiction</b>${(qc.jurisdictionFilter?.suppressed||[]).length} filtered out</div>
       <div class="qc-chip"><b>Duplicates</b>${qc.duplicateSuppression?.removed||0} suppressed</div>
-      <div class="qc-chip"><b>Normalized</b>${qc.outputNormalization?.itemsNormalized||stories.length} → schema ${qc.outputNormalization?.schemaVersion||'1.0.0'}</div>
+      <div class="qc-chip"><b>Normalized</b>${qc.outputNormalization?.itemsNormalized||stories.length} items · schema v${qc.outputNormalization?.schemaVersion||'1.0.0'}</div>
       <div class="qc-chip"><b>Readiness</b>avg ${qc.validationRubric?.averageScore||0}/100 · ${qc.validationRubric?.passCount||0} pass</div>
     </div>
   </div>` : '';
@@ -3776,21 +3767,35 @@ function dlFdaClinicalSchema(){
 function dlHealthcareSchema(){ return dlFdaClinicalSchema(); }
 
 /* GLOBAL COMPARE ENGINE */
+const HEALTHCARE_PRIVACY_MARKETS=['HIPAA','GDPR'];
+let healthcarePrivacyLibSynced=false;
+
 function healthcareLifeSciencesContext(){
   const sys=document.getElementById('f-system')?.value;
-  return sys&&HEALTHCARE_LS_SYSTEMS.includes(sys)&&selDomain&&HEALTHCARE_LS_DOMAINS.includes(selDomain);
+  return !!(sys&&HEALTHCARE_LS_SYSTEMS.includes(sys)&&selDomain&&HEALTHCARE_LS_DOMAINS.includes(selDomain));
 }
 function syncCompareMarketsHealthcare(){
-  if(!healthcareLifeSciencesContext()) return;
-  compareMarketSel.add('HIPAA');
-  compareMarketSel.add('GDPR');
+  const hc=healthcareLifeSciencesContext();
+  HEALTHCARE_PRIVACY_MARKETS.forEach(id=>{
+    if(hc) compareMarketSel.add(id);
+    else if(compareMarketSel.size>3) compareMarketSel.delete(id);
+  });
 }
 function applyHealthcarePrivacyLibrary(){
-  if(!healthcareLifeSciencesContext()) return;
+  const hc=healthcareLifeSciencesContext();
+  if(!hc){healthcarePrivacyLibSynced=false;return;}
+  if(healthcarePrivacyLibSynced) return;
+  healthcarePrivacyLibSynced=true;
   selItems.add('hipaa');
   selItems.add('gdpr');
   renderTree('');
   updateCount();
+}
+function refreshCompareView(renderMatrix){
+  syncCompareMarketsHealthcare();
+  applyHealthcarePrivacyLibrary();
+  buildCompareMarketFilters();
+  if(renderMatrix) buildGlobalCompare();
 }
 function buildCompareMarketFilters(){
   const el=document.getElementById('compare-market-filters');
