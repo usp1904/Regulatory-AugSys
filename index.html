@@ -55,15 +55,16 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .layout{display:flex;flex:1;overflow:hidden}
 
 /* ── SIDEBAR ── */
-.sidebar{width:280px;min-width:240px;max-width:480px;flex-shrink:0;background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;min-height:0;position:relative}
-.sb-resizer{position:absolute;top:0;right:0;width:12px;height:100%;cursor:col-resize;z-index:6;background:transparent;touch-action:none}
-.sb-resizer:hover,.sb-resizer:focus,.sb-resizer.dragging{background:linear-gradient(90deg,transparent 4px,var(--blue) 4px,var(--blue) 8px,transparent 8px)}
+.sidebar{width:280px;min-width:240px;max-width:480px;flex-shrink:0;background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:row;align-items:stretch;overflow:hidden;min-height:0;position:relative}
+.sb-stack{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column}
+.sb-resizer{width:10px;flex-shrink:0;align-self:stretch;cursor:col-resize;z-index:6;background:var(--bg);border-left:1px solid var(--border);touch-action:none}
+.sb-resizer:hover,.sb-resizer:focus,.sb-resizer.dragging{background:var(--blue-t);box-shadow:inset 3px 0 0 var(--blue)}
 .sb-resizer:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
-.sb-scroll{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;scrollbar-gutter:stable;scrollbar-width:auto}
-.sb-scroll::-webkit-scrollbar{width:12px}
-.sb-scroll::-webkit-scrollbar-track{background:var(--bg);border-left:1px solid var(--border)}
-.sb-scroll::-webkit-scrollbar-thumb{background:var(--ink4);border-radius:8px;min-height:48px;border:2px solid var(--bg)}
-.sb-scroll::-webkit-scrollbar-thumb:hover{background:var(--ink3)}
+.sb-scroll{flex:1;min-height:0;overflow-y:scroll;overflow-x:hidden;display:flex;flex-direction:column;scrollbar-gutter:stable;scrollbar-width:auto;padding-right:8px}
+.sb-scroll::-webkit-scrollbar,.sb-tree::-webkit-scrollbar{width:12px}
+.sb-scroll::-webkit-scrollbar-track,.sb-tree::-webkit-scrollbar-track{background:var(--bg2);border-radius:8px;margin:6px 2px;border:1px solid var(--border)}
+.sb-scroll::-webkit-scrollbar-thumb,.sb-tree::-webkit-scrollbar-thumb{background:var(--ink4);border-radius:8px;min-height:48px;border:2px solid var(--bg2)}
+.sb-scroll::-webkit-scrollbar-thumb:hover,.sb-tree::-webkit-scrollbar-thumb:hover{background:var(--ink3)}
 .sb-hdr{padding:10px 12px 6px;border-bottom:1px solid var(--bg2);display:flex;align-items:center;gap:6px}
 .sb-hdr-title{font-size:12px;font-weight:600;color:var(--ink);flex:1}
 .sb-hdr-btn{font-size:10px;padding:2px 7px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--ink3);cursor:pointer;font-family:inherit;transition:all .12s}
@@ -75,7 +76,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .sb-search-inner input::placeholder{color:var(--ink4)}
 .sb-si{position:absolute;left:8px;top:50%;transform:translateY(-50%);color:var(--ink4);font-size:11px;pointer-events:none}
 .sb-count{font-size:10px;color:var(--ink4);padding:0 10px 5px;margin-top:4px}
-.sb-tree{flex:none;overflow:visible;padding:4px 0 8px;min-height:0}
+.sb-tree{flex:1 1 auto;min-height:180px;overflow-y:scroll;overflow-x:hidden;padding:4px 4px 8px 0;margin-right:8px;scrollbar-gutter:stable;scrollbar-width:auto}
 .tg{margin-bottom:1px}
 .tg-h{display:flex;align-items:center;gap:6px;padding:5px 10px;cursor:pointer;user-select:none;transition:background .12s}
 .tg-h:hover{background:var(--bg)}
@@ -543,7 +544,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 
 <!-- SIDEBAR -->
 <div class="sidebar">
-  <div class="sb-resizer" id="sb-resizer" role="separator" aria-orientation="vertical" aria-label="Resize Regulatory Library" tabindex="0" title="Drag or use Left/Right arrows to resize the library"></div>
+  <div class="sb-stack">
   <div class="sb-scroll">
   <div class="sb-hdr">
     <span class="sb-hdr-title">Regulatory Library</span>
@@ -613,6 +614,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
       <div class="sbm-models" id="sbm-models"></div>
     </div>
   </div>
+  </div><!-- end sb-stack -->
+  <div class="sb-resizer" id="sb-resizer" role="separator" aria-orientation="vertical" aria-label="Resize Regulatory Library" tabindex="0" title="Drag or use Left/Right arrows to resize the library"></div>
 </div>
 
 <!-- RIGHT PANEL -->

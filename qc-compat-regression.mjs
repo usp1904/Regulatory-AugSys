@@ -343,6 +343,8 @@ check('library remains complete and every outcome example is selectable', () => 
   assert.ok(html.includes('id="req-example-select"'));
   assert.ok(html.includes('function applyReqExample'));
   assert.ok(html.includes('id="sb-resizer"'));
+  assert.ok(html.includes('margin-right:8px'));
+  assert.ok(html.includes('.sb-tree{flex:1 1 auto;min-height:180px;overflow-y:scroll'));
 });
 
 if (failures.length) throw new Error(failures.join('\n'));
