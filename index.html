@@ -76,7 +76,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .sb-search-inner input::placeholder{color:var(--ink4)}
 .sb-si{position:absolute;left:8px;top:50%;transform:translateY(-50%);color:var(--ink4);font-size:11px;pointer-events:none}
 .sb-count{font-size:10px;color:var(--ink4);padding:0 10px 5px;margin-top:4px}
-.sb-tree{flex:1 1 auto;min-height:180px;overflow-y:scroll;overflow-x:hidden;padding:4px 4px 8px 0;margin-right:8px;scrollbar-gutter:stable;scrollbar-width:auto}
+.sb-tree-row{flex:1 1 auto;min-height:180px;min-width:0;display:flex;flex-direction:row;align-items:stretch;gap:0}
+.sb-tree{flex:1 1 auto;min-width:0;min-height:180px;overflow-y:scroll;overflow-x:hidden;padding:4px 4px 8px 0;scrollbar-gutter:stable;scrollbar-width:auto}
+.sb-split-gap{width:8px;flex-shrink:0;align-self:stretch;background:var(--bg);border-left:1px solid var(--border);border-right:1px solid var(--border)}
 .tg{margin-bottom:1px}
 .tg-h{display:flex;align-items:center;gap:6px;padding:5px 10px;cursor:pointer;user-select:none;transition:background .12s}
 .tg-h:hover{background:var(--bg)}
@@ -558,7 +560,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
     </div>
   </div>
   <div class="sb-count" id="sb-count">0 of 64 selected</div>
-  <div class="sb-tree" id="tree"></div>
+  <div class="sb-tree-row">
+    <div class="sb-tree" id="tree"></div>
+    <div class="sb-split-gap" aria-hidden="true" title="Space between tree and sidebar scrollbars"></div>
+  </div>
   <div class="sb-upload">
     <div class="sb-upl-zone">
       <input type="file" id="sb-source-input" multiple accept=".pdf,.docx,.doc,.xlsx,.xls,.txt,.csv,.json" onchange="handleSBDocs(this.files)" aria-label="Ingest controlled regulatory source files">
