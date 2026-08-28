@@ -57,18 +57,15 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 /* ── SIDEBAR ── */
 .sidebar{width:312px;min-width:280px;max-width:520px;flex-shrink:0;background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:row;align-items:stretch;overflow:hidden;min-height:0;position:relative}
 .sb-stack{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column}
-.sb-resizer{width:12px;flex-shrink:0;align-self:stretch;cursor:col-resize;z-index:6;background:var(--bg);border-left:1px solid var(--border);touch-action:none}
+.sb-resizer{width:12px;flex-shrink:0;align-self:stretch;cursor:col-resize;z-index:6;background:var(--white);border-left:1px solid var(--border);touch-action:none}
 .sb-resizer:hover,.sb-resizer:focus,.sb-resizer.dragging{background:var(--blue-t);box-shadow:inset 3px 0 0 var(--blue)}
 .sb-resizer:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
+.sb-lib-gap{width:20px;flex-shrink:0;align-self:stretch;background:var(--bg);border-left:1px solid var(--border);border-right:1px solid var(--border)}
 .sb-scroll{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;scrollbar-gutter:stable;scrollbar-width:auto}
 .sb-scroll::-webkit-scrollbar{width:14px}
 .sb-scroll::-webkit-scrollbar-track{background:#eef0f4;border-left:1px solid var(--border)}
 .sb-scroll::-webkit-scrollbar-thumb{background:#9ca3af;border-radius:8px;min-height:48px;border:3px solid #eef0f4}
 .sb-scroll::-webkit-scrollbar-thumb:hover{background:#6b7280}
-.sb-tree::-webkit-scrollbar{width:14px}
-.sb-tree::-webkit-scrollbar-track{background:#e5e7eb}
-.sb-tree::-webkit-scrollbar-thumb{background:#6b7280;border-radius:8px;min-height:40px;border:3px solid #e5e7eb}
-.sb-tree::-webkit-scrollbar-thumb:hover{background:#4b5563}
 .sb-hdr{padding:10px 12px 6px;border-bottom:1px solid var(--bg2);display:flex;align-items:center;gap:6px}
 .sb-hdr-title{font-size:12px;font-weight:600;color:var(--ink);flex:1}
 .sb-hdr-btn{font-size:10px;padding:2px 7px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--ink3);cursor:pointer;font-family:inherit;transition:all .12s}
@@ -80,7 +77,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .sb-search-inner input::placeholder{color:var(--ink4)}
 .sb-si{position:absolute;left:8px;top:50%;transform:translateY(-50%);color:var(--ink4);font-size:11px;pointer-events:none}
 .sb-count{font-size:10px;color:var(--ink4);padding:0 10px 5px;margin-top:4px}
-.sb-tree{flex:1 1 auto;min-width:0;min-height:200px;overflow-y:auto;overflow-x:hidden;padding:4px 10px 8px 0;margin-right:24px;scrollbar-gutter:stable;scrollbar-width:auto}
+.sb-tree{flex:none;overflow:visible;padding:4px 10px 8px 0;min-height:0}
 .tg{margin-bottom:1px}
 .tg-h{display:flex;align-items:center;gap:6px;padding:5px 12px 5px 10px;cursor:pointer;user-select:none;transition:background .12s}
 .tg-h:hover{background:var(--bg)}
@@ -619,6 +616,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
     </div>
   </div>
   </div><!-- end sb-stack -->
+  <div class="sb-lib-gap" aria-hidden="true" title="Space beside the library scrollbar"></div>
   <div class="sb-resizer" id="sb-resizer" role="separator" aria-orientation="vertical" aria-label="Resize Regulatory Library" tabindex="0" title="Drag or use Left/Right arrows to resize the library"></div>
 </div>
 

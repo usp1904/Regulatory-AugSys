@@ -54,7 +54,7 @@ MARAS is a stakeholder-review MVP for Pharma and Life Sciences teams. It convert
 | MVP-16 | Global regulation comparison for consulting co-operations | **Global Compare** tab renders a citation matrix across US/EU/ICH/**HIPAA/GDPR** markets (all Healthcare & Life Sciences domains and listed system types), gap and briefing modes, JSON/CSV export, and optional push to Assure |
 | MVP-17 | SOP and policy mapper | **Readiness** tab maps regulations to library selections, client delta / audit gap / ingested SOP text; flags true unmapped controls and lexical conflicts |
 | MVP-18 | Inspection readiness assistant | **Readiness** tab generates checklist, per-PBI evidence requests, mock inspection Q&A, and downloadable gap / inspection JSON/CSV |
-| MVP-19 | Library and outcome example accessibility | Regulatory Library keeps a 24px gap between the tree scrollbar and the full-library scrollbar at normal page size (80–100% zoom); resize handle is a separate column; every **Define the business compliance outcome** example is selectable from the dropdown and Try chips |
+| MVP-19 | Library and outcome example accessibility | Regulatory Library uses **one** scrollbar for the full library (tree is not a nested scroller). A 20px gap sits between that scrollbar and the resize handle so they do not read as overlapping slivers at 80–100% zoom. Every **Define the business compliance outcome** example is selectable from the dropdown and Try chips |
 
 ## Stakeholder demo script
 
