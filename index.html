@@ -139,6 +139,19 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .fld input:focus,.fld select:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(29,111,206,.07)}
 .fld input::placeholder{color:var(--ink4)}
 .fld select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236b7280'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center;appearance:none;padding-right:24px}
+.ms-drop{position:relative}
+.ms-drop-btn{width:100%;padding:7px 24px 7px 9px;font-size:12px;border:1px solid var(--border);border-radius:var(--r);background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236b7280'/%3E%3C/svg%3E") no-repeat right 9px center;color:var(--ink);font-family:inherit;outline:none;cursor:pointer;text-align:left;line-height:1.35;min-height:32px}
+.ms-drop-btn:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(29,111,206,.07)}
+.ms-drop-btn.empty{color:var(--ink4)}
+.ms-drop-panel{position:absolute;z-index:50;left:0;right:0;top:calc(100% + 2px);max-height:220px;overflow-y:auto;background:#fff;border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow2);padding:4px 0}
+.ms-drop-bar{display:flex;justify-content:flex-end;padding:2px 8px 4px;position:sticky;top:0;background:#fff}
+.ms-drop-clear{font-size:11px;font-weight:600;color:var(--blue);background:none;border:none;cursor:pointer;font-family:inherit;padding:2px 0}
+.ms-drop-g{font-size:9px;font-weight:700;color:var(--ink4);text-transform:uppercase;letter-spacing:.3px;padding:6px 10px 2px}
+.ms-drop-opt{display:flex;align-items:center;gap:8px;width:100%;padding:6px 10px;font-size:12px;border:none;background:transparent;color:var(--ink2);cursor:pointer;font-family:inherit;text-align:left}
+.ms-drop-opt:hover{background:var(--bg)}
+.ms-drop-opt.on{background:var(--teal-t);color:var(--teal);font-weight:600}
+.ms-drop-ck{width:13px;height:13px;border:1px solid var(--border);border-radius:3px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;background:#fff}
+.ms-drop-opt.on .ms-drop-ck{border-color:var(--teal);background:var(--teal);color:#fff}
 .divider{height:1px;background:var(--bg2);margin:10px 0}
 
 /* Chips within cards */
@@ -706,13 +719,19 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
       </div>
       <div class="fld" style="margin-top:8px">
         <label id="fw-lbl">Regulatory Framework <span style="color:var(--ink4);font-weight:400;text-transform:none;font-size:10px">— click one or more; unions library sources</span></label>
-        <div class="multi-chips" id="ch-framework" role="group" aria-labelledby="fw-lbl"></div>
+        <div class="ms-drop" id="ch-framework">
+          <button type="button" class="ms-drop-btn" id="f-fw-btn" aria-labelledby="fw-lbl" aria-haspopup="listbox" aria-expanded="false" aria-controls="fw-drop-panel" onclick="toggleMultiDrop('fw',event)"></button>
+          <div class="ms-drop-panel" id="fw-drop-panel" hidden role="listbox" aria-multiselectable="true" aria-labelledby="fw-lbl" onclick="event.stopPropagation()"></div>
+        </div>
         <select id="f-fw" multiple hidden aria-hidden="true" tabindex="-1"></select>
         <div class="fld-hint">Graph: Frameworks → union library sources → jurisdictions → QC filter</div>
       </div>
       <div class="fld" style="margin-top:8px">
         <label id="jur-lbl">Jurisdiction <span style="color:var(--red);font-weight:700">*</span> <span style="color:var(--ink4);font-weight:400;text-transform:none;font-size:10px">— click every market that applies</span></label>
-        <div class="multi-chips" id="ch-jurisdiction" role="group" aria-labelledby="jur-lbl"></div>
+        <div class="ms-drop" id="ch-jurisdiction">
+          <button type="button" class="ms-drop-btn" id="f-jur-btn" aria-labelledby="jur-lbl" aria-haspopup="listbox" aria-expanded="false" aria-controls="jur-drop-panel" onclick="toggleMultiDrop('jur',event)"></button>
+          <div class="ms-drop-panel" id="jur-drop-panel" hidden role="listbox" aria-multiselectable="true" aria-labelledby="jur-lbl" onclick="event.stopPropagation()"></div>
+        </div>
         <select id="f-jurisdiction" multiple hidden aria-hidden="true" tabindex="-1" aria-required="true"></select>
         <div class="fld-hint">Graph: Markets → allowed nations → source filter (DRAFT_NOT_CONTROLLED)</div>
       </div>
@@ -1456,6 +1475,7 @@ function init(){
   buildChips('ch-domain',DOMAINS,'domain');
   buildFrameworkChips();
   buildJurisdictionChips();
+  document.addEventListener('click', closeMultiDrops);
   initSidebarResize();
   buildSBModels();buildStepBar();loadSaved();buildAssurance();buildCompareMarketFilters();
   document.getElementById('ns-chunks').textContent=GXP_CHUNKS.length;
@@ -1626,34 +1646,83 @@ function syncJurisdictionFromRegion(){
   }
   renderJurisdictionChips();
 }
+function multiDropSummary(values, empty){
+  if(!values.length) return empty;
+  if(values.length===1) return values[0];
+  return values.length+' selected — '+values.join(', ');
+}
+function closeMultiDrops(){
+  ['fw','jur'].forEach(which=>{
+    const panel=document.getElementById(which==='fw'?'fw-drop-panel':'jur-drop-panel');
+    const btn=document.getElementById(which==='fw'?'f-fw-btn':'f-jur-btn');
+    if(panel) panel.hidden=true;
+    btn?.setAttribute('aria-expanded','false');
+  });
+}
+function toggleMultiDrop(which, ev){
+  ev?.stopPropagation();
+  const panel=document.getElementById(which==='fw'?'fw-drop-panel':'jur-drop-panel');
+  const btn=document.getElementById(which==='fw'?'f-fw-btn':'f-jur-btn');
+  if(!panel||!btn) return;
+  const open=panel.hidden;
+  closeMultiDrops();
+  if(open){ panel.hidden=false; btn.setAttribute('aria-expanded','true'); }
+}
 function buildFrameworkChips(){
-  const el=document.getElementById('ch-framework');
+  const panel=document.getElementById('fw-drop-panel');
+  const btn=document.getElementById('f-fw-btn');
   const sel=document.getElementById('f-fw');
   if(sel && !sel.options.length){
     FRAMEWORK_GROUPS.forEach(g=>g.items.forEach(n=>{
       const o=document.createElement('option'); o.value=n; o.textContent=n; sel.appendChild(o);
     }));
   }
-  if(!el) return;
-  el.innerHTML=FRAMEWORK_GROUPS.map(g=>`<span class="chip-g">${g.label}</span>`+g.items.map(n=>
-    `<button type="button" class="chip${selFrameworks.has(n)?' on teal':''}" aria-pressed="${selFrameworks.has(n)}" onclick="toggleFramework('${n.replace(/'/g,"\\'")}')">${n}</button>`
-  ).join('')).join('');
+  if(panel){
+    panel.innerHTML='<div class="ms-drop-bar"><button type="button" class="ms-drop-clear" onclick="clearFrameworks(event)">Clear</button></div>'+
+      FRAMEWORK_GROUPS.map(g=>`<div class="ms-drop-g">${g.label}</div>`+g.items.map(n=>
+        `<button type="button" class="ms-drop-opt${selFrameworks.has(n)?' on':''}" role="option" aria-selected="${selFrameworks.has(n)}" onclick="toggleFramework('${n.replace(/'/g,"\\'")}');event.stopPropagation()"><span class="ms-drop-ck">${selFrameworks.has(n)?'✓':''}</span>${n}</button>`
+      ).join('')).join('');
+  }
+  if(btn){
+    const vals=[...selFrameworks];
+    btn.textContent=multiDropSummary(vals,'Select framework…');
+    btn.classList.toggle('empty',!vals.length);
+  }
   syncHiddenSelect('f-fw',[...selFrameworks]);
 }
 function buildJurisdictionChips(){
   renderJurisdictionChips();
 }
 function renderJurisdictionChips(){
-  const el=document.getElementById('ch-jurisdiction');
+  const panel=document.getElementById('jur-drop-panel');
+  const btn=document.getElementById('f-jur-btn');
   const sel=document.getElementById('f-jurisdiction');
   if(sel && !sel.options.length){
     JURISDICTION_OPTIONS.forEach(n=>{ const o=document.createElement('option'); o.value=n; o.textContent=n; sel.appendChild(o); });
   }
-  if(!el) return;
-  el.innerHTML=JURISDICTION_OPTIONS.map(n=>
-    `<button type="button" class="chip${selJurisdictions.has(n)?' on teal':''}" aria-pressed="${selJurisdictions.has(n)}" onclick="toggleJurisdiction('${n.replace(/'/g,"\\'")}')">${n==='Saudi Arabia'?'Saudi Arabia / UAE':n}</button>`
-  ).join('');
+  if(panel){
+    panel.innerHTML='<div class="ms-drop-bar"><button type="button" class="ms-drop-clear" onclick="clearJurisdictions(event)">Clear</button></div>'+
+      JURISDICTION_OPTIONS.map(n=>
+        `<button type="button" class="ms-drop-opt${selJurisdictions.has(n)?' on':''}" role="option" aria-selected="${selJurisdictions.has(n)}" onclick="toggleJurisdiction('${n.replace(/'/g,"\\'")}');event.stopPropagation()"><span class="ms-drop-ck">${selJurisdictions.has(n)?'✓':''}</span>${n==='Saudi Arabia'?'Saudi Arabia / UAE':n}</button>`
+      ).join('');
+  }
+  if(btn){
+    const vals=[...selJurisdictions];
+    btn.textContent=multiDropSummary(vals,'Select jurisdiction…');
+    btn.classList.toggle('empty',!vals.length);
+  }
   syncHiddenSelect('f-jurisdiction',[...selJurisdictions]);
+}
+function clearFrameworks(ev){
+  ev?.stopPropagation();
+  selFrameworks=new Set();
+  applySelectedFrameworks();
+}
+function clearJurisdictions(ev){
+  ev?.stopPropagation();
+  selJurisdictions=new Set();
+  renderJurisdictionChips();
+  syncJurisdictionField();
 }
 function toggleFramework(name){
   if(selFrameworks.has(name)) selFrameworks.delete(name);
