@@ -343,9 +343,9 @@ check('library remains complete and every outcome example is selectable', () => 
   assert.ok(html.includes('id="req-example-select"'));
   assert.ok(html.includes('function applyReqExample'));
   assert.ok(html.includes('id="sb-resizer"'));
-  assert.ok(html.includes('sb-split-gap'));
-  assert.ok(html.includes('.sb-split-gap{width:10px'));
-  assert.ok(html.includes('.sb-tree{flex:1 1 auto;min-width:0;min-height:180px;overflow-y:scroll'));
+  assert.ok(html.includes('margin-right:24px'));
+  assert.ok(html.includes('.sb-tree::-webkit-scrollbar{width:14px'));
+  assert.ok(!html.includes('sb-split-gap'));
 });
 
 if (failures.length) throw new Error(failures.join('\n'));
