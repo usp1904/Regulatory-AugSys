@@ -55,10 +55,15 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .layout{display:flex;flex:1;overflow:hidden}
 
 /* ── SIDEBAR ── */
-.sidebar{width:280px;flex-shrink:0;background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;min-height:0}
-.sb-scroll{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column}
-.sb-scroll::-webkit-scrollbar{width:4px}
-.sb-scroll::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:2px}
+.sidebar{width:280px;min-width:240px;max-width:480px;flex-shrink:0;background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;min-height:0;position:relative}
+.sb-resizer{position:absolute;top:0;right:0;width:12px;height:100%;cursor:col-resize;z-index:6;background:transparent;touch-action:none}
+.sb-resizer:hover,.sb-resizer:focus,.sb-resizer.dragging{background:linear-gradient(90deg,transparent 4px,var(--blue) 4px,var(--blue) 8px,transparent 8px)}
+.sb-resizer:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
+.sb-scroll{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;scrollbar-gutter:stable;scrollbar-width:auto}
+.sb-scroll::-webkit-scrollbar{width:12px}
+.sb-scroll::-webkit-scrollbar-track{background:var(--bg);border-left:1px solid var(--border)}
+.sb-scroll::-webkit-scrollbar-thumb{background:var(--ink4);border-radius:8px;min-height:48px;border:2px solid var(--bg)}
+.sb-scroll::-webkit-scrollbar-thumb:hover{background:var(--ink3)}
 .sb-hdr{padding:10px 12px 6px;border-bottom:1px solid var(--bg2);display:flex;align-items:center;gap:6px}
 .sb-hdr-title{font-size:12px;font-weight:600;color:var(--ink);flex:1}
 .sb-hdr-btn{font-size:10px;padding:2px 7px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--ink3);cursor:pointer;font-family:inherit;transition:all .12s}
@@ -70,9 +75,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .sb-search-inner input::placeholder{color:var(--ink4)}
 .sb-si{position:absolute;left:8px;top:50%;transform:translateY(-50%);color:var(--ink4);font-size:11px;pointer-events:none}
 .sb-count{font-size:10px;color:var(--ink4);padding:0 10px 5px;margin-top:4px}
-.sb-tree{flex:1;overflow-y:auto;padding:4px 0;min-height:100px}
-.sb-tree::-webkit-scrollbar{width:3px}
-.sb-tree::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:2px}
+.sb-tree{flex:none;overflow:visible;padding:4px 0 8px;min-height:0}
 .tg{margin-bottom:1px}
 .tg-h{display:flex;align-items:center;gap:6px;padding:5px 10px;cursor:pointer;user-select:none;transition:background .12s}
 .tg-h:hover{background:var(--bg)}
@@ -86,7 +89,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .ti{display:flex;align-items:center;gap:6px;padding:4px 10px 4px 24px;cursor:pointer;transition:background .12s}
 .ti:hover{background:var(--bg)}
 .ti.on{background:var(--blue-t)}
-.ti-cb{width:13px;height:13px;border:1.5px solid var(--border2);border-radius:3px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:8px;transition:all .12s}
+.ti-cb{width:18px;height:18px;border:1.5px solid var(--border2);border-radius:3px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;transition:all .12s}
 .ti.on .ti-cb{background:var(--blue);border-color:var(--blue);color:#fff}
 .ti-name{font-size:11px;color:var(--ink2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ti.on .ti-name{color:var(--blue);font-weight:500}
@@ -99,7 +102,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .sb-upl-ico{font-size:14px;margin-bottom:2px}
 .sb-upl-t{font-size:11px;font-weight:500;color:var(--ink2)}
 .sb-upl-s{font-size:10px;color:var(--ink4);margin-top:1px}
-.sb-docs{margin-top:5px;display:flex;flex-direction:column;gap:2px;max-height:132px;overflow-y:auto}
+.sb-docs{margin-top:5px;display:flex;flex-direction:column;gap:2px}
 .sb-gate-flow{margin-top:6px;font-size:9px;color:var(--ink4);letter-spacing:.2px;text-align:center;line-height:1.35}
 .sb-gate-flow b{color:var(--ink3);font-weight:600}
 .sd-row{display:flex;align-items:flex-start;gap:5px;padding:4px 7px;background:#fff;border-radius:4px;border:1px solid var(--border)}
@@ -168,11 +171,14 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .req-ta:focus{border-color:var(--blue);background:#fff;box-shadow:0 0 0 3px rgba(29,111,206,.07)}
 .req-ta::placeholder{color:var(--ink4);font-size:12px}
 .try-row{display:flex;align-items:flex-start;gap:6px;margin-top:7px;flex-wrap:wrap}
-.try-chips{display:grid;grid-template-columns:repeat(2,1fr);gap:5px;flex:1}
-.try-chip{font-size:11px;padding:6px 10px;border-radius:var(--r);border:1px solid var(--border);background:#fff;color:var(--ink2);cursor:pointer;transition:all .12s;line-height:1.35}
+.req-example-pick{width:100%;margin:0 0 8px;padding:8px 10px;font-size:12px;border:1px solid var(--border);border-radius:var(--r);background:#fff;color:var(--ink);font-family:inherit;cursor:pointer}
+.req-example-pick:focus{border-color:var(--blue);outline:none;box-shadow:0 0 0 3px rgba(29,111,206,.07)}
+.try-chips{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:6px;flex:1;min-width:0}
+.try-chip{font-size:11px;padding:8px 10px;min-height:40px;border-radius:var(--r);border:1px solid var(--border);background:#fff;color:var(--ink2);cursor:pointer;transition:all .12s;line-height:1.35;text-align:left;white-space:normal;width:100%}
 .try-chip:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-t)}
 .try-chip.hl{border-color:var(--teal);color:var(--teal);background:var(--teal-t)}
 .try-chip.hl:hover{background:#d1fae5}
+.try-chip[aria-pressed="true"]{border-color:var(--blue);background:var(--blue-t);color:var(--blue);font-weight:600}
 .upload-row{display:flex;align-items:center;gap:9px;margin-top:10px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--r);cursor:pointer;position:relative;transition:all .14s;background:var(--bg)}
 .upload-row:hover{border-color:var(--blue);background:var(--blue-t)}
 .upload-row input{position:absolute;inset:0;opacity:0;cursor:pointer}
@@ -337,9 +343,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .empty-s{font-size:11px}
 
 /* ── SIDEBAR MODEL SECTION ── */
-.sb-model{border-top:2px solid var(--border);background:var(--white);flex-shrink:0;max-height:min(48vh,380px);overflow-y:auto;box-shadow:0 -4px 12px rgba(0,0,0,.06)}
-.sb-model::-webkit-scrollbar{width:4px}
-.sb-model::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:2px}
+.sb-model{border-top:2px solid var(--border);background:var(--white);flex-shrink:0;max-height:min(48vh,380px);overflow-y:auto;box-shadow:0 -4px 12px rgba(0,0,0,.06);scrollbar-width:auto}
+.sb-model::-webkit-scrollbar{width:12px}
+.sb-model::-webkit-scrollbar-thumb{background:var(--ink4);border-radius:8px;min-height:40px;border:2px solid var(--white)}
 .sbm-hdr{padding:8px 10px 0}
 .sbm-mode-tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:0;padding:0 0 8px}
 .sbm-tab{display:flex;flex-direction:column;align-items:center;gap:1px;padding:8px 4px;border:1.5px solid var(--border);border-radius:var(--r);cursor:pointer;transition:all .14s;background:var(--bg);font-family:inherit;text-align:center}
@@ -355,10 +361,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .sbm-info-title{font-weight:600;color:var(--teal);margin-bottom:2px}
 .sbm-info-body{color:rgba(14,122,98,.8);line-height:1.5;font-size:10px}
 .sbm-picker-lbl{font-size:10px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.4px;padding:0 10px;margin-bottom:6px}
-.sbm-models{display:flex;flex-direction:column;gap:3px;padding:0 10px;margin-bottom:8px;max-height:130px;overflow-y:auto}
+.sbm-models{display:flex;flex-direction:column;gap:3px;padding:0 10px;margin-bottom:8px;overflow:visible}
 .sbm-key-prompt{font-size:10px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.4px;padding:0 10px 6px}
-.sbm-models::-webkit-scrollbar{width:3px}
-.sbm-models::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:2px}
 .sbm-model-card{display:flex;align-items:center;gap:8px;padding:7px 9px;border:1px solid var(--border);border-radius:var(--r);cursor:pointer;transition:all .12s;background:#fff}
 .sbm-model-card:hover{border-color:var(--border2);background:var(--bg)}
 .sbm-model-card.on{border-color:var(--blue);background:var(--blue-t)}
@@ -539,6 +543,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 
 <!-- SIDEBAR -->
 <div class="sidebar">
+  <div class="sb-resizer" id="sb-resizer" role="separator" aria-orientation="vertical" aria-label="Resize Regulatory Library" tabindex="0" title="Drag or use Left/Right arrows to resize the library"></div>
   <div class="sb-scroll">
   <div class="sb-hdr">
     <span class="sb-hdr-title">Regulatory Library</span>
@@ -722,7 +727,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 
         <div class="fld">
           <label for="f-outcome">Business Outcome <span style="color:var(--red);font-weight:700">*</span></label>
-          <input type="text" id="f-outcome" aria-required="true" placeholder="Reduce batch-release risk; prevent audit observations">
+          <input type="text" id="f-outcome" list="outcome-presets" aria-required="true" placeholder="Reduce batch-release risk; prevent audit observations">
+          <datalist id="outcome-presets"></datalist>
         </div>
       </div>
       <div class="row3" style="margin-top:8px">
@@ -814,9 +820,13 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
     <div class="card-body" style="padding-top:0">
       <textarea class="req-ta" id="req-ta" rows="4" aria-required="true"
         placeholder="Describe the regulated business outcome — e.g. 'For LIMS batch release, prove Part 11 audit trail and e-signature controls with source traceability, risk, tests, evidence and inspection questions.'"></textarea>
+      <label for="req-example-select" class="cs-lbl" style="margin-top:8px">Choose any outcome example</label>
+      <select id="req-example-select" class="req-example-pick" aria-label="Select a business compliance outcome example" onchange="applyReqExample(this.value)">
+        <option value="">Select an example to fill the outcome…</option>
+      </select>
       <div class="try-row">
         <span class="try-lbl" style="font-size:11px;color:var(--ink4);padding-top:3px">Try:</span>
-        <div class="try-chips" id="req-examples"></div>
+        <div class="try-chips" id="req-examples" role="group" aria-label="Business compliance outcome examples"></div>
       </div>
       <div class="upload-row" id="req-upload-row">
         <input type="file" id="req-file-input" multiple accept=".pdf,.docx,.xlsx,.txt,.csv,.json" onchange="handleReqFiles(this.files)" aria-label="Ingest requirement files">
@@ -1444,6 +1454,7 @@ function init(){
   buildTree();buildCats();
   buildReqExamples();
   buildChips('ch-domain',DOMAINS,'domain');
+  initSidebarResize();
   buildSBModels();buildStepBar();loadSaved();buildAssurance();buildCompareMarketFilters();
   document.getElementById('ns-chunks').textContent=GXP_CHUNKS.length;
   restoreSessionKeys();
@@ -1465,21 +1476,86 @@ function dismissOnboardGuide(){
   if(el) el.style.display='none';
 }
 
+function initSidebarResize(){
+  const sb=document.querySelector('.sidebar');
+  const handle=document.getElementById('sb-resizer');
+  if(!sb||!handle) return;
+  const MIN=240, MAX=480;
+  function setWidth(px){
+    const w=Math.min(MAX,Math.max(MIN,Math.round(px)));
+    sb.style.width=w+'px';
+    try{localStorage.setItem('maras_sidebar_width',String(w));}catch(_e){}
+    handle.setAttribute('aria-valuenow',String(w));
+  }
+  handle.setAttribute('aria-valuemin',String(MIN));
+  handle.setAttribute('aria-valuemax',String(MAX));
+  try{
+    const saved=parseInt(localStorage.getItem('maras_sidebar_width')||'',10);
+    if(saved) setWidth(saved);
+    else handle.setAttribute('aria-valuenow',String(Math.round(sb.getBoundingClientRect().width)));
+  }catch(_e){}
+  handle.addEventListener('pointerdown',e=>{
+    if(e.button!==0) return;
+    e.preventDefault();
+    handle.classList.add('dragging');
+    const startX=e.clientX;
+    const startW=sb.getBoundingClientRect().width;
+    const move=ev=>setWidth(startW+(ev.clientX-startX));
+    const up=()=>{
+      handle.classList.remove('dragging');
+      window.removeEventListener('pointermove',move);
+      window.removeEventListener('pointerup',up);
+    };
+    window.addEventListener('pointermove',move);
+    window.addEventListener('pointerup',up);
+  });
+  handle.addEventListener('keydown',e=>{
+    const w=sb.getBoundingClientRect().width;
+    if(e.key==='ArrowLeft'){e.preventDefault();setWidth(w-16);}
+    if(e.key==='ArrowRight'){e.preventDefault();setWidth(w+16);}
+    if(e.key==='Home'){e.preventDefault();setWidth(MIN);}
+    if(e.key==='End'){e.preventDefault();setWidth(MAX);}
+  });
+}
+
 /* ─── COMPLIANCE OUTCOME EXAMPLES ───────────────────────────────── */
 function buildReqExamples(){
   const el=document.getElementById('req-examples');
-  if(!el)return;
-  el.innerHTML=REQ_EXAMPLES.map((ex,i)=>{
-    const lbl=ex.short||ex.text.slice(0,40);
-    if(ex.action==='loadProductGradeSample'){
-      return`<button type="button" class="try-chip hl" title="${ex.text}" onclick="loadProductGradeSample()">${lbl}</button>`;
-    }
-    const cls='try-chip'+(ex.hl?' hl':'')+(ex.demo?' hl':'');
-    return`<button type="button" class="${cls}" title="${ex.text}" onclick="setReqByIndex(${i})">${lbl}</button>`;
-  }).join('');
+  const sel=document.getElementById('req-example-select');
+  const dl=document.getElementById('outcome-presets');
+  if(el){
+    el.innerHTML=REQ_EXAMPLES.map((ex,i)=>{
+      const lbl=ex.short||ex.text.slice(0,40);
+      const cls='try-chip'+(ex.hl||ex.demo?' hl':'');
+      return`<button type="button" class="${cls}" data-ex="${i}" title="${ex.text}" aria-pressed="false" onclick="applyReqExample(${i})">${lbl}</button>`;
+    }).join('');
+  }
+  if(sel){
+    sel.innerHTML='<option value="">Select an example to fill the outcome…</option>'+
+      REQ_EXAMPLES.map((ex,i)=>`<option value="${i}">${ex.short||ex.text}</option>`).join('');
+  }
+  if(dl){
+    dl.innerHTML=REQ_EXAMPLES.map(ex=>`<option value="${ex.short||ex.text}"></option>`).join('');
+  }
 }
-function setReqByIndex(i){ document.getElementById('req-ta').value=REQ_EXAMPLES[i]?.text||''; }
+function applyReqExample(i){
+  const idx=Number(i);
+  const ex=REQ_EXAMPLES[idx];
+  if(!ex) return;
+  const ta=document.getElementById('req-ta');
+  if(ta) ta.value=ex.text;
+  const out=document.getElementById('f-outcome');
+  if(out && (!out.value.trim() || OUTCOME_PRESET_VALUES.has(out.value.trim()))) out.value=ex.short||ex.text;
+  const sel=document.getElementById('req-example-select');
+  if(sel) sel.value=String(idx);
+  document.querySelectorAll('#req-examples .try-chip').forEach((b,n)=>{
+    b.setAttribute('aria-pressed', n===idx?'true':'false');
+  });
+  if(ex.action==='loadProductGradeSample') loadProductGradeSample();
+}
+function setReqByIndex(i){ applyReqExample(i); }
 function setReqText(t){ document.getElementById('req-ta').value=t; }
+const OUTCOME_PRESET_VALUES=new Set(REQ_EXAMPLES.map(ex=>ex.short||ex.text));
 
 function showMvpValidation(errors){
   const box=document.getElementById('mvp-validation');
@@ -3782,13 +3858,15 @@ function syncCompareMarketsHealthcare(){
   });
 }
 function applyHealthcarePrivacyLibrary(){
+  const compareOpen=document.getElementById('view-compare')?.style.display==='block';
+  if(!compareOpen) return;
   const hc=healthcareLifeSciencesContext();
   if(!hc){healthcarePrivacyLibSynced=false;return;}
   if(healthcarePrivacyLibSynced) return;
   healthcarePrivacyLibSynced=true;
   selItems.add('hipaa');
   selItems.add('gdpr');
-  renderTree('');
+  renderTree(document.querySelector('.sb-search-inner input')?.value||'');
   updateCount();
 }
 function refreshCompareView(renderMatrix){

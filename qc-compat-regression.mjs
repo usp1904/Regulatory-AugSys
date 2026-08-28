@@ -329,6 +329,22 @@ check('SOP mapper surfaces gaps and inspection pack schema', () => {
   assert.ok(insp.evidenceRequests.length >= 1);
 });
 
+check('library remains complete and every outcome example is selectable', () => {
+  const s = boot({});
+  const n = s.TREE_DATA.reduce((a, g) => a + g.items.length, 0);
+  assert.equal(n, 64);
+  const reqSrc = html.match(/const REQ_EXAMPLES=(\[[\s\S]*?\]);\s*\nconst CATS=/);
+  assert.ok(reqSrc, 'REQ_EXAMPLES not found');
+  const examples = vm.runInNewContext(reqSrc[1]);
+  assert.ok(examples.length >= 14);
+  examples.forEach((ex, i) => {
+    assert.ok(ex.text && ex.short, 'orphan example at ' + i);
+  });
+  assert.ok(html.includes('id="req-example-select"'));
+  assert.ok(html.includes('function applyReqExample'));
+  assert.ok(html.includes('id="sb-resizer"'));
+});
+
 if (failures.length) throw new Error(failures.join('\n'));
 
-export const result = { status: 'PASS', checks: 11, systemsValidated: 15 };
+export const result = { status: 'PASS', checks: 12, systemsValidated: 15 };
