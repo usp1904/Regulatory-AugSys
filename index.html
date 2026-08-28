@@ -1656,21 +1656,17 @@ function renderJurisdictionChips(){
   syncHiddenSelect('f-jurisdiction',[...selJurisdictions]);
 }
 function toggleFramework(name){
-  if(selFrameworks.has(name)){
-    if(selFrameworks.size===1) return;
-    selFrameworks.delete(name);
-  } else selFrameworks.add(name);
+  if(selFrameworks.has(name)) selFrameworks.delete(name);
+  else selFrameworks.add(name);
   applySelectedFrameworks();
 }
 function toggleJurisdiction(name){
   if(name==='Multi-Regional'){
-    if(selJurisdictions.has('Multi-Regional')) selJurisdictions=new Set(['United States']);
+    if(selJurisdictions.has('Multi-Regional')) selJurisdictions=new Set();
     else { selJurisdictions=new Set(JURISDICTION_OPTIONS); }
   } else {
-    if(selJurisdictions.has(name)){
-      if(selJurisdictions.size===1) return;
-      selJurisdictions.delete(name);
-    } else selJurisdictions.add(name);
+    if(selJurisdictions.has(name)) selJurisdictions.delete(name);
+    else selJurisdictions.add(name);
     selJurisdictions.delete('Multi-Regional');
   }
   renderJurisdictionChips();
@@ -2335,9 +2331,13 @@ function resolveScopeControls() {
   const treeCats = selectedRegs.length
     ? new Set(selectedRegs.map(it => it.cat))
     : null;
-  const openScope = !fws.length || fws.includes('Multi-Regional') || fws.some(f => JURISDICTION_BY_FRAMEWORK[f] === null);
+  const openFw = !fws.length || fws.includes('Multi-Regional') || fws.some(f => JURISDICTION_BY_FRAMEWORK[f] === null);
+  const openJur = !jurList.length || jurList.includes('Multi-Regional');
   let allowedNations = null;
-  if (!openScope) {
+  if (!openJur) {
+    // Selected markets: match ANY of the chosen jurisdictions (does not keep unselected framework nations)
+    allowedNations = new Set(jurList);
+  } else if (!openFw) {
     allowedNations = new Set();
     fws.forEach(f => {
       const nations = JURISDICTION_BY_FRAMEWORK[f];
@@ -2345,8 +2345,6 @@ function resolveScopeControls() {
     });
     if (!allowedNations.size) allowedNations = null; // unknown/empty framework → no jurisdiction filter (main-compatible)
   }
-  if (jurList.includes('Multi-Regional')) allowedNations = null;
-  else jurList.forEach(n => allowedNations?.add(n));
   if (region && allowedNations) {
     const r = region.toLowerCase();
     if (r.includes('us') || r.includes('united states') || r.includes('america')) allowedNations.add('United States');

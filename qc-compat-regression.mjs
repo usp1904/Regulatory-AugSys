@@ -150,6 +150,25 @@ check('FDA+EMA multi-select unions US and EU allowed nations', () => {
   assert.ok(ranked.some(c => (c.reg||'').includes('EU GMP')), 'EU sources should remain when EMA/EU is also selected');
 });
 
+check('zero, one, many, and cleared framework/jurisdiction filters', () => {
+  const none = boot({});
+  assert.equal(none.resolveScopeControls().allowedNations, null, 'no selection applies no nation filter');
+  const oneFw = boot({ fw: 'FDA' });
+  const oneFwNations = oneFw.resolveScopeControls().allowedNations;
+  assert.ok(oneFwNations.has('United States'));
+  assert.ok(!oneFwNations.has('European Union'));
+  const oneJur = boot({ fw: 'FDA', region: 'United States' });
+  assert.deepEqual([...oneJur.resolveScopeControls().allowedNations].sort(), ['United States']);
+  const many = boot({ fw: 'FDA, EMA / EU GMP', region: 'United States, European Union' });
+  const manyN = many.resolveScopeControls().allowedNations;
+  assert.ok(manyN.has('United States') && manyN.has('European Union'));
+  const cleared = boot({ fw: '', region: '' });
+  assert.equal(cleared.resolveScopeControls().allowedNations, null);
+  const both = boot({ fw: 'FDA', region: 'European Union' });
+  assert.ok(both.resolveScopeControls().allowedNations.has('European Union'));
+  assert.ok(!both.resolveScopeControls().allowedNations.has('United States'), 'explicit jurisdiction is OR of selected markets only');
+});
+
 check('nation normalization for GDPR under EMA', () => {
   const s = boot({ fw: 'EMA / EU GMP' });
   const meta = s.sourceMetaFor('EU GDPR Art.32');
