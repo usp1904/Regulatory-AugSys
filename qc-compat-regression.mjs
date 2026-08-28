@@ -287,17 +287,25 @@ check('ingestion production gate holds incomplete sources and drives complete on
 
 check('global compare matrix cites US and EU audit trail with deltas', () => {
   const s = boot({ fw: 'FDA', system: 'LIMS', domain: 'Pharma Mfg' });
-  s.compareMarketSel = new Set(['US', 'EU']);
+  s.compareMarketSel = new Set(['US', 'EU', 'HIPAA', 'GDPR']);
+  s.selDomain = 'Pharma Mfg';
+  s.document.getElementById = (id) => ({
+    value: id === 'f-system' ? 'LIMS' : id === 'f-fw' ? 'FDA' : ''
+  });
   const rows = s.buildCompareRows();
   const audit = rows.find(r => r.topic.id === 'audit-trail');
   assert.ok(audit);
   assert.equal(audit.cells.US.status, 'ok');
   assert.equal(audit.cells.EU.status, 'ok');
-  assert.ok(audit.cells.US.citation.includes('21 CFR'));
-  assert.ok(audit.cells.EU.citation.includes('Annex 11'));
+  assert.equal(audit.cells.HIPAA.status, 'ok');
+  assert.equal(audit.cells.GDPR.status, 'ok');
+  assert.ok(audit.cells.HIPAA.citation.includes('HIPAA'));
+  assert.ok(audit.cells.GDPR.citation.includes('GDPR'));
   const payload = s.buildCompareExportPayload();
   assert.equal(payload.schema, 'maras.global-regulation-compare.v1');
   assert.equal(payload.packageStatus, 'DRAFT_NOT_CONTROLLED');
+  assert.ok(payload.markets.some(m => /HIPAA/.test(m)));
+  assert.ok(payload.markets.some(m => /GDPR/.test(m)));
 });
 
 check('SOP mapper surfaces gaps and inspection pack schema', () => {
@@ -321,6 +329,26 @@ check('SOP mapper surfaces gaps and inspection pack schema', () => {
   assert.ok(insp.evidenceRequests.length >= 1);
 });
 
+check('library remains complete and every outcome example is selectable', () => {
+  const s = boot({});
+  const n = s.TREE_DATA.reduce((a, g) => a + g.items.length, 0);
+  assert.equal(n, 64);
+  const reqSrc = html.match(/const REQ_EXAMPLES=(\[[\s\S]*?\]);\s*\nconst CATS=/);
+  assert.ok(reqSrc, 'REQ_EXAMPLES not found');
+  const examples = vm.runInNewContext(reqSrc[1]);
+  assert.ok(examples.length >= 14);
+  examples.forEach((ex, i) => {
+    assert.ok(ex.text && ex.short, 'orphan example at ' + i);
+  });
+  assert.ok(html.includes('id="req-example-select"'));
+  assert.ok(html.includes('function applyReqExample'));
+  assert.ok(html.includes('id="sb-resizer"'));
+  assert.ok(html.includes('sb-lib-gap'));
+  assert.ok(html.includes('.sb-lib-gap{width:20px'));
+  assert.ok(html.includes('.sb-tree{flex:none;overflow:visible'));
+  assert.ok(!html.includes('sb-split-gap'));
+});
+
 if (failures.length) throw new Error(failures.join('\n'));
 
-export const result = { status: 'PASS', checks: 11, systemsValidated: 15 };
+export const result = { status: 'PASS', checks: 12, systemsValidated: 15 };
