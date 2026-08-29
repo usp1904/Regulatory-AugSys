@@ -1,0 +1,43 @@
+{
+  "schemaVersion": "maras.source-intake.v1",
+  "recordId": "INT-2026-08-29-PART11-json",
+  "status": "needs-review",
+  "intakeKind": "regulatory-source",
+  "sourceCategory": "official-authority",
+  "original": {
+    "fileName": "part11-source.json",
+    "fileHash": "a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456",
+    "byteSize": 2048,
+    "mimeType": "application/json",
+    "immutable": true
+  },
+  "metadata": {
+    "jurisdiction": "United States",
+    "issuingAuthority": "US FDA / eCFR",
+    "documentClass": "Regulation",
+    "documentVersion": "Current eCFR",
+    "effectiveDate": "1997-08-20",
+    "officialUrl": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-A/part-11",
+    "controlledDocId": null,
+    "licenseTag": "PUBLIC_US_GOVERNMENT",
+    "sourceApprovalStatus": "SME_PENDING",
+    "language": "en",
+    "documentStatus": "current"
+  },
+  "parse": {
+    "parseStatus": "PARSED",
+    "capturedAt": "2026-08-29",
+    "derivedArtifactRef": "derived/part11-source.parse.txt"
+  },
+  "gate": {
+    "decision": "HOLD",
+    "passed": false,
+    "missing": ["sourceApprovalStatus"],
+    "licenseBlocked": false,
+    "reason": "sourceApprovalStatus"
+  },
+  "reviewFlags": [],
+  "uncertainties": [],
+  "reviewerActionNeeded": ["SME/QA/RA review required: approve source before DRIVE."],
+  "intakeAt": "2026-08-29T17:49:00Z"
+}

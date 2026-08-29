@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/usp1904/Regulatory-AugSys/docs/schemas/source-intake-record.schema.json",
+  "title": "Regulatory Source Intake Record",
+  "description": "Immutable source registration, metadata, and gate decision. Derived parse/chunk artifacts stored separately.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "recordId",
+    "status",
+    "intakeKind",
+    "sourceCategory",
+    "original",
+    "metadata",
+    "gate",
+    "intakeAt"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "maras.source-intake.v1"
+    },
+    "recordId": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "needs-review", "reviewer-approved", "rejected"]
+    },
+    "intakeKind": {
+      "type": "string",
+      "enum": ["regulatory-source", "requirement-text"]
+    },
+    "sourceCategory": {
+      "type": "string",
+      "enum": [
+        "official-authority",
+        "official-translation",
+        "approved-internal-controlled",
+        "internal-draft",
+        "industry-commentary",
+        "machine-summary"
+      ]
+    },
+    "original": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fileName", "fileHash", "byteSize", "immutable"],
+      "properties": {
+        "fileName": { "type": "string", "minLength": 1 },
+        "fileHash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "byteSize": { "type": "integer", "minimum": 0 },
+        "mimeType": { "type": ["string", "null"] },
+        "immutable": { "type": "boolean", "const": true }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "jurisdiction",
+        "issuingAuthority",
+        "documentClass",
+        "documentVersion",
+        "language",
+        "documentStatus"
+      ],
+      "properties": {
+        "jurisdiction": { "type": "string", "minLength": 1 },
+        "issuingAuthority": { "type": "string", "minLength": 1 },
+        "documentClass": {
+          "type": "string",
+          "enum": [
+            "Regulation",
+            "Guidance",
+            "Guideline",
+            "Licensed standard",
+            "SOP",
+            "Policy",
+            "Work instruction",
+            "Validation package",
+            "Requirement",
+            "Unknown"
+          ]
+        },
+        "documentVersion": { "type": "string", "minLength": 1 },
+        "effectiveDate": { "type": ["string", "null"] },
+        "officialUrl": { "type": ["string", "null"] },
+        "controlledDocId": { "type": ["string", "null"] },
+        "licenseTag": { "type": ["string", "null"] },
+        "sourceApprovalStatus": {
+          "type": "string",
+          "enum": ["SME_PENDING", "SME_APPROVED", "BLOCKED_LICENSE", "REJECTED"]
+        },
+        "language": { "type": "string", "minLength": 2 },
+        "documentStatus": {
+          "type": "string",
+          "enum": ["current", "superseded", "draft", "unknown"]
+        }
+      }
+    },
+    "parse": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "parseStatus": {
+          "type": "string",
+          "enum": [
+            "PARSED",
+            "EMPTY",
+            "INVALID_JSON",
+            "UNSUPPORTED_BINARY",
+            "TOO_LARGE",
+            "OCR_PENDING"
+          ]
+        },
+        "capturedAt": { "type": "string" },
+        "derivedArtifactRef": {
+          "type": "string",
+          "description": "Path or id for derived parse text — not the original file."
+        }
+      }
+    },
+    "gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["decision", "passed", "reason"],
+      "properties": {
+        "decision": { "type": "string", "enum": ["DRIVE", "HOLD"] },
+        "passed": { "type": "boolean" },
+        "missing": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "licenseBlocked": { "type": "boolean" },
+        "reason": { "type": "string", "minLength": 1 }
+      }
+    },
+    "reviewFlags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "unclear",
+          "conflicting",
+          "translated",
+          "superseded",
+          "ocr-derived",
+          "non-authoritative",
+          "stale-document"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "uncertainties": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "reviewerActionNeeded": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "intakeAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}
