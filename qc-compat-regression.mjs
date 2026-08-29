@@ -331,6 +331,14 @@ check('global compare matrix cites US and EU audit trail with deltas', () => {
   assert.equal(audit.cells.GDPR.status, 'ok');
   assert.ok(audit.cells.HIPAA.citation.includes('HIPAA'));
   assert.ok(audit.cells.GDPR.citation.includes('GDPR'));
+  assert.equal(rows.find(r => r.topic.id === 'e-signature').cells.EU.status, 'ok');
+  const ukRow = rows.find(r => r.topic.id === 'audit-trail');
+  s.compareMarketSel = new Set(['US', 'EU', 'UK', 'INT']);
+  const ukRows = s.buildCompareRows();
+  const auditUk = ukRows.find(r => r.topic.id === 'audit-trail');
+  assert.equal(auditUk.cells.UK.status, 'ok');
+  assert.ok((auditUk.cells.UK.citation||'').includes('MHRA'));
+  assert.ok(ukRows.some(r => r.topic.id === 'computerised-systems'));
   const payload = s.buildCompareExportPayload();
   assert.equal(payload.schema, 'maras.global-regulation-compare.v1');
   assert.equal(payload.packageStatus, 'DRAFT_NOT_CONTROLLED');

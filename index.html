@@ -964,7 +964,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
     <div class="assurance-kicker">Co-operations · Consulting &amp; strategy</div>
     <div class="assurance-title">Global regulation comparison engine</div>
     <div class="assurance-sub">Compare the same control topic across markets in a citation-backed matrix. Built for consulting firms and strategy teams harmonising multi-jurisdiction programmes — separate from the Assure delivery workflow. Draft citations only; SME approval still required.</div>
-    <div class="cmp-graph" id="compare-graph">Topic → <b>US · EU · ICH · HIPAA · GDPR</b> matrix → Diff → Co-op deliverable</div>
+    <div class="cmp-graph" id="compare-graph">Topic → market matrix → Diff → Co-op deliverable (DRAFT_NOT_CONTROLLED)</div>
     <div class="assurance-actions">
       <button class="assurance-btn" onclick="dlCompareJson()">Download comparison JSON</button>
       <button class="assurance-btn secondary" onclick="dlCompareCsv()">Download matrix CSV</button>
@@ -987,7 +987,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
         <div class="cmp-market-filters" id="compare-market-filters"></div>
       </div>
       <div id="compare-body"></div>
-      <div class="assurance-note">Comparison uses the curated MARAS corpus plus ingested DRIVE sources. <b>HIPAA</b> and <b>GDPR</b> columns apply across all Healthcare &amp; Life Sciences domains and listed system types when system and domain are selected. Licensed standards appear as gates. Differences are lexical heuristics — not legal equivalence.</div>
+      <div class="assurance-note">Graph: <b>Topic → selected markets → citations → pairwise differences → briefing / Assure push</b>. Matrix cells are curated public summaries (US FDA, EU GMP, MHRA, ICH, PIC/S, HIPAA, GDPR). Other national GMP programmes in the Regulatory Library still need ingested official sources for a matrix cell. Differences are lexical heuristics — not legal equivalence. Licensed standards appear as gates. Draft only; SME approval still required.</div>
     </div>
   </div>
 </div>
@@ -1237,6 +1237,10 @@ const GXP_CHUNKS=[
   {id:'c15',cat:'F',reg:'EU GMP Annex 15',sec:'Qualification & Validation',title:'Performance Qualification',reqs:['Demonstrate process or system performance under routine operating conditions','Define acceptance criteria before PQ execution','Retain approved qualification protocol, execution evidence and summary report'],kws:['performance qualification','PQ','qualification','validation evidence','annex 15']},
   {id:'c16',cat:'A',reg:'ICH Q10',sec:'CAPA',title:'CAPA System Effectiveness',reqs:['Investigate root cause for quality issues and deviations','Define corrective and preventive actions with accountable owners','Verify CAPA effectiveness and document closure evidence'],kws:['CAPA','corrective action','preventive action','deviation','root cause']},
   {id:'c17',cat:'F',sourceKey:'FDA_CSA',medicalDeviceOnly:true,reg:'FDA CSA Guidance',sec:'Computer Software Assurance (February 2026)',title:'Computer Software Assurance',reqs:['Apply risk-based assurance for software used in production or quality management systems','Scale testing rigor according to intended use and patient/product risk','Maintain objective evidence for assurance activities supporting regulatory requirements'],excerpts:['Computer software assurance is a risk-based approach to establish confidence in the automation used for production or quality management systems.','This guidance identifies where additional rigor may be appropriate.','Testing activities may be applied to establish computer software assurance and provide objective evidence to fulfill regulatory requirements.'],kws:['CSA','software assurance','risk-based assurance','objective evidence','medical device']},
+  {id:'c18',cat:'B',reg:'EU GMP Annex 11',sec:'Cl.14',title:'Electronic Signatures',reqs:['Electronic signatures should have equivalent impact to handwritten signatures within the company','Apply only to authorised persons and remain uniquely attributable to the signatory'],excerpts:['Electronic signatures are expected to have the same impact as hand-written signatures within the boundaries of the company.','They should be permanently linked to the respective record.'],kws:['e-signature','electronic signature','annex 11','authorised persons','EU GMP']},
+  {id:'c19',cat:'C',reg:'MHRA GxP Data Integrity Guidance',sec:'Audit trails',title:'MHRA Data Integrity — Audit Trails',reqs:['Audit trails should be enabled, contemporaneous and retained with the original record','Data integrity expectations apply across the GxP data lifecycle, including ALCOA+'],excerpts:['MHRA expects organisations to design systems and processes that ensure data integrity throughout the data lifecycle.','Audit trails should capture who did what and when, and remain available for review.'],kws:['MHRA','data integrity','audit trail','ALCOA','United Kingdom']},
+  {id:'c20',cat:'C',reg:'PIC/S PI 041-1',sec:'Data management',title:'PIC/S Good Practices for Data Management and Integrity',reqs:['Apply data governance so GxP records remain complete, consistent and accurate','Computerised systems should prevent undetectable changes to original data'],excerpts:['PIC/S guidance aligns inspectorates on data management and integrity expectations for GxP regulated activities.','Controls should be proportionate to the risk to product quality and patient safety.'],kws:['PIC/S','data integrity','data management','computerised systems','international']},
+  {id:'c21',cat:'E',reg:'ICH E6(R3)',sec:'Computerised systems',title:'GCP Computerised Systems & Essential Records',reqs:['Computerised systems used in clinical trials should be validated for their intended purpose','Essential records should remain attributable, contemporaneous and available for inspection'],excerpts:['ICH E6(R3) expects sponsors and investigators to ensure computerised systems used in trials are fit for purpose.','Essential records must support trial conduct and inspection.'],kws:['ICH','GCP','E6','clinical','computerised systems','essential records']},
 ];
 
 const CONTROLLED_SOURCES={
@@ -1428,34 +1432,39 @@ const LEADERSHIP_ACTIONS=[
 const COMPARE_MARKETS=[
   {id:'US',label:'United States',short:'US FDA'},
   {id:'EU',label:'European Union',short:'EU GMP'},
-  {id:'INT',label:'International',short:'ICH'},
+  {id:'UK',label:'United Kingdom',short:'MHRA'},
+  {id:'INT',label:'International',short:'ICH / PIC/S'},
   {id:'HIPAA',label:'United States HIPAA',short:'HIPAA'},
   {id:'GDPR',label:'EU GDPR',short:'GDPR'}
 ];
 const GLOBAL_COMPARE_TOPICS=[
   {id:'audit-trail',label:'Audit trail & record changes',consulting:'Harmonise event taxonomy before multi-site LIMS/MES rollout.',
-   slots:{US:'c3',EU:'c4',HIPAA:'c7',GDPR:'c8'}},
+   slots:{US:'c3',EU:'c4',UK:'c19',INT:'c20',HIPAA:'c7',GDPR:'c8'}},
   {id:'e-signature',label:'Electronic signatures',consulting:'Signature meaning and manifestation rules need legal review per market.',
-   slots:{US:'c2',HIPAA:'c7',GDPR:'c8'}},
+   slots:{US:'c2',EU:'c18',UK:'c19',HIPAA:'c7',GDPR:'c8'}},
   {id:'data-integrity',label:'Data integrity (ALCOA+)',consulting:'ALCOA+ is the harmonisation anchor; local guidance depth varies.',
-   slots:{US:'c6',EU:'c4',INT:'c13',HIPAA:'c7',GDPR:'c8'}},
+   slots:{US:'c6',EU:'c4',UK:'c19',INT:'c20',HIPAA:'c7',GDPR:'c8'}},
   {id:'access-security',label:'Access control & security',consulting:'Password policy and periodic access review cadence often diverge.',
-   slots:{US:'c1',EU:'c5',HIPAA:'c7',GDPR:'c8'}},
+   slots:{US:'c1',EU:'c5',UK:'c19',HIPAA:'c7',GDPR:'c8'}},
+  {id:'computerised-systems',label:'Computerised / closed systems',consulting:'Map Part 11 closed-system controls to Annex 11 and inspectorate DI guidance before a global template.',
+   slots:{US:'c1',EU:'c5',UK:'c19',INT:'c20',HIPAA:'c7',GDPR:'c8'}},
   {id:'validation',label:'Validation & qualification',consulting:'IQ/OQ/PQ vs CSA/risk-based assurance — align CSV strategy early.',
-   slots:{US:'c1',EU:'c15',HIPAA:'c7',GDPR:'c8'}},
+   slots:{US:'c1',EU:'c15',INT:'c9',HIPAA:'c7',GDPR:'c8'}},
   {id:'quality-risk',label:'Quality risk management',consulting:'QRM rigor scales with ICH Q9 — map to site risk registers.',
    slots:{INT:'c13',GDPR:'c8'}},
   {id:'capa-change',label:'CAPA & change control',consulting:'Change-impact analysis spans QMS and IT — single thread for auditors.',
    slots:{INT:'c16',GDPR:'c8'}},
   {id:'outsourced',label:'Outsourced activities & vendors',consulting:'Quality agreements and vendor oversight differ by EU Chapter 7 depth.',
-   slots:{EU:'c14',GDPR:'c8'}},
+   slots:{EU:'c14',INT:'c20',GDPR:'c8'}},
+  {id:'clinical-gcp',label:'Clinical records & GCP systems',consulting:'Trial computerised systems and essential records need ICH E6 plus local privacy overlays.',
+   slots:{INT:'c21',US:'c3',HIPAA:'c7',GDPR:'c8'}},
   {id:'privacy',label:'Privacy & PHI safeguards',consulting:'HIPAA technical safeguards and GDPR design controls overlay every healthcare system.',
-   slots:{US:'c7',EU:'c8',HIPAA:'c7',GDPR:'c8'}},
+   slots:{US:'c7',EU:'c8',UK:'c19',HIPAA:'c7',GDPR:'c8'}},
   {id:'device-qms',label:'Medical device conformity',consulting:'Device QMS and MDR conformity are market-specific programmes.',
    slots:{EU:'c11',US:'c10',GDPR:'c8'}}
 ];
 let coOpMode='matrix';
-const compareMarketSel=new Set(['US','EU','INT','HIPAA','GDPR']);
+const compareMarketSel=new Set(['US','EU','UK','INT','HIPAA','GDPR']);
 
 /* ─── STATE ─────────────────────────────────────────────────────── */
 let demoMode=true,selItems=new Set(),selCatsSet=new Set(),selDomain='',selApp='';
@@ -4052,7 +4061,8 @@ function ingestedCompareCells(){
       if(m.id==='HIPAA') return /hipaa|phi|healthcare data/i.test(d.chunk.reg||d.name||'');
       if(m.id==='GDPR') return /gdpr|privacy|personal data|uk gdpr/i.test(d.chunk.reg||d.name||'');
       if(m.id==='US') return nation==='United States';
-      if(m.id==='EU') return nation==='European Union'||nation==='United Kingdom';
+      if(m.id==='EU') return nation==='European Union';
+      if(m.id==='UK') return nation==='United Kingdom';
       if(m.id==='INT') return nation==='International';
       return false;
     });
@@ -4071,12 +4081,14 @@ function diffMarketCells(cells){
   const ok=cells.filter(c=>c&&c.status==='ok');
   if(ok.length<2) return {similarity:ok.length?1:0,deltas:[],highDivergence:false};
   let minSim=1,deltas=[];
-  for(let i=1;i<ok.length;i++){
-    const sim=qcJaccard(ok[0].reqs.join(' '),ok[i].reqs.join(' '));
-    minSim=Math.min(minSim,sim);
-    const uniqueB=ok[i].reqs.filter(r=>!ok[0].reqs.some(a=>qcJaccard(a,r)>0.55));
-    const uniqueA=ok[0].reqs.filter(r=>!ok[i].reqs.some(b=>qcJaccard(r,b)>0.55));
-    if(uniqueA.length||uniqueB.length) deltas.push({pair:[ok[0].marketLabel,ok[i].marketLabel],similarity:sim,uniqueA,uniqueB});
+  for(let i=0;i<ok.length;i++){
+    for(let j=i+1;j<ok.length;j++){
+      const sim=qcJaccard(ok[i].reqs.join(' '),ok[j].reqs.join(' '));
+      minSim=Math.min(minSim,sim);
+      const uniqueB=ok[j].reqs.filter(r=>!ok[i].reqs.some(a=>qcJaccard(a,r)>0.55));
+      const uniqueA=ok[i].reqs.filter(r=>!ok[j].reqs.some(b=>qcJaccard(r,b)>0.55));
+      if(uniqueA.length||uniqueB.length) deltas.push({pair:[ok[i].marketLabel,ok[j].marketLabel],similarity:sim,uniqueA,uniqueB});
+    }
   }
   return {similarity:minSim,deltas,highDivergence:minSim<0.45};
 }
@@ -4104,8 +4116,27 @@ function strategicImplication(row){
   if(filled<=1) return 'Single-market citation only — expand library selection or ingest additional official sources for comparison.';
   return 'Strong textual alignment in demo corpus — still verify with official sources and SME sign-off.';
 }
+function uncoveredCompareMarkets(row){
+  return (row.markets||[]).filter(m=>!row.cells[m.id]||(row.cells[m.id].status!=='ok'&&row.cells[m.id].status!=='gated')).map(m=>m.short);
+}
+function renderCompareDiffSummary(row){
+  const missing=uncoveredCompareMarkets(row);
+  const parts=[];
+  if(row.diff.highDivergence) parts.push('High divergence');
+  if(row.diff.deltas[0]){
+    const d=row.diff.deltas[0];
+    parts.push(d.pair.join(' vs ')+': '+(d.uniqueA.concat(d.uniqueB)).slice(0,2).join('; '));
+  }
+  if(missing.length) parts.push('No citation: '+missing.join(', '));
+  return parts.join(' · ')||'Aligned in demo corpus — still verify with official sources.';
+}
 function buildGlobalCompare(){
   const rows=buildCompareRows();
+  const graph=document.getElementById('compare-graph');
+  if(graph){
+    const names=COMPARE_MARKETS.filter(m=>compareMarketSel.has(m.id)).map(m=>m.short).join(' · ');
+    graph.innerHTML=`Topic → <b>${escapeHtml(names||'markets')}</b> matrix → Diff → Co-op deliverable (DRAFT_NOT_CONTROLLED)`;
+  }
   const metricsEl=document.getElementById('compare-metrics');
   if(metricsEl){
     const covered=rows.filter(r=>Object.values(r.cells).some(c=>c&&c.status==='ok')).length;
@@ -4132,21 +4163,24 @@ function renderCompareCell(c,row){
   if(c.excerpt) h+=`<div class="cmp-req" style="color:var(--ink4);font-style:italic">${escapeHtml(c.excerpt.length>110?c.excerpt.slice(0,107)+'…':c.excerpt)}</div>`;
   if(url) h+=`<a class="source-url" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">Official source ↗</a>`;
   if(c.ingested) h+=`<div class="cmp-diff">Ingested · DRIVE gate passed</div>`;
-  const delta=row.diff.deltas.find(d=>d.pair.includes(c.marketLabel));
-  if(delta){
-    const mine=delta.pair[0]===c.marketLabel?delta.uniqueA:delta.uniqueB;
-    if(mine.length) h+=`<div class="cmp-diff">Unique here: ${escapeHtml(mine.slice(0,2).join('; '))}</div>`;
-  }
+  const deltaHits=[];
+  row.diff.deltas.forEach(d=>{
+    if(d.pair[0]===c.marketLabel) deltaHits.push(...d.uniqueA);
+    if(d.pair[1]===c.marketLabel) deltaHits.push(...d.uniqueB);
+  });
+  const mine=[...new Set(deltaHits)];
+  if(mine.length) h+=`<div class="cmp-diff">Unique here: ${escapeHtml(mine.slice(0,2).join('; '))}</div>`;
   return h;
 }
 function renderCompareMatrix(rows){
   const markets=COMPARE_MARKETS.filter(m=>compareMarketSel.has(m.id));
   let h='<div class="cmp-matrix-wrap"><table class="cmp-matrix"><thead><tr><th class="topic-col">Topic</th>';
   markets.forEach(m=>h+=`<th>${escapeHtml(m.short)}</th>`);
-  h+='</tr></thead><tbody>';
+  h+='<th>Differences</th></tr></thead><tbody>';
   rows.forEach(row=>{
     h+=`<tr><td><b>${escapeHtml(row.topic.label)}</b><div style="font-size:10px;color:var(--ink4);margin-top:3px;line-height:1.35">${escapeHtml(row.topic.consulting)}</div></td>`;
     markets.forEach(m=>h+=`<td class="cell">${renderCompareCell(row.cells[m.id],row)}</td>`);
+    h+=`<td class="cell"><div class="cmp-diff" style="margin-top:0;border:0;padding:0">${escapeHtml(renderCompareDiffSummary(row))}</div></td>`;
     h+='</tr>';
   });
   return h+'</tbody></table></div>';
@@ -4155,11 +4189,13 @@ function renderCompareGap(rows){
   return rows.map(row=>{
     const deltas=row.diff.deltas;
     const cites=Object.values(row.cells).filter(c=>c&&c.status==='ok').map(c=>c.citation).join(' · ');
+    const missing=uncoveredCompareMarkets(row);
     let body=deltas.length?deltas.map(d=>`
       <div class="cmp-req"><b>${escapeHtml(d.pair.join(' vs '))}</b> · similarity ${Math.round(d.similarity*100)}%
         ${d.uniqueA.length?`<div>Only ${escapeHtml(d.pair[0])}: ${escapeHtml(d.uniqueA.join('; '))}</div>`:''}
         ${d.uniqueB.length?`<div>Only ${escapeHtml(d.pair[1])}: ${escapeHtml(d.uniqueB.join('; '))}</div>`:''}
       </div>`).join(''):'<div class="cmp-req">No pairwise delta in selected markets — single citation or high overlap.</div>';
+    if(missing.length) body+=`<div class="cmp-diff">Uncovered markets (ingest official source or expand library): ${escapeHtml(missing.join(', '))}</div>`;
     return `<div class="cmp-gap-card"><div class="cmp-gap-title">${escapeHtml(row.topic.label)}</div>
       <div class="cmp-gap-meta">${escapeHtml(cites||'No citations')} · ${row.diff.highDivergence?'High divergence':'Aligned / partial'}</div>${body}
       <div class="cmp-diff">${escapeHtml(strategicImplication(row))}</div></div>`;
@@ -4168,11 +4204,13 @@ function renderCompareGap(rows){
 function renderCompareBriefing(rows){
   return rows.map(row=>{
     const markets=row.markets.filter(m=>row.cells[m.id]&&row.cells[m.id].status==='ok').map(m=>m.short).join(', ');
+    const cites=Object.values(row.cells).filter(c=>c&&c.status==='ok').map(c=>c.citation).join(' · ');
     return `<div class="cmp-brief-card"><div class="cmp-gap-title">${escapeHtml(row.topic.label)}</div>
       <div class="cmp-gap-meta">Markets: ${escapeHtml(markets||'—')} · Similarity ${Math.round(row.diff.similarity*100)}%</div>
+      <div class="cmp-req"><b>Citations:</b> ${escapeHtml(cites||'None in selected markets')}</div>
       <div class="cmp-req"><b>Consulting note:</b> ${escapeHtml(row.topic.consulting)}</div>
       <div class="cmp-req"><b>Strategy implication:</b> ${escapeHtml(strategicImplication(row))}</div>
-      ${row.diff.deltas.slice(0,1).map(d=>`<div class="cmp-diff">Key delta (${escapeHtml(d.pair.join(' vs '))}): ${escapeHtml((d.uniqueA.concat(d.uniqueB)).slice(0,2).join('; ')||'overlap')}</div>`).join('')}
+      ${row.diff.deltas.slice(0,2).map(d=>`<div class="cmp-diff">Key delta (${escapeHtml(d.pair.join(' vs '))}): ${escapeHtml((d.uniqueA.concat(d.uniqueB)).slice(0,2).join('; ')||'overlap')}</div>`).join('')}
     </div>`;
   }).join('');
 }
@@ -4193,6 +4231,7 @@ function buildCompareExportPayload(){
         citation:r.cells[m.id].citation,title:r.cells[m.id].title,docClass:r.cells[m.id].docClass,
         url:r.cells[m.id].url,requirements:r.cells[m.id].reqs,excerpt:r.cells[m.id].excerpt
       }:null])),
+      uncovered:uncoveredCompareMarkets(r),
       deltas:r.diff.deltas
     }))
   };
@@ -4205,7 +4244,7 @@ function dlCompareCsv(){
   const rows=buildCompareRows();
   const markets=COMPARE_MARKETS.filter(m=>compareMarketSel.has(m.id));
   const esc=v=>`"${String(v??'').replace(/"/g,'""')}"`;
-  const header=['Topic',...markets.map(m=>m.label),'Similarity','High divergence','Strategy'].map(esc).join(',');
+  const header=['Topic',...markets.map(m=>m.label),'Similarity','High divergence','Differences','Strategy'].map(esc).join(',');
   const lines=rows.map(r=>[
     r.topic.label,
     ...markets.map(m=>{
@@ -4215,6 +4254,7 @@ function dlCompareCsv(){
     }),
     Math.round(r.diff.similarity*100)+'%',
     r.diff.highDivergence?'YES':'NO',
+    renderCompareDiffSummary(r),
     strategicImplication(r)
   ].map(esc).join(','));
   const b=new Blob([header+'\n'+lines.join('\n')],{type:'text/csv'});
@@ -4228,10 +4268,12 @@ function pushCompareToAssure(){
     return (h&&g&&h.citation&&g.citation&&qcJaccard((h.requirements||[]).join(' '),(g.requirements||[]).join(' '))<0.45);
   }).map(t=>t.label);
   const ta=document.getElementById('req-ta');
+  const uncovered=[...new Set(payload.topics.flatMap(t=>t.uncovered||[]))];
   if(ta){
     const block=`Cross-market harmonisation brief (${payload.markets.join(', ')}):\n`+
       (gaps.length?`Priority gap topics: ${gaps.join('; ')}.\n`:'')+
       (privGaps.length?`HIPAA vs GDPR divergence: ${privGaps.join('; ')}.\n`:'')+
+      (uncovered.length?`Uncovered market cells: ${uncovered.join(', ')}.\n`:'')+
       (healthcareLifeSciencesContext()?'Healthcare & Life Sciences scope — leverage HIPAA and GDPR columns for every listed system type.\n':'')+
       payload.topics.slice(0,4).map(t=>`• ${t.label}: ${t.strategy}`).join('\n');
     ta.value=(ta.value?ta.value+'\n\n':'')+block;
@@ -4263,7 +4305,11 @@ const SOP_CHUNK_LIBRARY_LINKS={
   c14:['ch4','sop'],
   c15:['a15','iqoq','gamp5'],
   c16:['capa','ichq10','dev','sop'],
-  c17:['csa','iqoq','gamp5']
+  c17:['csa','iqoq','gamp5'],
+  c18:['a11'],
+  c19:['mhra_di','mhra_uk','alcoa'],
+  c20:['pics_di','pics','who_di'],
+  c21:['iche6']
 };
 const MVP_VALIDATION_ROWS=[
   {id:'MVP-09',label:'Ingestion production gates',check:()=>typeof evaluateSourceProductionGate==='function'},
@@ -4715,6 +4761,9 @@ function sourceMetaFor(reg,sourceKey){
   if(r.includes('fda')||r.includes('alcoa')) return {...CONTROLLED_SOURCES.FDA_DI};
   if(r.includes('gdpr')) return {authority:'European Union',nation:'European Union',sourceType:'Regulation',url:'https://eur-lex.europa.eu/eli/reg/2016/679/oj'};
   if(r.includes('eu gmp')||r.includes('annex')||r.includes('eudralex')) return {authority:'European Commission / EudraLex',nation:'European Union',sourceType:'Guideline',url:'https://health.ec.europa.eu/medicinal-products/eudralex/eudralex-volume-4_en'};
+  if(r.includes('mhra')) return {authority:'MHRA',nation:'United Kingdom',sourceType:'Guidance',url:'https://www.gov.uk/government/publications/gxp-data-integrity-guidance-and-definitions'};
+  if(r.includes('pic/s')||r.includes('pics')) return {authority:'PIC/S',nation:'International',sourceType:'Guidance',url:'https://picscheme.org/en/publications'};
+  if(r.includes('who')) return {authority:'WHO',nation:'International',sourceType:'Guideline',url:'https://www.who.int/teams/health-product-policy-and-standards/standards-and-specifications/norms-and-standards-for-pharmaceuticals/guidelines/quality-assurance'};
   if(r.includes('ich')) return {authority:'ICH',nation:'International',sourceType:'Guideline',url:'https://www.ich.org/page/quality-guidelines'};
   if(r.includes('iso')) return {...CONTROLLED_SOURCES.ISO13485};
   if(r.includes('gamp')) return {...CONTROLLED_SOURCES.GAMP5};
