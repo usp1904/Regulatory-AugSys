@@ -1,0 +1,48 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-regulatory}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-regulatory}
+      POSTGRES_DB: ${POSTGRES_DB:-regulatory_augsys}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-regulatory} -d ${POSTGRES_DB:-regulatory_augsys}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./apps/api
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-regulatory}:${POSTGRES_PASSWORD:-regulatory}@db:5432/${POSTGRES_DB:-regulatory_augsys}
+      API_HOST: 0.0.0.0
+      API_PORT: 8000
+      STORAGE_ROOT: /app/storage
+    ports:
+      - "8000:8000"
+    volumes:
+      - api_storage:/app/storage
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./apps/web
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8000
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
+  api_storage:

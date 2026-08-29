@@ -2,6 +2,102 @@
 
 MARAS is a stakeholder-review MVP for Pharma and Life Sciences teams. It converts a scoped set of curated regulatory control summaries into a draft assurance package containing regulatory work items, acceptance criteria, risk context, evidence needs, and Jira/ADO/JSON exports.
 
+## Regulatory-AugSys monorepo (local-first platform)
+
+A new **Next.js + FastAPI** stack lives under `apps/` for CTD/eCTD CMC evidence management. The legacy single-file demo (`index.html`) remains the GitHub Pages MVP until the platform replaces it.
+
+**Mandatory product principles** (full text): [`docs/prompts/cursor_master_prompt.md`](docs/prompts/cursor_master_prompt.md)
+
+### Prerequisites
+
+- Docker and Docker Compose **or** local Node 22+, Python 3.12+, PostgreSQL 16 (optional SQLite fallback)
+- Copy environment template: `cp .env.example .env`
+
+### Run everything with Docker Compose
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+| Service | URL |
+|---------|-----|
+| Web (Next.js health page) | http://localhost:3000 |
+| API (FastAPI `/health`) | http://localhost:8000/health |
+| PostgreSQL | `localhost:5432` (user/db: `regulatory` / `regulatory_augsys`) |
+
+Run database migrations inside the API container:
+
+```bash
+docker compose exec api alembic upgrade head
+```
+
+### Run API locally (SQLite, no Docker)
+
+```bash
+cd apps/api
+python3.12 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+mkdir -p data
+export DATABASE_URL=sqlite:///./data/regulatory_augsys.db
+alembic upgrade head
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+Verify:
+
+```bash
+curl -s http://localhost:8000/health | python3 -m json.tool
+pytest
+ruff check app tests
+```
+
+### Run API locally (PostgreSQL)
+
+```bash
+# Start Postgres (Docker example)
+docker run --rm -d --name regulatory-pg \
+  -e POSTGRES_USER=regulatory \
+  -e POSTGRES_PASSWORD=regulatory \
+  -e POSTGRES_DB=regulatory_augsys \
+  -p 5432:5432 postgres:16-alpine
+
+cd apps/api
+source .venv/bin/activate  # after venv + pip install as above
+export DATABASE_URL=postgresql+psycopg://regulatory:regulatory@localhost:5432/regulatory_augsys
+alembic upgrade head
+uvicorn app.main:app --reload --port 8000
+```
+
+### Run web locally
+
+```bash
+cd apps/web
+npm install
+export NEXT_PUBLIC_API_URL=http://localhost:8000
+npm run dev
+```
+
+Open http://localhost:3000 — the health page shows web status and polls the API.
+
+```bash
+npm run typecheck
+npm run lint
+npm run build
+```
+
+### Monorepo layout
+
+```text
+apps/api/     FastAPI, SQLAlchemy 2, Alembic
+apps/web/     Next.js, TypeScript, Tailwind, shadcn/ui (Card)
+docs/prompts/ Cursor master prompt and slice guidance
+docker-compose.yml
+```
+
+---
+
 ## Intended stakeholders
 
 - Regulatory Affairs and Compliance: applicability, jurisdiction, and source review.
