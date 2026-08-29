@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "maras.ctd-mapping.v1",
+  "recordId": "CTD-2026-08-29-PART11-VAL",
+  "status": "needs-review",
+  "submissionContext": {
+    "region": "US-FDA",
+    "productType": "small-molecule",
+    "applicationType": "NDA",
+    "ectdSpecification": null,
+    "submissionUnit": null
+  },
+  "mappings": [
+    {
+      "mappingId": "M001",
+      "ctdModule": "3",
+      "ctdSection": "3.2.P.5",
+      "sectionTitle": "Control of Drug Product",
+      "ectdLeafTitle": null,
+      "placementRationale": "Evidence indicates computerised system audit-trail controls may support manufacturing data integrity statements in control-of-product documentation; gap requires review for full 3.2.P.5 completeness.",
+      "sourceRefs": {
+        "intakeRecordId": null,
+        "evidenceRecordId": "EVR-2026-08-29-PART11-0110e",
+        "evidenceClaimId": "C001",
+        "marasPbiId": "CFR-001",
+        "controlledDocId": null
+      },
+      "verbatimExcerptRef": "EVR-2026-08-29-PART11-0110e claims.C001.verbatimExcerpt",
+      "coverageLevel": "partial",
+      "reviewFlags": ["regional-mismatch"],
+      "reviewerActionNeeded": "RA confirm whether Part 11 evidence belongs in 3.2.P.5 vs regional Module 1 for this NDA."
+    }
+  ],
+  "unmappedSources": [],
+  "coverageNotes": ["Mapping covers audit-trail evidence only; full Module 3 quality tree not assessed."],
+  "gaps": ["3.2.P.5 analytical procedures not evidenced in supplied batch."],
+  "uncertainties": ["eCTD specification version not confirmed by RA."],
+  "reviewerActionNeeded": ["SME/QA/RA review required before any publishing action."],
+  "mappedAt": "2026-08-29T17:51:00Z"
+}

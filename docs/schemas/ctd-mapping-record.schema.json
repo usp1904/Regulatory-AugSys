@@ -1,0 +1,169 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/usp1904/Regulatory-AugSys/docs/schemas/ctd-mapping-record.schema.json",
+  "title": "CTD / eCTD Mapping Record",
+  "description": "Proposed CTD placement for sourced evidence. No submission or completeness conclusions.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "recordId",
+    "status",
+    "submissionContext",
+    "mappings",
+    "mappedAt"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "maras.ctd-mapping.v1"
+    },
+    "recordId": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "needs-review", "reviewer-approved", "rejected"]
+    },
+    "submissionContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["region", "productType", "applicationType"],
+      "properties": {
+        "region": {
+          "type": "string",
+          "enum": ["US-FDA", "EU-EMA", "UK-MHRA", "JP-PMDA", "ICH-common", "multi-regional", "unknown"]
+        },
+        "productType": {
+          "type": "string",
+          "enum": ["small-molecule", "biologic", "vaccine", "medical-device", "combination", "unknown"]
+        },
+        "applicationType": {
+          "type": "string",
+          "enum": ["NDA", "ANDA", "BLA", "MAA", "variation", "PSUR", "DSUR", "unknown"]
+        },
+        "ectdSpecification": {
+          "type": ["string", "null"],
+          "description": "e.g. FDA eCTD v4.0, EU eCTD current — null if not confirmed."
+        },
+        "submissionUnit": {
+          "type": ["string", "null"],
+          "description": "Optional dossier or sequence identifier supplied by RA team."
+        }
+      }
+    },
+    "mappings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/mapping" }
+    },
+    "unmappedSources": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/unmappedSource" }
+    },
+    "coverageNotes": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "gaps": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "uncertainties": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "reviewerActionNeeded": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "mappedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "$defs": {
+    "mapping": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mappingId",
+        "ctdModule",
+        "ctdSection",
+        "sectionTitle",
+        "placementRationale",
+        "sourceRefs",
+        "coverageLevel"
+      ],
+      "properties": {
+        "mappingId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+        },
+        "ctdModule": {
+          "type": "string",
+          "enum": ["1", "2", "3", "4", "5", "regional-1", "unknown"]
+        },
+        "ctdSection": {
+          "type": "string",
+          "minLength": 1,
+          "description": "ICH M4 section id, e.g. 3.2.P.5 or regional 1.3.1"
+        },
+        "sectionTitle": { "type": "string", "minLength": 1 },
+        "ectdLeafTitle": { "type": ["string", "null"] },
+        "placementRationale": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Neutral rationale — why evidence may belong here; not a completeness assertion."
+        },
+        "sourceRefs": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "intakeRecordId": { "type": ["string", "null"] },
+            "evidenceRecordId": { "type": ["string", "null"] },
+            "evidenceClaimId": { "type": ["string", "null"] },
+            "marasPbiId": { "type": ["string", "null"] },
+            "controlledDocId": { "type": ["string", "null"] }
+          }
+        },
+        "verbatimExcerptRef": {
+          "type": ["string", "null"],
+          "description": "Pointer to verbatim excerpt in evidence record — required when evidenceRecordId is set."
+        },
+        "coverageLevel": {
+          "type": "string",
+          "enum": ["supports-section", "partial", "placeholder-only", "unclear", "gap"]
+        },
+        "reviewFlags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "unclear",
+              "conflicting",
+              "translated",
+              "superseded",
+              "ocr-derived",
+              "non-authoritative",
+              "regional-mismatch",
+              "lifecycle-uncertain"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "reviewerActionNeeded": { "type": ["string", "null"] }
+      }
+    },
+    "unmappedSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceRef", "reason"],
+      "properties": {
+        "sourceRef": { "type": "string", "minLength": 1 },
+        "reason": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}
