@@ -16,6 +16,7 @@ from app.models import (  # noqa: F401
     Document,
     DocumentPage,
     DocumentParagraph,
+    DossierExport,
     EvidenceItem,
 )
 from app.services.ctd_seed import seed_ctd_module_32s

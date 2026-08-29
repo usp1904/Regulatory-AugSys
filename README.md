@@ -28,6 +28,7 @@ docker compose up --build
 | API CTD sections | `GET /api/v1/ctd-sections` |
 | API document store | `POST /api/v1/documents`, `GET /api/v1/documents`, `GET /api/v1/documents/{id}`, `GET /api/v1/documents/{id}/download` |
 | API evidence | `POST /api/v1/evidence`, `GET /api/v1/evidence`, `PATCH /api/v1/evidence/{id}`, `POST /api/v1/evidence/{id}/review`, `GET /api/v1/evidence/{id}/review-context`, `GET /api/v1/evidence/export` |
+| API dossier export | `POST /api/v1/dossiers/{dossier_id}/export`, `GET /api/v1/dossier-exports/{export_id}`, `GET /api/v1/dossier-exports/{export_id}/download` |
 | API CTD validation | `POST /api/v1/ctd-engine/validate` |
 | PostgreSQL | `localhost:5432` (user/db: `regulatory` / `regulatory_augsys`) |
 
