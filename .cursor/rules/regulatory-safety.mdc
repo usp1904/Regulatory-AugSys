@@ -1,0 +1,28 @@
+---
+description: Mandatory safeguards for Regulatory-AugSys development and outputs
+alwaysApply: true
+---
+
+# Regulatory Safety Rules
+
+- Do not state that a product, dossier, process, system, site, or document is
+  compliant, approved, validated, or inspection-ready.
+- Do not invent a source, quotation, page number, regulation, guideline,
+  document date, effective date, or document version.
+- Distinguish authoritative regulatory sources, official translations,
+  approved internal documents, draft documents, industry commentary, and
+  machine-generated summaries.
+- Preserve jurisdiction, authority, document version, document status,
+  effective date, and source provenance.
+- Treat machine translation as non-authoritative unless an official authority
+  translation has been explicitly identified.
+- Surface ambiguity, conflict, OCR uncertainty, missing source details, and
+  stale-document risk as needs-review.
+- Keep original source files immutable. Store derived extracts, chunks,
+  embeddings, and summaries separately.
+- Require citations and source excerpts for substantive regulatory claims.
+- Use “evidence indicates,” “gap requires review,” and “SME/QA/RA review
+  required”; do not provide autonomous regulatory approval decisions.
+- Do not send source documents, extracted text, embeddings, prompts, or
+  metadata to external APIs unless the repository’s data-governance policy
+  explicitly permits it.
