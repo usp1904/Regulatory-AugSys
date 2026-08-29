@@ -1,0 +1,183 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/usp1904/Regulatory-AugSys/docs/schemas/evidence-record.schema.json",
+  "title": "Regulatory Evidence Record",
+  "description": "Atomic, source-grounded regulatory evidence. No compliance conclusions.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "recordId",
+    "status",
+    "sourceClass",
+    "provenance",
+    "claims",
+    "extractedAt"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "maras.evidence-record.v1"
+    },
+    "recordId": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "needs-review", "reviewer-approved", "rejected"]
+    },
+    "sourceClass": {
+      "type": "string",
+      "enum": ["official-authority", "approved-internal-controlled"]
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "jurisdiction",
+        "issuingAuthority",
+        "documentVersion",
+        "language",
+        "documentStatus",
+        "sourceLocator"
+      ],
+      "properties": {
+        "jurisdiction": { "type": "string", "minLength": 1 },
+        "issuingAuthority": { "type": "string", "minLength": 1 },
+        "documentVersion": { "type": "string", "minLength": 1 },
+        "effectiveDate": {
+          "type": ["string", "null"],
+          "description": "ISO 8601 calendar date (YYYY-MM-DD) when known; null if not stated in source."
+        },
+        "language": { "type": "string", "minLength": 2 },
+        "documentStatus": {
+          "type": "string",
+          "enum": ["current", "superseded", "draft", "unknown"]
+        },
+        "sourceLocator": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": {
+            "kind": { "type": "string", "enum": ["url", "file"] },
+            "url": { "type": "string", "minLength": 8 },
+            "fileIdentifier": { "type": "string", "minLength": 1 },
+            "page": { "type": ["string", "integer", "null"] },
+            "section": { "type": ["string", "null"] },
+            "chunkIdentifier": { "type": ["string", "null"] }
+          },
+          "allOf": [
+            {
+              "if": { "properties": { "kind": { "const": "url" } }, "required": ["kind"] },
+              "then": { "required": ["url"] }
+            },
+            {
+              "if": { "properties": { "kind": { "const": "file" } }, "required": ["kind"] },
+              "then": { "required": ["fileIdentifier"] }
+            }
+          ]
+        }
+      }
+    },
+    "claims": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/claim" }
+    },
+    "coverageNotes": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Neutral coverage observations only — never compliance declarations."
+    },
+    "gaps": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "uncertainties": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "reviewerActionNeeded": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "reviewerNotes": { "type": "string" },
+    "extractedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 extraction timestamp (UTC recommended)."
+    }
+  },
+  "$defs": {
+    "claim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claimId",
+        "claimType",
+        "statement",
+        "verbatimExcerpt",
+        "excerptLocator"
+      ],
+      "properties": {
+        "claimId": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+        },
+        "claimType": {
+          "type": "string",
+          "enum": [
+            "requirement",
+            "definition",
+            "obligation",
+            "prohibition",
+            "permission",
+            "scope",
+            "procedure",
+            "coverage",
+            "gap",
+            "uncertainty"
+          ]
+        },
+        "statement": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Neutral evidence summary grounded in verbatimExcerpt."
+        },
+        "verbatimExcerpt": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Exact quoted text from the source; no paraphrase."
+        },
+        "excerptLocator": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "page": { "type": ["string", "integer", "null"] },
+            "section": { "type": ["string", "null"] },
+            "chunkIdentifier": { "type": ["string", "null"] }
+          }
+        },
+        "reviewFlags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "unclear",
+              "conflicting",
+              "translated",
+              "superseded",
+              "ocr-derived",
+              "non-authoritative"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "reviewerActionNeeded": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

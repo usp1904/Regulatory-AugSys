@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "maras.evidence-record.v1",
+  "recordId": "EVR-2026-08-29-PART11-001",
+  "status": "needs-review",
+  "sourceClass": "official-authority",
+  "provenance": {
+    "jurisdiction": "United States",
+    "issuingAuthority": "US FDA / eCFR",
+    "documentVersion": "Current eCFR",
+    "effectiveDate": null,
+    "language": "en",
+    "documentStatus": "current",
+    "sourceLocator": {
+      "kind": "url",
+      "url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-A/part-11",
+      "page": null,
+      "section": "§11.10(e)",
+      "chunkIdentifier": "c3"
+    }
+  },
+  "claims": [
+    {
+      "claimId": "C001",
+      "claimType": "requirement",
+      "statement": "The source requires secure, computer-generated, time-stamped audit trails for operator entries and actions.",
+      "verbatimExcerpt": "Use of secure, computer-generated, time-stamped audit trails to independently record the date and time of operator entries and actions.",
+      "excerptLocator": {
+        "page": null,
+        "section": "§11.10(e)",
+        "chunkIdentifier": "c3"
+      },
+      "reviewFlags": [],
+      "reviewerActionNeeded": "Confirm eCFR capture date matches customer baseline."
+    }
+  ],
+  "coverageNotes": ["Excerpt addresses audit trail controls only; signature manifestations not included."],
+  "gaps": ["§11.50 not extracted in this batch."],
+  "uncertainties": [],
+  "reviewerActionNeeded": ["SME confirm jurisdiction applicability for non-US sites."],
+  "extractedAt": "2026-08-29T17:30:00Z"
+}
