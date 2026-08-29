@@ -1,0 +1,154 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/usp1904/Regulatory-AugSys/docs/schemas/document-review-record.schema.json",
+  "title": "Regulated Document Review Record",
+  "description": "Structured SME/QA/RA review worksheet. Draft attestation only — not electronic approval.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "recordId",
+    "status",
+    "reviewSubject",
+    "checklist",
+    "reviewDecision",
+    "preparedAt"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "maras.document-review.v1"
+    },
+    "recordId": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "needs-review", "reviewer-approved", "rejected"]
+    },
+    "reviewSubject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "subjectRef"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "evidence-record",
+            "intake-record",
+            "comparison-record",
+            "ctd-mapping-record",
+            "maras-pbi-package",
+            "controlled-document",
+            "inspection-pack",
+            "custom"
+          ]
+        },
+        "subjectRef": { "type": "string", "minLength": 1 },
+        "label": { "type": ["string", "null"] }
+      }
+    },
+    "reviewer": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "role": { "type": "string", "minLength": 1 },
+        "comment": { "type": "string" },
+        "reviewedAt": { "type": "string" }
+      }
+    },
+    "reviewDecision": {
+      "type": "string",
+      "enum": [
+        "NOT_REVIEWED",
+        "NEEDS_SECOND_REVIEW",
+        "CLARIFICATION_REQUIRED",
+        "SME_REVIEW_ATTESTED_DRAFT",
+        "REJECTED"
+      ]
+    },
+    "checklist": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/checklistItem" }
+    },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    },
+    "gaps": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "uncertainties": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "reviewerActionNeeded": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "evidenceReadiness": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "decision": {
+          "type": "string",
+          "enum": ["NOT_READY", "CONDITIONALLY_READY", "READY"]
+        },
+        "score": { "type": ["integer", "null"], "minimum": 0, "maximum": 100 },
+        "submissionReady": { "type": "boolean", "const": false }
+      }
+    },
+    "controls": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "electronicSignature": { "type": "boolean", "const": false },
+        "immutableAuditRecord": { "type": "boolean" },
+        "packageStatus": { "type": "string", "const": "DRAFT_NOT_CONTROLLED" }
+      }
+    },
+    "preparedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "$defs": {
+    "checklistItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label", "result"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "label": { "type": "string", "minLength": 1 },
+        "result": {
+          "type": "string",
+          "enum": ["pass", "fail", "na", "needs-review"]
+        },
+        "evidence": { "type": ["string", "null"] }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["findingId", "severity", "statement"],
+      "properties": {
+        "findingId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["info", "advisory", "gap", "blocking"]
+        },
+        "statement": { "type": "string", "minLength": 1 },
+        "citationRef": { "type": ["string", "null"] },
+        "verbatimExcerptRef": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

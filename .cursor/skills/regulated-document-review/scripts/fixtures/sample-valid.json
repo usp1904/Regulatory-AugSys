@@ -1,0 +1,54 @@
+{
+  "schemaVersion": "maras.document-review.v1",
+  "recordId": "REV-2026-08-29-EVR-PART11",
+  "status": "needs-review",
+  "reviewSubject": {
+    "kind": "evidence-record",
+    "subjectRef": "EVR-2026-08-29-PART11-0110e",
+    "label": "21 CFR Part 11 §11.10(e) audit trail evidence"
+  },
+  "reviewDecision": "NOT_REVIEWED",
+  "checklist": [
+    {
+      "id": "source_trace",
+      "label": "Citations trace to authoritative sources",
+      "result": "needs-review",
+      "evidence": "officialUrl present; SME_PENDING on PART11 corpus"
+    },
+    {
+      "id": "verbatim",
+      "label": "Substantive claims have verbatim excerpts",
+      "result": "pass",
+      "evidence": "3 claims with verbatimExcerpt"
+    },
+    {
+      "id": "watermark",
+      "label": "Draft watermark preserved",
+      "result": "pass",
+      "evidence": "DRAFT_NOT_CONTROLLED"
+    }
+  ],
+  "findings": [
+    {
+      "findingId": "F001",
+      "severity": "advisory",
+      "statement": "Evidence indicates excerpts were taken from MARAS embedded corpus; gap requires review against live eCFR.",
+      "citationRef": "EVR-2026-08-29-PART11-0110e",
+      "verbatimExcerptRef": null
+    }
+  ],
+  "gaps": ["§11.50 not covered in evidence batch"],
+  "uncertainties": ["Jurisdiction applicability for EU-only sites not assessed"],
+  "reviewerActionNeeded": ["Qualified SME verify verbatim text against eCFR baseline"],
+  "evidenceReadiness": {
+    "decision": "NOT_READY",
+    "score": 0,
+    "submissionReady": false
+  },
+  "controls": {
+    "electronicSignature": false,
+    "immutableAuditRecord": false,
+    "packageStatus": "DRAFT_NOT_CONTROLLED"
+  },
+  "preparedAt": "2026-08-29T17:54:00Z"
+}
