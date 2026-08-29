@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { DocumentDetailView } from "@/components/document-detail-view";
+import { SiteShell } from "@/components/site-shell";
 import { fetchDocument } from "@/lib/document-types";
 
 type DocumentPageProps = {
@@ -12,25 +13,21 @@ export default async function DocumentPage({ params }: DocumentPageProps) {
   const document = await fetchDocument(id);
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-4xl flex-col gap-6 p-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Controlled document</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Immutable source file metadata, extracted text, and audit trail. Draft internal record
-          only — not submission-validated.
-        </p>
-      </div>
-
+    <SiteShell
+      title="Controlled document"
+      description="Immutable source file metadata, extracted text, evidence capture, and audit trail."
+      wide
+    >
       {document ? (
         <DocumentDetailView document={document} />
       ) : (
-        <div className="rounded-md border p-4 text-sm text-muted-foreground">
+        <div className="panel text-sm text-muted-foreground">
           Document not found.{" "}
           <Link href="/ctd" className="text-primary hover:underline">
-            Return to CTD/eCTD Engine
+            Return to CTD Engine
           </Link>
         </div>
       )}
-    </main>
+    </SiteShell>
   );
 }

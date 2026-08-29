@@ -146,9 +146,11 @@ export function EvidenceReviewer({ context }: EvidenceReviewerProps) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3 text-sm">
-        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusBadgeClass(evidence.review_status)}`}>
+        <span
+          className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadgeClass(evidence.review_status)}`}
+        >
           {evidence.review_status}
         </span>
         <span className="text-muted-foreground">
@@ -157,40 +159,36 @@ export function EvidenceReviewer({ context }: EvidenceReviewerProps) {
         {evidence.supersedes_id ? (
           <Link
             href={`/evidence/review/${evidence.supersedes_id}`}
-            className="text-primary hover:underline"
+            className="font-medium text-primary hover:underline"
           >
             Supersedes #{evidence.supersedes_id}
           </Link>
         ) : null}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <section className="flex flex-col rounded-md border">
-          <header className="border-b px-4 py-3">
-            <h2 className="text-sm font-medium">Source text</h2>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <section className="panel flex flex-col p-0">
+          <header className="border-b px-5 py-4">
+            <h2 className="text-base font-semibold">Source text</h2>
             <p className="mt-1 text-xs text-muted-foreground">{sourceMeta}</p>
           </header>
-          <pre className="max-h-[32rem] flex-1 overflow-auto whitespace-pre-wrap p-4 text-sm">
+          <pre className="max-h-[32rem] flex-1 overflow-auto whitespace-pre-wrap p-5 text-sm leading-relaxed">
             {highlightExcerpt(sourceText, excerpt)}
           </pre>
         </section>
 
-        <section className="space-y-4 rounded-md border p-4">
-          <h2 className="text-sm font-medium">Evidence record</h2>
+        <section className="panel space-y-5">
+          <h2 className="text-base font-semibold">Evidence record</h2>
 
-          <label className="block text-sm">
-            <span className="font-medium">Dossier ID</span>
-            <input
-              className="mt-1 w-full rounded border bg-muted/30 px-3 py-2"
-              value={evidence.dossier_id}
-              readOnly
-            />
+          <label className="space-y-2">
+            <span className="form-label">Dossier ID</span>
+            <input className="form-input bg-muted/30" value={evidence.dossier_id} readOnly />
           </label>
 
-          <label className="block text-sm">
-            <span className="font-medium">CTD section code</span>
+          <label className="space-y-2">
+            <span className="form-label">CTD section code</span>
             <input
-              className="mt-1 w-full rounded border px-3 py-2"
+              className="form-input"
               value={ctdSectionCode}
               onChange={(e) => setCtdSectionCode(e.target.value)}
               placeholder="e.g. 3.2.S.7.3"
@@ -199,7 +197,7 @@ export function EvidenceReviewer({ context }: EvidenceReviewerProps) {
 
           {sourceDocument ? (
             <p className="text-xs text-muted-foreground">
-              Source document version ID: {sourceDocument.id} (version {sourceDocument.version})
+              Source document: {sourceDocument.filename} (version {sourceDocument.version})
             </p>
           ) : null}
 
@@ -207,15 +205,15 @@ export function EvidenceReviewer({ context }: EvidenceReviewerProps) {
             <p className="text-xs text-muted-foreground">Page: {evidence.page_number}</p>
           ) : null}
 
-          <label className="block text-sm">
-            <span className="font-medium">Exact source excerpt</span>
+          <label className="space-y-2">
+            <span className="form-label">Exact source excerpt</span>
             {excerptLocked ? (
-              <p className="mt-1 text-xs text-amber-700">
+              <p className="text-xs text-amber-700">
                 Locked after approval. Editing creates a new evidence version.
               </p>
             ) : null}
             <textarea
-              className="mt-1 w-full rounded border px-3 py-2 font-mono text-sm"
+              className="form-input font-mono"
               rows={4}
               value={excerpt}
               onChange={(e) => setExcerpt(e.target.value)}
@@ -223,10 +221,10 @@ export function EvidenceReviewer({ context }: EvidenceReviewerProps) {
             />
           </label>
 
-          <label className="block text-sm">
-            <span className="font-medium">Normalized summary (optional)</span>
+          <label className="space-y-2">
+            <span className="form-label">Normalized summary (optional)</span>
             <textarea
-              className="mt-1 w-full rounded border px-3 py-2 text-sm"
+              className="form-input"
               rows={3}
               value={summary}
               onChange={(e) => setSummary(e.target.value)}
@@ -234,10 +232,10 @@ export function EvidenceReviewer({ context }: EvidenceReviewerProps) {
             />
           </label>
 
-          <label className="block text-sm">
-            <span className="font-medium">Evidence type</span>
+          <label className="space-y-2">
+            <span className="form-label">Evidence type</span>
             <select
-              className="mt-1 w-full rounded border px-3 py-2"
+              className="form-input"
               value={evidenceType}
               onChange={(e) => setEvidenceType(e.target.value as typeof evidenceType)}
             >
@@ -249,44 +247,35 @@ export function EvidenceReviewer({ context }: EvidenceReviewerProps) {
             </select>
           </label>
 
-          <label className="block text-sm">
-            <span className="font-medium">Actor (for edits)</span>
-            <input
-              className="mt-1 w-full rounded border px-3 py-2"
-              value={actor}
-              onChange={(e) => setActor(e.target.value)}
-            />
+          <label className="space-y-2">
+            <span className="form-label">Actor (for edits)</span>
+            <input className="form-input" value={actor} onChange={(e) => setActor(e.target.value)} />
           </label>
 
           {(canEdit || excerptLocked) && (
-            <button
-              type="button"
-              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
-              disabled={busy}
-              onClick={saveChanges}
-            >
+            <button type="button" className="btn-primary" disabled={busy} onClick={saveChanges}>
               Save changes
             </button>
           )}
 
-          <hr className="my-2" />
+          <hr />
 
-          <h3 className="text-sm font-medium">Human review</h3>
+          <h3 className="text-base font-semibold">Human review</h3>
 
-          <label className="block text-sm">
-            <span className="font-medium">Reviewer</span>
+          <label className="space-y-2">
+            <span className="form-label">Reviewer</span>
             <input
-              className="mt-1 w-full rounded border px-3 py-2"
+              className="form-input"
               value={reviewer}
               onChange={(e) => setReviewer(e.target.value)}
               placeholder="qa.reviewer"
             />
           </label>
 
-          <label className="block text-sm">
-            <span className="font-medium">Decision</span>
+          <label className="space-y-2">
+            <span className="form-label">Decision</span>
             <select
-              className="mt-1 w-full rounded border px-3 py-2"
+              className="form-input"
               value={decision}
               onChange={(e) => setDecision(e.target.value as ReviewDecision)}
               disabled={evidence.review_status === "APPROVED"}
@@ -299,10 +288,10 @@ export function EvidenceReviewer({ context }: EvidenceReviewerProps) {
             </select>
           </label>
 
-          <label className="block text-sm">
-            <span className="font-medium">Rationale</span>
+          <label className="space-y-2">
+            <span className="form-label">Rationale</span>
             <textarea
-              className="mt-1 w-full rounded border px-3 py-2 text-sm"
+              className="form-input"
               rows={3}
               value={rationale}
               onChange={(e) => setRationale(e.target.value)}
@@ -313,7 +302,7 @@ export function EvidenceReviewer({ context }: EvidenceReviewerProps) {
           {evidence.review_status !== "APPROVED" ? (
             <button
               type="button"
-              className="rounded-md border border-primary px-4 py-2 text-sm font-medium text-primary disabled:opacity-50"
+              className="btn-secondary border-primary text-primary"
               disabled={busy || !reviewer.trim() || !rationale.trim()}
               onClick={submitReview}
             >
@@ -328,16 +317,20 @@ export function EvidenceReviewer({ context }: EvidenceReviewerProps) {
         </section>
       </div>
 
-      {message ? <p className="text-sm text-muted-foreground">{message}</p> : null}
+      {message ? (
+        <p className="rounded-md border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+          {message}
+        </p>
+      ) : null}
 
-      <div className="flex gap-4 text-sm">
+      <div className="flex flex-wrap gap-4 text-sm">
         {sourceDocument ? (
-          <Link href={`/documents/${sourceDocument.id}`} className="text-primary hover:underline">
+          <Link href={`/documents/${sourceDocument.id}`} className="font-medium text-primary hover:underline">
             ← Source document
           </Link>
         ) : null}
-        <Link href="/ctd" className="text-primary hover:underline">
-          CTD/eCTD Engine
+        <Link href="/dossiers" className="font-medium text-primary hover:underline">
+          Dossier export
         </Link>
       </div>
     </div>

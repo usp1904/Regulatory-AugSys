@@ -108,30 +108,30 @@ export function CtdEnginePanel() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-2">
-        <label className="space-y-1 text-sm">
-          <span className="font-medium">Regulatory Framework(s)</span>
+    <div className="space-y-8">
+      <div className="grid gap-5 sm:grid-cols-2">
+        <label className="space-y-2">
+          <span className="form-label">Regulatory Framework(s)</span>
           <input
-            className="w-full rounded-md border border-input bg-background px-3 py-2"
+            className="form-input"
             value={frameworks}
             onChange={(e) => setFrameworks(e.target.value)}
             placeholder="FDA, ICH, EU GMP"
           />
         </label>
-        <label className="space-y-1 text-sm">
-          <span className="font-medium">Jurisdiction(s)</span>
+        <label className="space-y-2">
+          <span className="form-label">Jurisdiction(s)</span>
           <input
-            className="w-full rounded-md border border-input bg-background px-3 py-2"
+            className="form-input"
             value={jurisdictions}
             onChange={(e) => setJurisdictions(e.target.value)}
             placeholder="United States, European Union"
           />
         </label>
-        <label className="space-y-1 text-sm sm:col-span-2">
-          <span className="font-medium">Uploader</span>
+        <label className="space-y-2 sm:col-span-2">
+          <span className="form-label">Uploader</span>
           <input
-            className="w-full rounded-md border border-input bg-background px-3 py-2"
+            className="form-input"
             value={uploader}
             onChange={(e) => setUploader(e.target.value)}
             placeholder="records.manager"
@@ -139,10 +139,11 @@ export function CtdEnginePanel() {
         </label>
       </div>
 
-      <div className="space-y-2">
-        <label className="text-sm font-medium">In-house document upload (PDF, DOCX, TXT)</label>
+      <div className="space-y-3">
+        <label className="form-label">In-house document upload (PDF, DOCX, TXT)</label>
         <input
           type="file"
+          className="block w-full text-sm text-muted-foreground file:mr-4 file:rounded-md file:border-0 file:bg-primary file:px-4 file:py-2 file:text-sm file:font-medium file:text-primary-foreground"
           accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
           disabled={busy}
           onChange={(e) => {
@@ -151,14 +152,16 @@ export function CtdEnginePanel() {
           }}
         />
         {documents.length > 0 ? (
-          <ul className="space-y-1 text-sm text-muted-foreground">
+          <ul className="space-y-2 text-sm">
             {documents.map((d) => (
-              <li key={d.id}>
-                <Link href={`/documents/${d.id}`} className="text-primary hover:underline">
+              <li key={d.id} className="rounded-lg border px-3 py-2">
+                <Link href={`/documents/${d.id}`} className="font-medium text-primary hover:underline">
                   {d.filename}
-                </Link>{" "}
-                — v{d.version} · {d.parse_status} · {d.uploader}
-                {d.file_hash ? ` · ${d.file_hash.slice(0, 12)}…` : ""}
+                </Link>
+                <span className="mt-1 block text-xs text-muted-foreground">
+                  v{d.version} · {d.parse_status} · {d.uploader}
+                  {d.file_hash ? ` · ${d.file_hash.slice(0, 12)}…` : ""}
+                </span>
               </li>
             ))}
           </ul>
@@ -167,10 +170,10 @@ export function CtdEnginePanel() {
         )}
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-3">
         <button
           type="button"
-          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
+          className="btn-primary"
           disabled={busy}
           onClick={() => void runValidation()}
         >
@@ -178,7 +181,7 @@ export function CtdEnginePanel() {
         </button>
         <button
           type="button"
-          className="rounded-md border px-4 py-2 text-sm disabled:opacity-50"
+          className="btn-secondary"
           disabled={busy}
           onClick={() => {
             void refreshDocuments();
@@ -189,10 +192,14 @@ export function CtdEnginePanel() {
         </button>
       </div>
 
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? (
+        <p className="rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          {error}
+        </p>
+      ) : null}
 
       {result ? (
-        <div className="space-y-3 rounded-md border p-4 text-sm">
+        <div className="panel space-y-4 text-sm">
           <p>
             <span className="font-medium">Status:</span> {result.status} · {result.packageStatus}
           </p>
@@ -200,13 +207,13 @@ export function CtdEnginePanel() {
             Supported: {result.metrics.supported} · Partial: {result.metrics.partial} · Gaps:{" "}
             {result.metrics.gapCount}
           </p>
-          <div className="max-h-64 space-y-2 overflow-y-auto">
+          <div className="max-h-72 space-y-2 overflow-y-auto">
             {result.mappings.map((m) => (
-              <div key={m.ctdSection} className="rounded border p-2">
+              <div key={m.ctdSection} className="rounded-lg border px-3 py-2">
                 <div className="font-mono text-xs text-primary">{m.ctdSection}</div>
                 <div className="font-medium">{m.sectionTitle}</div>
                 <div className="text-muted-foreground">{m.coverageLevel}</div>
-                <div className="text-xs">{m.placementRationale}</div>
+                <div className="mt-1 text-xs">{m.placementRationale}</div>
               </div>
             ))}
           </div>
@@ -214,8 +221,8 @@ export function CtdEnginePanel() {
       ) : null}
 
       {tree && tree.length > 0 ? (
-        <div>
-          <h3 className="mb-2 text-sm font-medium">CTD taxonomy reference</h3>
+        <div className="space-y-3">
+          <h3 className="text-sm font-medium">CTD taxonomy reference</h3>
           <CtdSectionTree nodes={tree} />
         </div>
       ) : null}

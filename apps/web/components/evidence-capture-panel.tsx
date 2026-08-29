@@ -66,35 +66,38 @@ export function EvidenceCapturePanel({
   }
 
   return (
-    <div className="rounded-md border p-4">
-      <h2 className="mb-3 text-sm font-medium">Capture evidence</h2>
-      <p className="mb-4 text-xs text-muted-foreground">
-        Select text in the extracted content panel, then complete this form. Source document version{" "}
-        {documentVersion} will be recorded automatically.
-      </p>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <label className="block text-sm sm:col-span-2">
-          <span className="font-medium">Dossier ID</span>
+    <div className="panel space-y-5">
+      <div>
+        <h2 className="text-base font-semibold">Capture evidence</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Highlight text above, then complete this form. Source document version {documentVersion}{" "}
+          will be recorded automatically.
+        </p>
+      </div>
+
+      <div className="grid gap-5 sm:grid-cols-2">
+        <label className="space-y-2 sm:col-span-2">
+          <span className="form-label">Dossier ID</span>
           <input
-            className="mt-1 w-full rounded border px-3 py-2"
+            className="form-input"
             value={dossierId}
             onChange={(e) => setDossierId(e.target.value)}
             placeholder="DOS-2026-001"
           />
         </label>
-        <label className="block text-sm">
-          <span className="font-medium">CTD section</span>
+        <label className="space-y-2">
+          <span className="form-label">CTD section</span>
           <input
-            className="mt-1 w-full rounded border px-3 py-2"
+            className="form-input"
             value={ctdSectionCode}
             onChange={(e) => setCtdSectionCode(e.target.value)}
             placeholder="3.2.S.7.3"
           />
         </label>
-        <label className="block text-sm">
-          <span className="font-medium">Evidence type</span>
+        <label className="space-y-2">
+          <span className="form-label">Evidence type</span>
           <select
-            className="mt-1 w-full rounded border px-3 py-2"
+            className="form-input"
             value={evidenceType}
             onChange={(e) => setEvidenceType(e.target.value)}
           >
@@ -105,37 +108,43 @@ export function EvidenceCapturePanel({
             ))}
           </select>
         </label>
-        <label className="block text-sm sm:col-span-2">
-          <span className="font-medium">Exact source excerpt</span>
+        <label className="space-y-2 sm:col-span-2">
+          <span className="form-label">Exact source excerpt</span>
           <textarea
-            className="mt-1 w-full rounded border px-3 py-2 font-mono text-sm"
+            className="form-input font-mono"
             rows={3}
             value={excerpt}
             onChange={(e) => setExcerpt(e.target.value)}
           />
         </label>
-        <label className="block text-sm sm:col-span-2">
-          <span className="font-medium">Normalized summary (optional)</span>
+        <label className="space-y-2 sm:col-span-2">
+          <span className="form-label">Normalized summary (optional)</span>
           <textarea
-            className="mt-1 w-full rounded border px-3 py-2 text-sm"
+            className="form-input"
             rows={2}
             value={summary}
             onChange={(e) => setSummary(e.target.value)}
           />
         </label>
-        <label className="block text-sm sm:col-span-2">
-          <span className="font-medium">Created by</span>
+        <label className="space-y-2 sm:col-span-2">
+          <span className="form-label">Created by</span>
           <input
-            className="mt-1 w-full rounded border px-3 py-2"
+            className="form-input"
             value={createdBy}
             onChange={(e) => setCreatedBy(e.target.value)}
           />
         </label>
       </div>
-      {error ? <p className="mt-3 text-sm text-destructive">{error}</p> : null}
+
+      {error ? (
+        <p className="rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          {error}
+        </p>
+      ) : null}
+
       <button
         type="button"
-        className="mt-4 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
+        className="btn-primary"
         disabled={busy || !dossierId.trim() || !excerpt.trim()}
         onClick={capture}
       >

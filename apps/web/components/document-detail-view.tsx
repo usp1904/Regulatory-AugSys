@@ -25,9 +25,9 @@ export function DocumentDetailView({ document }: DocumentDetailViewProps) {
   }, [document, isPaged, isParagraph, pageIndex, paragraphIndex]);
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-md border p-4 text-sm">
-        <div className="grid gap-2 sm:grid-cols-2">
+    <div className="space-y-8">
+      <div className="panel">
+        <div className="grid gap-4 text-sm sm:grid-cols-2">
           <p>
             <span className="font-medium">Filename:</span> {document.filename}
           </p>
@@ -54,43 +54,36 @@ export function DocumentDetailView({ document }: DocumentDetailViewProps) {
           <p>
             <span className="font-medium">Extraction:</span> {document.parse_status}
           </p>
-          <p>
-            <span className="font-medium">Storage path:</span>{" "}
-            <span className="text-muted-foreground">stored immutably on server</span>
-          </p>
         </div>
         {document.extraction_error ? (
-          <p className="mt-3 text-destructive">{document.extraction_error}</p>
+          <p className="mt-4 text-sm text-destructive">{document.extraction_error}</p>
         ) : null}
-        <div className="mt-4">
-          <a
-            href={documentDownloadUrl(document.id)}
-            className="inline-flex rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
-          >
+        <div className="mt-5">
+          <a href={documentDownloadUrl(document.id)} className="btn-primary">
             Download original file
           </a>
         </div>
       </div>
 
-      <div className="rounded-md border p-4">
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 className="text-sm font-medium">Extracted content</h2>
+      <div className="panel space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-base font-semibold">Extracted content</h2>
           {isPaged ? (
             <div className="flex items-center gap-2 text-sm">
               <button
                 type="button"
-                className="rounded border px-2 py-1 disabled:opacity-50"
+                className="btn-secondary px-3 py-1"
                 disabled={pageIndex === 0}
                 onClick={() => setPageIndex((value) => Math.max(0, value - 1))}
               >
                 Previous
               </button>
-              <span>
+              <span className="text-muted-foreground">
                 Page {pageIndex + 1} of {document.pages.length}
               </span>
               <button
                 type="button"
-                className="rounded border px-2 py-1 disabled:opacity-50"
+                className="btn-secondary px-3 py-1"
                 disabled={pageIndex >= document.pages.length - 1}
                 onClick={() =>
                   setPageIndex((value) => Math.min(document.pages.length - 1, value + 1))
@@ -104,18 +97,18 @@ export function DocumentDetailView({ document }: DocumentDetailViewProps) {
             <div className="flex items-center gap-2 text-sm">
               <button
                 type="button"
-                className="rounded border px-2 py-1 disabled:opacity-50"
+                className="btn-secondary px-3 py-1"
                 disabled={paragraphIndex === 0}
                 onClick={() => setParagraphIndex((value) => Math.max(0, value - 1))}
               >
                 Previous
               </button>
-              <span>
+              <span className="text-muted-foreground">
                 Paragraph {paragraphIndex + 1} of {document.paragraphs.length}
               </span>
               <button
                 type="button"
-                className="rounded border px-2 py-1 disabled:opacity-50"
+                className="btn-secondary px-3 py-1"
                 disabled={paragraphIndex >= document.paragraphs.length - 1}
                 onClick={() =>
                   setParagraphIndex((value) =>
@@ -129,7 +122,7 @@ export function DocumentDetailView({ document }: DocumentDetailViewProps) {
           ) : null}
         </div>
         <pre
-          className="max-h-[28rem] overflow-auto whitespace-pre-wrap rounded-md bg-muted/40 p-4 text-sm"
+          className="max-h-[28rem] overflow-auto whitespace-pre-wrap rounded-lg bg-muted/40 p-4 text-sm leading-relaxed"
           onMouseUp={() => {
             const selection = window.getSelection()?.toString().trim();
             if (selection) setSelectedExcerpt(selection);
@@ -137,15 +130,11 @@ export function DocumentDetailView({ document }: DocumentDetailViewProps) {
         >
           {currentText || "No extracted text available."}
         </pre>
-        {selectedExcerpt ? (
-          <p className="mt-2 text-xs text-muted-foreground">
-            Selected excerpt ({selectedExcerpt.length} chars) copied to capture form below.
-          </p>
-        ) : (
-          <p className="mt-2 text-xs text-muted-foreground">
-            Highlight text above to pre-fill the evidence excerpt.
-          </p>
-        )}
+        <p className="text-xs text-muted-foreground">
+          {selectedExcerpt
+            ? `Selected excerpt (${selectedExcerpt.length} chars) — copied to capture form below.`
+            : "Highlight text above to pre-fill the evidence excerpt."}
+        </p>
       </div>
 
       <EvidenceCapturePanel
@@ -155,27 +144,29 @@ export function DocumentDetailView({ document }: DocumentDetailViewProps) {
         initialExcerpt={selectedExcerpt}
       />
 
-      <div className="rounded-md border p-4">
-        <h2 className="mb-3 text-sm font-medium">Audit events</h2>
-        <ul className="space-y-2 text-sm">
+      <div className="panel space-y-4">
+        <h2 className="text-base font-semibold">Audit events</h2>
+        <ul className="space-y-3 text-sm">
           {document.audit_events.map((event) => (
-            <li key={event.id} className="rounded border px-3 py-2">
+            <li key={event.id} className="rounded-lg border px-4 py-3">
               <div className="font-medium">
                 {event.event_type} · {event.actor}
               </div>
-              <div className="text-xs text-muted-foreground">
+              <div className="mt-1 text-xs text-muted-foreground">
                 {new Date(event.created_at).toLocaleString()}
               </div>
               {event.detail ? (
-                <pre className="mt-2 overflow-x-auto text-xs">{event.detail}</pre>
+                <pre className="mt-2 overflow-x-auto text-xs text-muted-foreground">
+                  {event.detail}
+                </pre>
               ) : null}
             </li>
           ))}
         </ul>
       </div>
 
-      <Link href="/ctd" className="text-sm text-primary hover:underline">
-        ← Back to CTD/eCTD Engine
+      <Link href="/ctd" className="text-sm font-medium text-primary hover:underline">
+        ← Back to CTD Engine
       </Link>
     </div>
   );
