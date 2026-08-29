@@ -1,0 +1,76 @@
+{
+  "schemaVersion": "maras.requirements-comparison.v1",
+  "recordId": "CMP-2026-08-29-AUDIT-TRAIL",
+  "status": "needs-review",
+  "comparisonType": "cross-market",
+  "sides": [
+    {
+      "sideId": "US",
+      "label": "United States (21 CFR Part 11)",
+      "jurisdiction": "United States",
+      "sourceRefs": {
+        "intakeRecordId": null,
+        "evidenceRecordId": "EVR-2026-08-29-PART11-0110e",
+        "marasChunkId": "c3",
+        "controlledDocId": null,
+        "globalCompareTopicId": "audit-trail"
+      }
+    },
+    {
+      "sideId": "EU",
+      "label": "European Union (Annex 11)",
+      "jurisdiction": "European Union",
+      "sourceRefs": {
+        "intakeRecordId": null,
+        "evidenceRecordId": null,
+        "marasChunkId": "c4",
+        "controlledDocId": null,
+        "globalCompareTopicId": "audit-trail"
+      }
+    }
+  ],
+  "items": [
+    {
+      "itemId": "I001",
+      "topic": "Audit trail for record changes",
+      "relationship": "divergent",
+      "statement": "Evidence indicates both markets require audit trails for GxP-critical changes; US text emphasises operator entries and independent timestamps while EU Annex 11 frames traceability to the individual.",
+      "sideEvidence": [
+        {
+          "sideId": "US",
+          "present": true,
+          "citation": "21 CFR Part 11 §11.10(e)",
+          "verbatimExcerpt": "Use of secure, computer-generated, time-stamped audit trails to independently record the date and time of operator entries and actions.",
+          "evidenceClaimId": "C001",
+          "section": "§11.10(e)"
+        },
+        {
+          "sideId": "EU",
+          "present": true,
+          "citation": "EU GMP Annex 11 Cl.10",
+          "verbatimExcerpt": "Relevant changes to GxP critical data should be recorded and traceable to the person who made the change.",
+          "evidenceClaimId": null,
+          "section": "Cl.10"
+        }
+      ],
+      "differences": [
+        "US: explicit operator-entry wording and independent audit trail",
+        "EU: individual traceability framing"
+      ],
+      "reviewFlags": [],
+      "reviewerActionNeeded": "SME confirm excerpts against current official sources."
+    }
+  ],
+  "summary": {
+    "alignedCount": 0,
+    "divergentCount": 1,
+    "gapCount": 0,
+    "conflictCount": 0,
+    "unclearCount": 0
+  },
+  "uncoveredTopics": ["e-signature manifestations"],
+  "gaps": ["UK MHRA not included in this batch"],
+  "uncertainties": [],
+  "reviewerActionNeeded": ["RA/QA review required before using in client deliverables."],
+  "comparedAt": "2026-08-29T17:52:00Z"
+}

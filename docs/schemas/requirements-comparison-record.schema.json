@@ -1,0 +1,177 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/usp1904/Regulatory-AugSys/docs/schemas/requirements-comparison-record.schema.json",
+  "title": "Requirements Comparison Record",
+  "description": "Structured comparison of requirement sets with citations. No harmonisation or compliance conclusions.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "recordId",
+    "status",
+    "comparisonType",
+    "sides",
+    "items",
+    "comparedAt"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "maras.requirements-comparison.v1"
+    },
+    "recordId": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "needs-review", "reviewer-approved", "rejected"]
+    },
+    "comparisonType": {
+      "type": "string",
+      "enum": [
+        "cross-market",
+        "sop-vs-regulation",
+        "version-diff",
+        "pbi-vs-source",
+        "internal-vs-authority",
+        "custom"
+      ]
+    },
+    "sides": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 6,
+      "items": { "$ref": "#/$defs/side" }
+    },
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/comparisonItem" }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "alignedCount": { "type": "integer", "minimum": 0 },
+        "divergentCount": { "type": "integer", "minimum": 0 },
+        "gapCount": { "type": "integer", "minimum": 0 },
+        "conflictCount": { "type": "integer", "minimum": 0 },
+        "unclearCount": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "uncoveredTopics": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "gaps": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "uncertainties": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "reviewerActionNeeded": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "comparedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "$defs": {
+    "side": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sideId", "label"],
+      "properties": {
+        "sideId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,31}$"
+        },
+        "label": { "type": "string", "minLength": 1 },
+        "jurisdiction": { "type": ["string", "null"] },
+        "sourceRefs": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "intakeRecordId": { "type": ["string", "null"] },
+            "evidenceRecordId": { "type": ["string", "null"] },
+            "marasChunkId": { "type": ["string", "null"] },
+            "controlledDocId": { "type": ["string", "null"] },
+            "globalCompareTopicId": { "type": ["string", "null"] }
+          }
+        }
+      }
+    },
+    "comparisonItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "itemId",
+        "topic",
+        "relationship",
+        "statement"
+      ],
+      "properties": {
+        "itemId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+        },
+        "topic": { "type": "string", "minLength": 1 },
+        "relationship": {
+          "type": "string",
+          "enum": ["aligned", "divergent", "gap-left", "gap-right", "conflict", "unclear"]
+        },
+        "statement": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Neutral comparison summary — not a compliance conclusion."
+        },
+        "sideEvidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/sideEvidence" }
+        },
+        "differences": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "reviewFlags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "unclear",
+              "conflicting",
+              "translated",
+              "superseded",
+              "ocr-derived",
+              "non-authoritative",
+              "lexical-only",
+              "scope-mismatch"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "reviewerActionNeeded": { "type": ["string", "null"] }
+      }
+    },
+    "sideEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sideId", "present"],
+      "properties": {
+        "sideId": { "type": "string", "minLength": 1 },
+        "present": { "type": "boolean" },
+        "citation": { "type": ["string", "null"] },
+        "verbatimExcerpt": { "type": ["string", "null"] },
+        "evidenceClaimId": { "type": ["string", "null"] },
+        "section": { "type": ["string", "null"] }
+      }
+    }
+  }
+}
