@@ -1,0 +1,33 @@
+{
+  "mode": "CRS",
+  "pillars": {
+    "Caveman": "Smallest safe diff; plain-language outcomes; no over-engineering.",
+    "RTK": "Map changes to MVP IDs in README.md; verify with regression or pytest.",
+    "Supermemory": "Reuse harness state H, GXP_CHUNKS, shared services — never duplicate corpus logic.",
+    "Graphify": "Express flows as Input → Gate → Transform → Evidence → Export."
+  },
+  "liveHarness": {
+    "configKey": "LIVE_HARNESS_CONFIG",
+    "profileFn": "getLiveHarnessProfile",
+    "contextLineFn": "buildHarnessContextLine",
+    "scopedSourcesFn": "buildScopedSourceSummary",
+    "graph": "Scope → Intake → Govern → Decompose → QC → Evidence"
+  },
+  "platformAgents": {
+    "compactContextMaxChars": 280,
+    "preferExistingModules": [
+      "app.services.ctd_ordering",
+      "app.services.evidence",
+      "app.services.dossier_export",
+      "app.services.document_storage"
+    ],
+    "auditOnMutations": true,
+    "exportWatermark": "TRAINING / INTERNAL REVIEW ONLY — NOT A REGULATORY SUBMISSION"
+  },
+  "deepseekProfile": {
+    "compact": true,
+    "omitContextInSystemPrompt": true,
+    "scopedSourceChunks": 6,
+    "prevOutputLimit": 400
+  }
+}

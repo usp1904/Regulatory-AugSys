@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import io
-import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
@@ -21,6 +20,7 @@ from app.models.dossier_export import EXPORT_FORMATS, DossierExport
 from app.models.evidence_item import GAP_EXPORT_TYPES, EvidenceItem
 from app.schemas.dossier_export import DossierExportResponse, ExportManifest
 from app.services.audit import record_audit_event
+from app.services.ctd_ordering import ctd_code_sort_key
 from app.services.document_storage import persist_original_bytes
 
 WATERMARK = "TRAINING / INTERNAL REVIEW ONLY — NOT A REGULATORY SUBMISSION"
@@ -62,20 +62,6 @@ class ExportSection:
     code: str | None
     title: str | None
     items: list[ExportEvidenceRow]
-
-
-def ctd_code_sort_key(code: str | None) -> tuple:
-    if not code:
-        return (9999, "")
-    tokens: list[tuple[int, int | str]] = []
-    for part in code.split("."):
-        for match in re.finditer(r"\d+|[A-Za-z]+", part):
-            token = match.group()
-            if token.isdigit():
-                tokens.append((0, int(token)))
-            else:
-                tokens.append((1, token))
-    return tuple(tokens)  # type: ignore[return-value]
 
 
 def _load_ctd_titles(db: Session) -> dict[str, str]:

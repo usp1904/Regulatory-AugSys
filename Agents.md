@@ -48,3 +48,10 @@ Repository-managed Cloud Agent setup: `.cursor/environment.json`
 ## Subagents
 
 - Document ingestion post-processing: `.cursor/agents/okf-document-pipeline.md` (OKF v0.2, when ingestion expands beyond browser parse)
+
+## Platform workflows (Notion + Graphify)
+
+- Registry: `docs/workflows/platform-workflows.json`
+- Harness config: `docs/harness/platform-harness-config.json`
+- Platform agents: `docs/prompts/platform-harness.md`
+- Regenerate Notion import pages: `node scripts/generate-notion-workflows.mjs` → `docs/workflows/notion-export/`

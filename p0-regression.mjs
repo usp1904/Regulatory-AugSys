@@ -62,5 +62,8 @@ check('CTD eCTD Engine tab is present', html.includes('id="view-ctd"') && html.i
 check('CTD engine validates against framework jurisdiction scope', html.includes('function buildCtdEngineValidation') && html.includes('function getCtdScopedRegulatoryChunks') && html.includes('CTD_MODULE_32S') && html.includes('function handleCtdHouseDocs'));
 check('CTD mapping export is draft watermarked', html.includes('DRAFT-MARAS-CTD-Mapping-3.2.S.json') && html.includes("packageStatus:'DRAFT_NOT_CONTROLLED'") && html.includes('maras.ctd-mapping.v1'));
 check('Agents.md default instructions', fs.existsSync('Agents.md') && fs.readFileSync('Agents.md','utf8').includes('CRS Mode') && fs.readFileSync('Agents.md','utf8').includes('Graphiffy'));
+check('platform workflow registry', fs.existsSync('docs/workflows/platform-workflows.json') && fs.readFileSync('docs/workflows/platform-workflows.json','utf8').includes('WF-PLATFORM-EVIDENCE'));
+check('platform harness config', fs.existsSync('docs/harness/platform-harness-config.json') && fs.readFileSync('docs/harness/platform-harness-config.json','utf8').includes('deepseekProfile'));
+check('notion workflow generator', fs.existsSync('scripts/generate-notion-workflows.mjs') && fs.existsSync('docs/workflows/notion-export/00-index.md'));
 
 export const result = { status: 'PASS', checks: checks.length, systemsValidated: 15, names: checks };

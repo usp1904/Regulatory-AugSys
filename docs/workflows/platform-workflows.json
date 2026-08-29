@@ -1,0 +1,81 @@
+{
+  "schemaVersion": "maras.workflows.v1",
+  "generatedBy": "scripts/generate-notion-workflows.mjs",
+  "harnessMode": "CRS",
+  "pillars": ["Caveman", "RTK", "Supermemory", "Graphify"],
+  "tokenProfile": "docs/harness/platform-harness-config.json",
+  "workflows": [
+    {
+      "id": "WF-MVP-ASSURE",
+      "name": "MARAS Assure (browser MVP)",
+      "mvpIds": ["MVP-01", "MVP-21"],
+      "graph": "Scope → Intake → Govern → Decompose → QC → Evidence → Export (DRAFT_NOT_CONTROLLED)",
+      "harness": "LIVE_HARNESS_CONFIG / getLiveHarnessProfile / buildHarnessContextLine",
+      "tokenRules": ["compact context line", "scoped rankChunks for decomp only", "per-agent max_tokens"],
+      "verification": ["p0-regression.mjs", "qc-compat-regression.mjs"]
+    },
+    {
+      "id": "WF-PLATFORM-INGEST",
+      "name": "Controlled document ingestion",
+      "mvpIds": ["MVP-22", "MVP-23"],
+      "graph": "Upload → Hash → Parse → Store → Audit",
+      "api": ["POST /api/v1/documents", "GET /api/v1/documents/{id}"],
+      "web": ["/documents/{id}"],
+      "verification": ["apps/api/tests/test_documents.py", "pytest"]
+    },
+    {
+      "id": "WF-PLATFORM-EVIDENCE",
+      "name": "Evidence capture and human review",
+      "mvpIds": ["MVP-23"],
+      "graph": "Capture → Pending → Review → Approved | Rejected | Needs clarification",
+      "api": [
+        "POST /api/v1/evidence",
+        "PATCH /api/v1/evidence/{id}",
+        "POST /api/v1/evidence/{id}/review",
+        "GET /api/v1/evidence/{id}/review-context"
+      ],
+      "web": ["/documents/{id}", "/evidence/review/{id}"],
+      "rules": [
+        "Approved excerpt immutable; changes create new version",
+        "Only APPROVED evidence in exports"
+      ],
+      "verification": ["apps/api/tests/test_evidence.py"]
+    },
+    {
+      "id": "WF-PLATFORM-DOSSIER",
+      "name": "Evidence-based dossier export",
+      "mvpIds": ["MVP-24"],
+      "graph": "Approved evidence → CTD order → Render → Manifest → Immutable file → Audit",
+      "api": [
+        "POST /api/v1/dossiers/{dossier_id}/export",
+        "GET /api/v1/dossier-exports/{export_id}/download"
+      ],
+      "web": ["/dossiers"],
+      "formats": ["txt", "docx", "pdf"],
+      "verification": ["apps/api/tests/test_dossier_export.py"]
+    },
+    {
+      "id": "WF-PLATFORM-CTD",
+      "name": "CTD Module 3.2.S validation",
+      "mvpIds": ["MVP-22"],
+      "graph": "Documents → Framework/Jurisdiction scope → Validate → Gap report",
+      "api": ["POST /api/v1/ctd-engine/validate", "GET /api/v1/ctd-sections"],
+      "web": ["/ctd"],
+      "verification": ["apps/api/tests/test_ctd_engine.py", "apps/api/tests/test_ctd_sections.py"]
+    },
+    {
+      "id": "WF-GLOBAL-COMPARE",
+      "name": "Global regulation comparison",
+      "mvpIds": ["MVP-16"],
+      "graph": "Topic → Market matrix → Diff → Co-op deliverable",
+      "verification": ["p0-regression.mjs"]
+    },
+    {
+      "id": "WF-READINESS",
+      "name": "Inspection readiness",
+      "mvpIds": ["MVP-17", "MVP-18"],
+      "graph": "Regulation ↔ SOP map → Gap flags → Inspection pack → Download",
+      "verification": ["p0-regression.mjs"]
+    }
+  ]
+}

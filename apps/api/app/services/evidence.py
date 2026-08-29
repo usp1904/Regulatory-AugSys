@@ -22,6 +22,7 @@ from app.schemas.evidence import (
     EvidenceUpdateRequest,
 )
 from app.services.audit import record_audit_event
+from app.services.ctd_ordering import ctd_code_sort_key
 
 
 class EvidenceServiceError(ValueError):
@@ -277,12 +278,14 @@ def list_evidence(
 
 
 def export_approved_evidence(db: Session, dossier_id: str) -> EvidenceExportResponse:
-    items = db.scalars(
-        select(EvidenceItem)
-        .where(EvidenceItem.dossier_id == dossier_id)
-        .where(EvidenceItem.review_status == "APPROVED")
-        .order_by(EvidenceItem.ctd_section_code, EvidenceItem.id)
-    ).all()
+    items = list(
+        db.scalars(
+            select(EvidenceItem)
+            .where(EvidenceItem.dossier_id == dossier_id)
+            .where(EvidenceItem.review_status == "APPROVED")
+        ).all()
+    )
+    items.sort(key=lambda item: (ctd_code_sort_key(item.ctd_section_code), item.id))
     export_items: list[EvidenceExportItem] = []
     for item in items:
         if item.evidence_type in GAP_EXPORT_TYPES:
