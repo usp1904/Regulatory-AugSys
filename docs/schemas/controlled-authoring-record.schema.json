@@ -1,0 +1,177 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/usp1904/Regulatory-AugSys/docs/schemas/controlled-authoring-record.schema.json",
+  "title": "Controlled Authoring Record",
+  "description": "Structured draft authoring package for controlled documents. Not an approved or effective QMS record.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "recordId",
+    "status",
+    "documentType",
+    "documentControl",
+    "authoringPurpose",
+    "sections",
+    "authoredAt"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "maras.controlled-authoring.v1"
+    },
+    "recordId": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "needs-review", "reviewer-approved", "rejected"]
+    },
+    "documentType": {
+      "type": "string",
+      "enum": [
+        "sop",
+        "work-instruction",
+        "policy",
+        "specification",
+        "validation-protocol",
+        "change-control-record",
+        "custom"
+      ]
+    },
+    "documentControl": {
+      "$ref": "#/$defs/documentControl"
+    },
+    "authoringPurpose": {
+      "type": "string",
+      "enum": ["new", "revision", "obsolescence", "periodic-review", "custom"]
+    },
+    "changeRationale": {
+      "type": ["string", "null"],
+      "description": "Why the document is being authored or revised — not an approval justification."
+    },
+    "sections": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/section" }
+    },
+    "regulatoryTraceability": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/traceLink" }
+    },
+    "upstreamRefs": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "changeImpactRecordId": { "type": ["string", "null"] },
+        "comparisonRecordId": { "type": ["string", "null"] },
+        "evidenceRecordId": { "type": ["string", "null"] },
+        "priorIntakeRecordId": { "type": ["string", "null"] }
+      }
+    },
+    "gaps": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "uncertainties": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "reviewerActionNeeded": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "controls": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "packageStatus": {
+          "type": "string",
+          "const": "DRAFT_NOT_CONTROLLED"
+        },
+        "approvedForUse": { "type": "boolean", "const": false },
+        "effectiveInQms": { "type": "boolean", "const": false }
+      }
+    },
+    "authoredAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "$defs": {
+    "documentControl": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["documentId", "title", "proposedVersion", "documentStatus"],
+      "properties": {
+        "documentId": { "type": "string", "minLength": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "proposedVersion": { "type": "string", "minLength": 1 },
+        "supersedesVersion": { "type": ["string", "null"] },
+        "documentStatus": {
+          "type": "string",
+          "enum": ["Draft", "Draft-For-Review", "Draft-In-Revision"]
+        },
+        "owningDepartment": { "type": ["string", "null"] },
+        "proposedEffectiveDate": { "type": ["string", "null"] },
+        "language": { "type": ["string", "null"] }
+      }
+    },
+    "section": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sectionId", "heading", "order", "content"],
+      "properties": {
+        "sectionId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+        },
+        "heading": { "type": "string", "minLength": 1 },
+        "order": { "type": "integer", "minimum": 1 },
+        "purpose": { "type": ["string", "null"] },
+        "content": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Draft prose — not approved controlled text."
+        },
+        "reviewFlags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "machine-generated",
+              "needs-sme-wording",
+              "regulatory-citation-required",
+              "scope-unclear",
+              "translation-needed"
+            ]
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "traceLink": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["linkId", "requirementRef", "statement"],
+      "properties": {
+        "linkId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+        },
+        "requirementRef": { "type": "string", "minLength": 1 },
+        "statement": { "type": "string", "minLength": 1 },
+        "citation": { "type": ["string", "null"] },
+        "verbatimExcerpt": { "type": ["string", "null"] },
+        "evidenceClaimId": { "type": ["string", "null"] },
+        "marasChunkId": { "type": ["string", "null"] },
+        "linkedSectionIds": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}

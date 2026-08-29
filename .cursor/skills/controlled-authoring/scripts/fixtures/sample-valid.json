@@ -1,0 +1,105 @@
+{
+  "schemaVersion": "maras.controlled-authoring.v1",
+  "recordId": "AUT-2026-08-29-SOP-AUDIT-REVIEW",
+  "status": "needs-review",
+  "documentType": "sop",
+  "documentControl": {
+    "documentId": "SOP-CSV-AUDIT-REVIEW-004",
+    "title": "Computerised System Audit Trail Review",
+    "proposedVersion": "2.1-draft",
+    "supersedesVersion": "2.0",
+    "documentStatus": "Draft-For-Review",
+    "owningDepartment": "Quality Assurance",
+    "proposedEffectiveDate": null,
+    "language": "en"
+  },
+  "authoringPurpose": "revision",
+  "changeRationale": "Proposed revision to reflect potential Annex 11 audit-trail review expectations identified in change-impact assessment RCI-2026-08-29-ANNEX11-AUDIT.",
+  "sections": [
+    {
+      "sectionId": "S01",
+      "heading": "Purpose",
+      "order": 1,
+      "purpose": "State why the SOP exists",
+      "content": "This draft SOP defines the process for periodic review of computerised system audit trails in GxP environments.",
+      "reviewFlags": ["machine-generated", "needs-sme-wording"]
+    },
+    {
+      "sectionId": "S02",
+      "heading": "Scope",
+      "order": 2,
+      "purpose": "Define applicability",
+      "content": "Applies to GxP computerised systems where audit trails record changes to GxP-critical data.",
+      "reviewFlags": ["machine-generated"]
+    },
+    {
+      "sectionId": "S03",
+      "heading": "Responsibilities",
+      "order": 3,
+      "purpose": "Assign roles",
+      "content": "System Owner ensures audit trails are enabled. QA reviews audit-trail records per the schedule defined in Section 4.",
+      "reviewFlags": ["needs-sme-wording"]
+    },
+    {
+      "sectionId": "S04",
+      "heading": "Procedure",
+      "order": 4,
+      "purpose": "Define review steps",
+      "content": "Review audit-trail entries for GxP-critical changes at a frequency defined by the quality risk assessment. Document review with reviewer identity and timestamp.",
+      "reviewFlags": ["machine-generated", "regulatory-citation-required"]
+    },
+    {
+      "sectionId": "S05",
+      "heading": "References",
+      "order": 5,
+      "purpose": "List controlled references",
+      "content": "EU GMP Annex 11; 21 CFR Part 11; applicable validation protocols.",
+      "reviewFlags": []
+    },
+    {
+      "sectionId": "S06",
+      "heading": "Revision History (proposed)",
+      "order": 6,
+      "purpose": "Track draft revisions",
+      "content": "2.1-draft — proposed revision for Annex 11 alignment review (not effective).",
+      "reviewFlags": []
+    }
+  ],
+  "regulatoryTraceability": [
+    {
+      "linkId": "T001",
+      "requirementRef": "EU GMP Annex 11 Cl.10",
+      "statement": "Procedure section should address traceability of GxP-critical changes to individuals.",
+      "citation": "Annex 11 Cl.10",
+      "verbatimExcerpt": "Relevant changes to GxP critical data should be recorded and traceable to the person who made the change.",
+      "evidenceClaimId": null,
+      "marasChunkId": "c4",
+      "linkedSectionIds": ["S04"]
+    },
+    {
+      "linkId": "T002",
+      "requirementRef": "21 CFR Part 11 §11.10(e)",
+      "statement": "US audit-trail expectations may inform dual-jurisdiction review frequency wording.",
+      "citation": "§11.10(e)",
+      "verbatimExcerpt": "Use of secure, computer-generated, time-stamped audit trails to independently record the date and time of operator entries and actions.",
+      "evidenceClaimId": "C001",
+      "marasChunkId": "c3",
+      "linkedSectionIds": ["S04", "S05"]
+    }
+  ],
+  "upstreamRefs": {
+    "changeImpactRecordId": "RCI-2026-08-29-ANNEX11-AUDIT",
+    "comparisonRecordId": null,
+    "evidenceRecordId": "EVR-2026-08-29-PART11-0110e",
+    "priorIntakeRecordId": null
+  },
+  "gaps": ["Review frequency not yet tied to risk assessment template"],
+  "uncertainties": ["Whether proposed review cadence meets both EU and US expectations"],
+  "reviewerActionNeeded": ["SME review draft procedure wording", "QA confirm document control metadata before export"],
+  "controls": {
+    "packageStatus": "DRAFT_NOT_CONTROLLED",
+    "approvedForUse": false,
+    "effectiveInQms": false
+  },
+  "authoredAt": "2026-08-29T18:05:00Z"
+}
