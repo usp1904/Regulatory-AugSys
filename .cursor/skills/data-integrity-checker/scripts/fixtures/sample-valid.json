@@ -1,0 +1,85 @@
+{
+  "schemaVersion": "maras.data-integrity-assessment.v1",
+  "recordId": "DIA-2026-08-29-EVR-PART11",
+  "status": "needs-review",
+  "assessmentSubject": {
+    "kind": "evidence-record",
+    "subjectRef": "EVR-2026-08-29-PART11-0110e",
+    "label": "Part 11 audit trail evidence batch"
+  },
+  "principles": [
+    {
+      "principle": "attributable",
+      "result": "needs-review",
+      "statement": "Issuing authority and jurisdiction are recorded; SME approval on source corpus is still pending.",
+      "evidenceRef": "provenance.issuingAuthority",
+      "gap": "sourceApprovalStatus not SME_APPROVED"
+    },
+    {
+      "principle": "legible",
+      "result": "pass",
+      "statement": "Claims include verbatim excerpts in readable text.",
+      "evidenceRef": "claims[].verbatimExcerpt",
+      "gap": null
+    },
+    {
+      "principle": "contemporaneous",
+      "result": "pass",
+      "statement": "extractedAt timestamp is present.",
+      "evidenceRef": "extractedAt",
+      "gap": null
+    },
+    {
+      "principle": "original",
+      "result": "needs-review",
+      "statement": "Evidence drawn from embedded MARAS corpus rather than customer-controlled original file hash in this batch.",
+      "evidenceRef": "coverageNotes",
+      "gap": "Link to intake-record with fileHash recommended"
+    },
+    {
+      "principle": "accurate",
+      "result": "needs-review",
+      "statement": "Excerpts require verification against live eCFR before reliance.",
+      "evidenceRef": "reviewerActionNeeded",
+      "gap": null
+    },
+    {
+      "principle": "complete",
+      "result": "pass",
+      "statement": "Required evidence-record fields and claims array are populated.",
+      "evidenceRef": "schemaVersion",
+      "gap": null
+    },
+    {
+      "principle": "consistent",
+      "result": "pass",
+      "statement": "Jurisdiction and authority align across provenance and claims for US FDA Part 11.",
+      "evidenceRef": "provenance.jurisdiction",
+      "gap": null
+    },
+    {
+      "principle": "enduring",
+      "result": "needs-review",
+      "statement": "Document version recorded; effective date verification against official register still required.",
+      "evidenceRef": "provenance.documentVersion",
+      "gap": null
+    },
+    {
+      "principle": "available",
+      "result": "pass",
+      "statement": "Official eCFR URL is recorded in provenance source locator.",
+      "evidenceRef": "provenance.sourceLocator.url",
+      "gap": null
+    }
+  ],
+  "overallRisk": "medium",
+  "gaps": ["No linked intake-record with SHA-256 for original source file"],
+  "uncertainties": ["Whether corpus text matches current eCFR"],
+  "reviewerActionNeeded": ["QA verify attributable and accurate principles against official source"],
+  "controls": {
+    "originalImmutable": null,
+    "derivedSeparated": true,
+    "packageStatus": "DRAFT_NOT_CONTROLLED"
+  },
+  "assessedAt": "2026-08-29T17:59:00Z"
+}
