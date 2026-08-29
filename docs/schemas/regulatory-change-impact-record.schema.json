@@ -1,0 +1,239 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/usp1904/Regulatory-AugSys/docs/schemas/regulatory-change-impact-record.schema.json",
+  "title": "Regulatory Change Impact Record",
+  "description": "Structured assessment of regulatory source changes and downstream artifact impact. Not a change-control closure or compliance certification.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "recordId",
+    "status",
+    "changeType",
+    "changeSource",
+    "clauseChanges",
+    "impactedAssets",
+    "assessedAt"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "maras.regulatory-change-impact.v1"
+    },
+    "recordId": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "needs-review", "reviewer-approved", "rejected"]
+    },
+    "changeType": {
+      "type": "string",
+      "enum": [
+        "version-amendment",
+        "new-publication",
+        "withdrawal",
+        "effective-date-shift",
+        "scope-clarification",
+        "custom"
+      ]
+    },
+    "changeSource": {
+      "$ref": "#/$defs/changeSource"
+    },
+    "changeSummary": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Neutral summary of what changed — not an impact closure statement."
+    },
+    "clauseChanges": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/clauseChange" }
+    },
+    "impactedAssets": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/impactedAsset" }
+    },
+    "recommendedActions": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "upstreamRefs": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "comparisonRecordId": { "type": ["string", "null"] },
+        "priorEvidenceRecordId": { "type": ["string", "null"] },
+        "newEvidenceRecordId": { "type": ["string", "null"] },
+        "intakeRecordId": { "type": ["string", "null"] }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "clauseChangeCount": { "type": "integer", "minimum": 0 },
+        "highImpactCount": { "type": "integer", "minimum": 0 },
+        "mediumImpactCount": { "type": "integer", "minimum": 0 },
+        "lowImpactCount": { "type": "integer", "minimum": 0 },
+        "unknownImpactCount": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "gaps": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "uncertainties": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "reviewerActionNeeded": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "controls": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "changeControlClosed": { "type": ["boolean", "null"] },
+        "packageStatus": {
+          "type": "string",
+          "const": "DRAFT_NOT_CONTROLLED"
+        }
+      }
+    },
+    "assessedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "$defs": {
+    "changeSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["authority", "documentTitle"],
+      "properties": {
+        "authority": { "type": "string", "minLength": 1 },
+        "jurisdiction": { "type": ["string", "null"] },
+        "documentTitle": { "type": "string", "minLength": 1 },
+        "before": { "$ref": "#/$defs/sourceRevision" },
+        "after": { "$ref": "#/$defs/sourceRevision" }
+      }
+    },
+    "sourceRevision": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "versionLabel": { "type": ["string", "null"] },
+        "effectiveDate": { "type": ["string", "null"] },
+        "sourceLocator": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "url": { "type": ["string", "null"] },
+            "controlledDocId": { "type": ["string", "null"] }
+          }
+        },
+        "intakeRecordId": { "type": ["string", "null"] },
+        "evidenceRecordId": { "type": ["string", "null"] }
+      }
+    },
+    "clauseChange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["changeId", "clauseRef", "changeKind", "statement"],
+      "properties": {
+        "changeId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+        },
+        "clauseRef": { "type": "string", "minLength": 1 },
+        "changeKind": {
+          "type": "string",
+          "enum": ["added", "removed", "modified", "relocated", "superseded", "unclear"]
+        },
+        "statement": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Neutral description of the clause delta."
+        },
+        "beforeExcerpt": { "type": ["string", "null"] },
+        "afterExcerpt": { "type": ["string", "null"] },
+        "evidenceClaimId": { "type": ["string", "null"] },
+        "reviewFlags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "unclear",
+              "translated",
+              "superseded",
+              "ocr-derived",
+              "non-authoritative",
+              "scope-mismatch",
+              "effective-date-unverified"
+            ]
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "impactedAsset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["assetId", "assetKind", "assetRef", "impactLevel", "rationale"],
+      "properties": {
+        "assetId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+        },
+        "assetKind": {
+          "type": "string",
+          "enum": [
+            "system",
+            "sop",
+            "pbi",
+            "test-case",
+            "evidence-record",
+            "validation-package",
+            "controlled-document",
+            "ctd-module",
+            "custom"
+          ]
+        },
+        "assetRef": { "type": "string", "minLength": 1 },
+        "label": { "type": ["string", "null"] },
+        "impactLevel": {
+          "type": "string",
+          "enum": ["high", "medium", "low", "unknown"]
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Why the asset may be affected — not a remediation closure."
+        },
+        "linkedClauseChangeIds": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "reviewFlags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "inferred-link",
+              "lexical-only",
+              "scope-mismatch",
+              "stale-artifact",
+              "missing-owner"
+            ]
+          },
+          "uniqueItems": true
+        }
+      }
+    }
+  }
+}

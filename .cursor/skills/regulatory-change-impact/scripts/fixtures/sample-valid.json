@@ -1,0 +1,106 @@
+{
+  "schemaVersion": "maras.regulatory-change-impact.v1",
+  "recordId": "RCI-2026-08-29-ANNEX11-AUDIT",
+  "status": "needs-review",
+  "changeType": "version-amendment",
+  "changeSource": {
+    "authority": "European Commission / EMA",
+    "jurisdiction": "European Union",
+    "documentTitle": "EU GMP Annex 11 — Computerised Systems",
+    "before": {
+      "versionLabel": "prior-revision-not-verified",
+      "effectiveDate": null,
+      "sourceLocator": { "url": null, "controlledDocId": null },
+      "intakeRecordId": null,
+      "evidenceRecordId": null
+    },
+    "after": {
+      "versionLabel": "draft-revision-not-verified",
+      "effectiveDate": null,
+      "sourceLocator": { "url": null, "controlledDocId": null },
+      "intakeRecordId": null,
+      "evidenceRecordId": "EVR-2026-08-29-ANNEX11-CL10"
+    }
+  },
+  "changeSummary": "Evidence indicates a potential revision to Annex 11 audit-trail review expectations; SME verification against official publication required.",
+  "clauseChanges": [
+    {
+      "changeId": "CC001",
+      "clauseRef": "Annex 11 Cl.10",
+      "changeKind": "modified",
+      "statement": "Evidence indicates audit-trail traceability language may require more frequent review of GxP-critical changes.",
+      "beforeExcerpt": "Prior revision text not supplied in this batch.",
+      "afterExcerpt": "Relevant changes to GxP critical data should be recorded and traceable to the person who made the change.",
+      "evidenceClaimId": null,
+      "reviewFlags": ["effective-date-unverified", "non-authoritative"]
+    },
+    {
+      "changeId": "CC002",
+      "clauseRef": "Annex 11 Cl.12",
+      "changeKind": "unclear",
+      "statement": "Scope of periodic review requirements unclear without official side-by-side comparison.",
+      "beforeExcerpt": null,
+      "afterExcerpt": null,
+      "evidenceClaimId": null,
+      "reviewFlags": ["unclear"]
+    }
+  ],
+  "impactedAssets": [
+    {
+      "assetId": "IA001",
+      "assetKind": "pbi",
+      "assetRef": "STORY-AUDIT-TRAIL-ANNEX11-001",
+      "label": "Audit trail review for LIMS — Annex 11 alignment",
+      "impactLevel": "medium",
+      "rationale": "PBI acceptance criteria reference Annex 11 audit-trail controls; clause delta may affect review frequency wording.",
+      "linkedClauseChangeIds": ["CC001"],
+      "reviewFlags": ["inferred-link"]
+    },
+    {
+      "assetId": "IA002",
+      "assetKind": "sop",
+      "assetRef": "SOP-CSV-AUDIT-REVIEW-004",
+      "label": "Computerised system audit trail review SOP",
+      "impactLevel": "high",
+      "rationale": "SOP maps to Annex 11 Cl.10 per readiness mapper; direct clause modification hypothesised.",
+      "linkedClauseChangeIds": ["CC001"],
+      "reviewFlags": ["inferred-link"]
+    },
+    {
+      "assetId": "IA003",
+      "assetKind": "test-case",
+      "assetRef": "TC-LIMS-AUDIT-TRAIL-012",
+      "label": "LIMS audit trail periodic review test",
+      "impactLevel": "medium",
+      "rationale": "Test protocol validates audit-trail review cadence tied to Annex 11 expectations.",
+      "linkedClauseChangeIds": ["CC001", "CC002"],
+      "reviewFlags": ["lexical-only"]
+    }
+  ],
+  "recommendedActions": [
+    "RA obtain official before/after Annex 11 publication and link intake records",
+    "QA review SOP-CSV-AUDIT-REVIEW-004 against CC001 excerpt",
+    "Re-run version-diff comparison via requirements-comparator"
+  ],
+  "upstreamRefs": {
+    "comparisonRecordId": null,
+    "priorEvidenceRecordId": null,
+    "newEvidenceRecordId": "EVR-2026-08-29-ANNEX11-CL10",
+    "intakeRecordId": null
+  },
+  "summary": {
+    "clauseChangeCount": 2,
+    "highImpactCount": 1,
+    "mediumImpactCount": 2,
+    "lowImpactCount": 0,
+    "unknownImpactCount": 0
+  },
+  "gaps": ["Before-revision official text not in batch", "No live source monitor confirmation"],
+  "uncertainties": ["Whether draft revision language matches published instrument"],
+  "reviewerActionNeeded": ["SME/RA verify clause excerpts and effective dates before change package scoping"],
+  "controls": {
+    "changeControlClosed": null,
+    "packageStatus": "DRAFT_NOT_CONTROLLED"
+  },
+  "assessedAt": "2026-08-29T18:01:00Z"
+}
