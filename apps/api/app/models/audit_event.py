@@ -24,6 +24,11 @@ class AuditEvent(Base):
         nullable=True,
         index=True,
     )
+    evidence_id: Mapped[int | None] = mapped_column(
+        ForeignKey("evidence_items.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     actor: Mapped[str] = mapped_column(String(256), nullable=False, default="unknown")
     detail: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

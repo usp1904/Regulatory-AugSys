@@ -27,6 +27,7 @@ docker compose up --build
 | API (FastAPI `/health`) | http://localhost:8000/health |
 | API CTD sections | `GET /api/v1/ctd-sections` |
 | API document store | `POST /api/v1/documents`, `GET /api/v1/documents`, `GET /api/v1/documents/{id}`, `GET /api/v1/documents/{id}/download` |
+| API evidence | `POST /api/v1/evidence`, `GET /api/v1/evidence`, `PATCH /api/v1/evidence/{id}`, `POST /api/v1/evidence/{id}/review`, `GET /api/v1/evidence/{id}/review-context`, `GET /api/v1/evidence/export` |
 | API CTD validation | `POST /api/v1/ctd-engine/validate` |
 | PostgreSQL | `localhost:5432` (user/db: `regulatory` / `regulatory_augsys`) |
 
@@ -83,7 +84,7 @@ export NEXT_PUBLIC_API_URL=http://localhost:8000
 npm run dev
 ```
 
-Open http://localhost:3000 — the health page shows web status and polls the API.
+Open http://localhost:3000 — the health page shows web status and polls the API. Evidence review UI: `/evidence/review/{id}` (side-by-side source text and review form). Capture evidence from `/documents/{id}`.
 
 ```bash
 npm run typecheck

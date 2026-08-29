@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
+import { EvidenceCapturePanel } from "@/components/evidence-capture-panel";
 import type { DocumentDetail } from "@/lib/document-types";
 import { documentDownloadUrl } from "@/lib/document-types";
 
@@ -15,6 +16,7 @@ export function DocumentDetailView({ document }: DocumentDetailViewProps) {
   const isParagraph = document.paragraphs.length > 0;
   const [pageIndex, setPageIndex] = useState(0);
   const [paragraphIndex, setParagraphIndex] = useState(0);
+  const [selectedExcerpt, setSelectedExcerpt] = useState("");
 
   const currentText = useMemo(() => {
     if (isPaged) return document.pages[pageIndex]?.text_content ?? "";
@@ -126,10 +128,32 @@ export function DocumentDetailView({ document }: DocumentDetailViewProps) {
             </div>
           ) : null}
         </div>
-        <pre className="max-h-[28rem] overflow-auto whitespace-pre-wrap rounded-md bg-muted/40 p-4 text-sm">
+        <pre
+          className="max-h-[28rem] overflow-auto whitespace-pre-wrap rounded-md bg-muted/40 p-4 text-sm"
+          onMouseUp={() => {
+            const selection = window.getSelection()?.toString().trim();
+            if (selection) setSelectedExcerpt(selection);
+          }}
+        >
           {currentText || "No extracted text available."}
         </pre>
+        {selectedExcerpt ? (
+          <p className="mt-2 text-xs text-muted-foreground">
+            Selected excerpt ({selectedExcerpt.length} chars) copied to capture form below.
+          </p>
+        ) : (
+          <p className="mt-2 text-xs text-muted-foreground">
+            Highlight text above to pre-fill the evidence excerpt.
+          </p>
+        )}
       </div>
+
+      <EvidenceCapturePanel
+        documentId={document.id}
+        documentVersion={document.version}
+        pageNumber={isPaged ? document.pages[pageIndex]?.page_number ?? null : null}
+        initialExcerpt={selectedExcerpt}
+      />
 
       <div className="rounded-md border p-4">
         <h2 className="mb-3 text-sm font-medium">Audit events</h2>

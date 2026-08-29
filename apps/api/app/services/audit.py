@@ -15,11 +15,13 @@ def record_audit_event(
     event_type: str,
     actor: str,
     document_id: int | None = None,
+    evidence_id: int | None = None,
     detail: dict | None = None,
 ) -> AuditEvent:
     event = AuditEvent(
         event_type=event_type,
         document_id=document_id,
+        evidence_id=evidence_id,
         actor=actor,
         detail=json.dumps(detail or {}, default=str),
     )
