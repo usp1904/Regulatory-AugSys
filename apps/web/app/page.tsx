@@ -5,6 +5,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { CtdSectionTree } from "@/components/ctd-section-tree";
+import { fetchCtdSections } from "@/lib/ctd-types";
 
 type HealthResponse = {
   status: string;
@@ -26,9 +28,10 @@ async function fetchApiHealth(): Promise<HealthResponse | null> {
 
 export default async function HealthPage() {
   const apiHealth = await fetchApiHealth();
+  const ctdTree = await fetchCtdSections();
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center gap-6 p-8">
+    <main className="mx-auto flex min-h-screen max-w-3xl flex-col gap-6 p-8">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Regulatory-AugSys</h1>
         <p className="mt-2 text-sm text-muted-foreground">
@@ -81,6 +84,25 @@ export default async function HealthPage() {
           ) : (
             <p className="text-muted-foreground">
               API unreachable. Start the FastAPI service (see README).
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>CTD Module 3.2.S — Drug Substance</CardTitle>
+          <CardDescription>
+            Controlled taxonomy for CMC evidence mapping (draft reference; not eCTD-validated).
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {ctdTree && ctdTree.sections.length > 0 ? (
+            <CtdSectionTree nodes={ctdTree.sections} />
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              CTD sections unavailable. Run migrations and start the API (
+              <code className="text-xs">GET /api/v1/ctd-sections</code>).
             </p>
           )}
         </CardContent>
