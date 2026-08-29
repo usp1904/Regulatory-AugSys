@@ -1,0 +1,170 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/usp1904/Regulatory-AugSys/docs/schemas/citation-provenance-audit-record.schema.json",
+  "title": "Citation and Provenance Audit Record",
+  "description": "Structured audit of citations and provenance across regulatory JSON artifacts. Not a compliance certification or audit sign-off.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "recordId",
+    "status",
+    "auditSubject",
+    "auditScope",
+    "findings",
+    "overallResult",
+    "auditedAt"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "maras.citation-provenance-audit.v1"
+    },
+    "recordId": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "needs-review", "reviewer-approved", "rejected"]
+    },
+    "auditSubject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "subjectRef"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "evidence-record",
+            "intake-record",
+            "comparison-record",
+            "change-impact-record",
+            "authoring-record",
+            "document-review-record",
+            "maras-pbi-package",
+            "multi-record-batch",
+            "custom"
+          ]
+        },
+        "subjectRef": { "type": "string", "minLength": 1 },
+        "label": { "type": ["string", "null"] }
+      }
+    },
+    "auditScope": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/scopeEntry" }
+    },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    },
+    "overallResult": {
+      "type": "string",
+      "enum": ["inconclusive", "minor-gaps", "major-gaps", "needs-review"]
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "findingCount": { "type": "integer", "minimum": 0 },
+        "blockingCount": { "type": "integer", "minimum": 0 },
+        "gapCount": { "type": "integer", "minimum": 0 },
+        "advisoryCount": { "type": "integer", "minimum": 0 },
+        "infoCount": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "gaps": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "uncertainties": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "reviewerActionNeeded": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "controls": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "packageStatus": {
+          "type": "string",
+          "const": "DRAFT_NOT_CONTROLLED"
+        },
+        "auditSignedOff": { "type": "boolean", "const": false }
+      }
+    },
+    "auditedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "$defs": {
+    "scopeEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["recordKind", "recordId"],
+      "properties": {
+        "recordKind": {
+          "type": "string",
+          "enum": [
+            "evidence-record",
+            "intake-record",
+            "comparison-record",
+            "change-impact-record",
+            "authoring-record",
+            "document-review-record",
+            "data-integrity-assessment",
+            "ctd-mapping-record",
+            "custom"
+          ]
+        },
+        "recordId": { "type": "string", "minLength": 1 },
+        "schemaVersion": { "type": ["string", "null"] }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["findingId", "category", "severity", "statement"],
+      "properties": {
+        "findingId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "missing-excerpt",
+            "missing-citation",
+            "provenance-gap",
+            "metadata-mismatch",
+            "unsourced-claim",
+            "stale-source",
+            "non-authoritative-source",
+            "cross-record-conflict",
+            "hash-or-locator-gap",
+            "scope-mismatch"
+          ]
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["info", "advisory", "gap", "blocking"]
+        },
+        "statement": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Neutral audit observation — not a compliance verdict."
+        },
+        "fieldPath": { "type": ["string", "null"] },
+        "sourceRecordId": { "type": ["string", "null"] },
+        "recommendation": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

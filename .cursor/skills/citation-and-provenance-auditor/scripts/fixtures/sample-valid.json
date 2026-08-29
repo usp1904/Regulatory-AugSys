@@ -1,0 +1,62 @@
+{
+  "schemaVersion": "maras.citation-provenance-audit.v1",
+  "recordId": "CPA-2026-08-29-EVR-PART11",
+  "status": "needs-review",
+  "auditSubject": {
+    "kind": "evidence-record",
+    "subjectRef": "EVR-2026-08-29-PART11-0110e",
+    "label": "Part 11 audit trail evidence batch"
+  },
+  "auditScope": [
+    {
+      "recordKind": "evidence-record",
+      "recordId": "EVR-2026-08-29-PART11-0110e",
+      "schemaVersion": "maras.evidence-record.v1"
+    }
+  ],
+  "findings": [
+    {
+      "findingId": "F001",
+      "category": "hash-or-locator-gap",
+      "severity": "gap",
+      "statement": "Evidence indicates corpus-based source locator without linked intake-record SHA-256 for a customer-controlled original file.",
+      "fieldPath": "provenance.sourceLocator",
+      "sourceRecordId": "EVR-2026-08-29-PART11-0110e",
+      "recommendation": "Register immutable original via regulatory-source-intake and link intakeRecordId."
+    },
+    {
+      "findingId": "F002",
+      "category": "stale-source",
+      "severity": "advisory",
+      "statement": "Effective date against live eCFR not verified in this batch; reviewerActionNeeded notes verification required.",
+      "fieldPath": "provenance.effectiveDate",
+      "sourceRecordId": "EVR-2026-08-29-PART11-0110e",
+      "recommendation": "RA confirm current Part 11 text against official register before reliance."
+    },
+    {
+      "findingId": "F003",
+      "category": "missing-citation",
+      "severity": "info",
+      "statement": "Claims include section locators; page numbers not recorded for URL-based eCFR source.",
+      "fieldPath": "claims[].excerptLocator.page",
+      "sourceRecordId": "EVR-2026-08-29-PART11-0110e",
+      "recommendation": "Add page or subsection locator when available from official source view."
+    }
+  ],
+  "overallResult": "minor-gaps",
+  "summary": {
+    "findingCount": 3,
+    "blockingCount": 0,
+    "gapCount": 1,
+    "advisoryCount": 1,
+    "infoCount": 1
+  },
+  "gaps": ["No paired intake-record in audit scope"],
+  "uncertainties": ["Whether eCFR URL reflects current effective text"],
+  "reviewerActionNeeded": ["QA review hash-or-locator-gap before using in client deliverables"],
+  "controls": {
+    "packageStatus": "DRAFT_NOT_CONTROLLED",
+    "auditSignedOff": false
+  },
+  "auditedAt": "2026-08-29T18:06:00Z"
+}
