@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.core.database import get_db
 from app.models.document import Document
@@ -20,7 +20,11 @@ def validate_ctd(
     if not body.document_ids:
         raise HTTPException(status_code=400, detail="At least one document_id is required")
 
-    docs = db.scalars(select(Document).where(Document.id.in_(body.document_ids))).all()
+    docs = db.scalars(
+        select(Document)
+        .options(joinedload(Document.pages), joinedload(Document.paragraphs))
+        .where(Document.id.in_(body.document_ids))
+    ).unique().all()
     if len(docs) != len(set(body.document_ids)):
         raise HTTPException(status_code=404, detail="One or more documents not found")
 

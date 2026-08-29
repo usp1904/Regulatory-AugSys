@@ -113,7 +113,7 @@ def validate_ctd_documents(
     frameworks: list[str],
     jurisdictions: list[str],
 ) -> dict:
-    house_blob = "\n".join(doc.text_excerpt or "" for doc in documents).lower()
+    house_blob = "\n".join(doc.full_extracted_text() for doc in documents).lower()
     scoped_refs = filter_regulatory_refs(frameworks, jurisdictions)
     mappings = []
     gaps: list[str] = []

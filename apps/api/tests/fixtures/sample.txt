@@ -1,0 +1,2 @@
+Controlled document fixture for ingestion tests.
+Contains specification and stability keywords for CTD mapping checks.

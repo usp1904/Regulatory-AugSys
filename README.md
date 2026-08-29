@@ -26,7 +26,7 @@ docker compose up --build
 | Web CTD/eCTD Engine | http://localhost:3000/ctd |
 | API (FastAPI `/health`) | http://localhost:8000/health |
 | API CTD sections | `GET /api/v1/ctd-sections` |
-| API document store | `POST /api/v1/documents`, `GET /api/v1/documents` |
+| API document store | `POST /api/v1/documents`, `GET /api/v1/documents`, `GET /api/v1/documents/{id}`, `GET /api/v1/documents/{id}/download` |
 | API CTD validation | `POST /api/v1/ctd-engine/validate` |
 | PostgreSQL | `localhost:5432` (user/db: `regulatory` / `regulatory_augsys`) |
 

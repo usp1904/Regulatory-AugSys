@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
 
 import { CtdSectionTree } from "@/components/ctd-section-tree";
 import { fetchCtdSections, type CtdSectionNode } from "@/lib/ctd-types";
@@ -10,6 +11,8 @@ type StoredDocument = {
   filename: string;
   file_hash: string;
   parse_status: string;
+  version: number;
+  uploader: string;
   text_excerpt: string | null;
 };
 
@@ -36,6 +39,7 @@ const apiBase = () => process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
 export function CtdEnginePanel() {
   const [frameworks, setFrameworks] = useState("FDA");
   const [jurisdictions, setJurisdictions] = useState("United States");
+  const [uploader, setUploader] = useState("internal.author");
   const [documents, setDocuments] = useState<StoredDocument[]>([]);
   const [tree, setTree] = useState<CtdSectionNode[] | null>(null);
   const [result, setResult] = useState<ValidationResult | null>(null);
@@ -54,12 +58,18 @@ export function CtdEnginePanel() {
     setDocuments(body.documents);
   }, []);
 
+  useEffect(() => {
+    void refreshDocuments();
+    void loadTree();
+  }, [loadTree, refreshDocuments]);
+
   async function handleUpload(file: File) {
     setBusy(true);
     setError(null);
     try {
       const form = new FormData();
       form.append("file", file);
+      form.append("uploader", uploader.trim() || "unknown");
       const res = await fetch(`${apiBase()}/api/v1/documents`, { method: "POST", body: form });
       if (!res.ok) throw new Error(`Upload failed (${res.status})`);
       await refreshDocuments();
@@ -118,13 +128,22 @@ export function CtdEnginePanel() {
             placeholder="United States, European Union"
           />
         </label>
+        <label className="space-y-1 text-sm sm:col-span-2">
+          <span className="font-medium">Uploader</span>
+          <input
+            className="w-full rounded-md border border-input bg-background px-3 py-2"
+            value={uploader}
+            onChange={(e) => setUploader(e.target.value)}
+            placeholder="records.manager"
+          />
+        </label>
       </div>
 
       <div className="space-y-2">
-        <label className="text-sm font-medium">In-house document upload</label>
+        <label className="text-sm font-medium">In-house document upload (PDF, DOCX, TXT)</label>
         <input
           type="file"
-          accept=".txt,.csv,.json"
+          accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
           disabled={busy}
           onChange={(e) => {
             const file = e.target.files?.[0];
@@ -132,10 +151,13 @@ export function CtdEnginePanel() {
           }}
         />
         {documents.length > 0 ? (
-          <ul className="text-sm text-muted-foreground">
+          <ul className="space-y-1 text-sm text-muted-foreground">
             {documents.map((d) => (
               <li key={d.id}>
-                {d.filename} — {d.parse_status}
+                <Link href={`/documents/${d.id}`} className="text-primary hover:underline">
+                  {d.filename}
+                </Link>{" "}
+                — v{d.version} · {d.parse_status} · {d.uploader}
                 {d.file_hash ? ` · ${d.file_hash.slice(0, 12)}…` : ""}
               </li>
             ))}

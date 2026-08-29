@@ -1,13 +1,22 @@
-"""In-house document API routes."""
+"""Controlled document API routes."""
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from pathlib import Path
+
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi.responses import FileResponse
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.core.database import get_db
 from app.models.document import Document
-from app.schemas.document import DocumentListResponse, DocumentResponse
-from app.services.document_storage import save_upload
+from app.schemas.document import (
+    DeletionRequestBody,
+    DocumentDetailResponse,
+    DocumentListResponse,
+    DocumentResponse,
+)
+from app.services.document_ingestion import ingest_controlled_document, request_document_deletion
+from app.services.document_storage import DocumentValidationError
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
@@ -21,33 +30,56 @@ def list_documents(db: Session = Depends(get_db)) -> DocumentListResponse:
 @router.post("", response_model=DocumentResponse, status_code=201)
 async def upload_document(
     file: UploadFile = File(...),
+    uploader: str = Form(default="unknown"),
     db: Session = Depends(get_db),
 ) -> Document:
     try:
-        filename, file_hash, storage_path, parse_status, _size = await save_upload(file)
-    except ValueError as exc:
-        raise HTTPException(status_code=413, detail=str(exc)) from exc
+        return await ingest_controlled_document(db, file, uploader=uploader.strip() or "unknown")
+    except DocumentValidationError as exc:
+        status = 413 if "maximum size" in str(exc).lower() else 415
+        raise HTTPException(status_code=status, detail=str(exc)) from exc
 
-    existing = db.scalar(select(Document).where(Document.file_hash == file_hash))
-    if existing:
-        return existing
 
-    from pathlib import Path
-
-    from app.services.document_storage import extract_text
-
-    data = Path(storage_path).read_bytes()
-    parse_status, excerpt = extract_text(filename, data)
-
-    doc = Document(
-        filename=filename,
-        content_type=file.content_type or "application/octet-stream",
-        file_hash=file_hash,
-        storage_path=storage_path,
-        parse_status=parse_status,
-        text_excerpt=excerpt or None,
+@router.get("/{document_id}", response_model=DocumentDetailResponse)
+def get_document(document_id: int, db: Session = Depends(get_db)) -> Document:
+    document = db.scalar(
+        select(Document)
+        .options(
+            joinedload(Document.pages),
+            joinedload(Document.paragraphs),
+            joinedload(Document.audit_events),
+        )
+        .where(Document.id == document_id)
     )
-    db.add(doc)
-    db.commit()
-    db.refresh(doc)
-    return doc
+    if document is None:
+        raise HTTPException(status_code=404, detail="Document not found")
+    return document
+
+
+@router.get("/{document_id}/download")
+def download_document(document_id: int, db: Session = Depends(get_db)) -> FileResponse:
+    document = db.get(Document, document_id)
+    if document is None:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    path = Path(document.storage_path)
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="Stored file missing on disk")
+
+    return FileResponse(
+        path=path,
+        filename=document.filename,
+        media_type=document.content_type,
+    )
+
+
+@router.post("/{document_id}/deletion-request", status_code=204)
+def deletion_request(
+    document_id: int,
+    body: DeletionRequestBody,
+    db: Session = Depends(get_db),
+) -> None:
+    document = db.get(Document, document_id)
+    if document is None:
+        raise HTTPException(status_code=404, detail="Document not found")
+    request_document_deletion(db, document, actor=body.actor, reason=body.reason)
