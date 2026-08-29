@@ -1,0 +1,162 @@
+{
+  "schemaVersion": "maras.validation-test-package.v1",
+  "recordId": "VTG-2026-08-29-LIMS-AUDIT-OQ",
+  "status": "needs-review",
+  "testPhase": "oq",
+  "systemUnderTest": {
+    "systemId": "LIMS-PROD-001",
+    "systemName": "GxP Laboratory LIMS",
+    "gampCategory": "4",
+    "environmentNotes": "Validated test environment referenced; configuration baseline not verified in this batch."
+  },
+  "testCases": [
+    {
+      "testId": "TC-OQ-001",
+      "title": "Audit trail records operator entry on GxP-critical change",
+      "objective": "Proposed positive test to verify audit trail captures operator identity and timestamp when a GxP-critical result is modified.",
+      "testType": "positive",
+      "preconditions": [
+        "Test analyst account exists with appropriate role",
+        "Audit trail enabled for target record type",
+        "Test environment available per validation plan"
+      ],
+      "steps": [
+        {
+          "stepNumber": 1,
+          "action": "Given an approved GxP-critical sample result, when the analyst modifies the result value, then save the record.",
+          "expectedObservation": "Audit trail entry records user id, timestamp, prior value, and new value."
+        },
+        {
+          "stepNumber": 2,
+          "action": "When a QA reviewer opens the audit trail report for the record, then filter by the modification event.",
+          "expectedObservation": "Report displays the modification event with readable operator and timestamp fields."
+        }
+      ],
+      "requirementRefs": [
+        "21 CFR Part 11 §11.10(e)",
+        "STORY-AUDIT-TRAIL-ANNEX11-001"
+      ],
+      "sourceEvidence": {
+        "citation": "§11.10(e)",
+        "verbatimExcerpt": "Use of secure, computer-generated, time-stamped audit trails to independently record the date and time of operator entries and actions.",
+        "evidenceClaimId": "C001",
+        "marasPbiId": "STORY-AUDIT-TRAIL-ANNEX11-001"
+      },
+      "reviewFlags": ["machine-generated", "environment-not-defined"]
+    },
+    {
+      "testId": "TC-OQ-002",
+      "title": "Unauthorized user cannot modify GxP-critical record without audit entry",
+      "objective": "Proposed negative test to verify access control prevents unauthorized modification.",
+      "testType": "negative",
+      "preconditions": [
+        "Unauthorized test account exists without modify privilege",
+        "Target GxP-critical record exists"
+      ],
+      "steps": [
+        {
+          "stepNumber": 1,
+          "action": "Given an unauthorized user session, when the user attempts to modify a GxP-critical record, then submit the change.",
+          "expectedObservation": "System denies the modification and does not create a successful change audit entry for the unauthorized user."
+        }
+      ],
+      "requirementRefs": [
+        "21 CFR Part 11 §11.10(d)",
+        "STORY-AUDIT-TRAIL-ANNEX11-001"
+      ],
+      "sourceEvidence": {
+        "citation": "§11.10(d)",
+        "verbatimExcerpt": "Limiting system access to authorized individuals.",
+        "evidenceClaimId": null,
+        "marasPbiId": "STORY-AUDIT-TRAIL-ANNEX11-001"
+      },
+      "reviewFlags": ["machine-generated", "dual-signoff-required"]
+    },
+    {
+      "testId": "TC-OQ-003",
+      "title": "Audit trail review cadence documented",
+      "objective": "Proposed test to confirm periodic audit-trail review workflow is executable per SOP draft.",
+      "testType": "positive",
+      "preconditions": ["SOP-CSV-AUDIT-REVIEW-004 draft available for test script alignment"],
+      "steps": [
+        {
+          "stepNumber": 1,
+          "action": "Given audit-trail entries spanning the review period, when QA performs the documented review procedure, then record the review outcome.",
+          "expectedObservation": "Review record shows reviewer identity, date, and scope of records reviewed."
+        }
+      ],
+      "requirementRefs": [
+        "EU GMP Annex 11 Cl.10",
+        "SOP-CSV-AUDIT-REVIEW-004"
+      ],
+      "sourceEvidence": {
+        "citation": "Annex 11 Cl.10",
+        "verbatimExcerpt": "Relevant changes to GxP critical data should be recorded and traceable to the person who made the change.",
+        "evidenceClaimId": null,
+        "marasPbiId": null
+      },
+      "reviewFlags": ["needs-sme-review", "regulatory-citation-required"]
+    }
+  ],
+  "traceability": [
+    {
+      "requirementRef": "21 CFR Part 11 §11.10(e)",
+      "linkedTestIds": ["TC-OQ-001"],
+      "coverageStatus": "proposed",
+      "notes": "Positive audit-trail capture test drafted."
+    },
+    {
+      "requirementRef": "21 CFR Part 11 §11.10(d)",
+      "linkedTestIds": ["TC-OQ-002"],
+      "coverageStatus": "proposed",
+      "notes": "Negative access-control test drafted."
+    },
+    {
+      "requirementRef": "EU GMP Annex 11 Cl.10",
+      "linkedTestIds": ["TC-OQ-003"],
+      "coverageStatus": "needs-review",
+      "notes": "Review frequency wording still under SOP revision."
+    },
+    {
+      "requirementRef": "Performance under routine load (PQ)",
+      "linkedTestIds": [],
+      "coverageStatus": "gap",
+      "notes": "No PQ tests in this OQ batch."
+    }
+  ],
+  "environmentRequirements": [
+    "Dedicated validation LIMS instance with audit trail enabled",
+    "Test user accounts for analyst, QA reviewer, and unauthorized roles",
+    "System clock synchronized to traceable time source"
+  ],
+  "upstreamRefs": {
+    "authoringRecordId": "AUT-2026-08-29-SOP-AUDIT-REVIEW",
+    "evidenceRecordId": "EVR-2026-08-29-PART11-0110e",
+    "changeImpactRecordId": "RCI-2026-08-29-ANNEX11-AUDIT",
+    "marasPbiIds": ["STORY-AUDIT-TRAIL-ANNEX11-001"]
+  },
+  "summary": {
+    "testCaseCount": 3,
+    "positiveCount": 2,
+    "negativeCount": 1,
+    "requirementsCovered": 3,
+    "requirementsGapped": 1
+  },
+  "gaps": [
+    "PQ performance tests not included in this OQ package",
+    "Test environment configuration baseline not documented"
+  ],
+  "uncertainties": [
+    "Whether review cadence in TC-OQ-003 matches final SOP revision"
+  ],
+  "reviewerActionNeeded": [
+    "QA approve test steps and environmentRequirements before execution",
+    "CSV lead confirm GAMP category and phase scope"
+  ],
+  "controls": {
+    "packageStatus": "DRAFT_NOT_CONTROLLED",
+    "executed": false,
+    "passed": false
+  },
+  "generatedAt": "2026-08-29T18:09:00Z"
+}
