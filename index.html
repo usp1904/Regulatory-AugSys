@@ -2968,11 +2968,80 @@ function needsBilingual() {
 }
 
 /* ════════════════════════════════════════════════════════════════════
+   LIVE HARNESS — CRS token profile (Caveman + RTK + Supermemory)
+   Graph: Scope → Intake → Govern → Decompose → QC → Evidence
+   Supermemory: rankChunks + H.ctx snapshot; no duplicate full ctx per agent.
+   ════════════════════════════════════════════════════════════════════ */
+const LIVE_HARNESS_CONFIG = {
+  default: {
+    compact: false,
+    omitContextInSystemPrompt: false,
+    scopedSourceChunks: 0,
+    maxTokens: { intake: 2000, govern: 2000, decomp: 2000, backlog: 1500, board: 1500, analytics: 1500, review: 1500, retro: 2000 },
+    prevOutputLimit: 600
+  },
+  deepseek: {
+    compact: true,
+    omitContextInSystemPrompt: true,
+    scopedSourceChunks: 6,
+    maxTokens: { intake: 1200, govern: 1000, decomp: 1800, backlog: 800, board: 800, analytics: 800, review: 1000, retro: 1200 },
+    prevOutputLimit: { intake: 0, govern: 400, decomp: 500, backlog: 300, board: 300, analytics: 300, review: 400, retro: 500 }
+  },
+  glm: {
+    compact: true,
+    omitContextInSystemPrompt: true,
+    scopedSourceChunks: 5,
+    maxTokens: { intake: 1200, govern: 1000, decomp: 1600, backlog: 800, board: 800, analytics: 800, review: 1000, retro: 1200 },
+    prevOutputLimit: { intake: 0, govern: 350, decomp: 450, backlog: 280, board: 280, analytics: 280, review: 350, retro: 450 }
+  }
+};
+function getLiveHarnessProfile(modelId) {
+  const base = LIVE_HARNESS_CONFIG.default;
+  const override = LIVE_HARNESS_CONFIG[modelId] || {};
+  return {
+    ...base,
+    ...override,
+    maxTokens: { ...base.maxTokens, ...(override.maxTokens || {}) }
+  };
+}
+function getPrevOutputLimit(profile, stepId) {
+  const lim = profile?.prevOutputLimit;
+  if (typeof lim === 'number') return lim;
+  if (lim && typeof lim === 'object') return lim[stepId] ?? 400;
+  return 600;
+}
+function buildHarnessContextLine(ctxObj) {
+  if (!ctxObj) return '';
+  const parts = [
+    ctxObj.req ? `Req: ${String(ctxObj.req).slice(0, 280)}` : '',
+    ctxObj.sys ? `Sys: ${ctxObj.sys}` : '',
+    ctxObj.fw ? `FW: ${ctxObj.fw}` : '',
+    (ctxObj.jurisdiction || ctxObj.clientRegion) ? `Market: ${ctxObj.jurisdiction || ctxObj.clientRegion}` : '',
+    ctxObj.outcome ? `Outcome: ${String(ctxObj.outcome).slice(0, 120)}` : '',
+    ctxObj.clientDelta ? `Delta: ${String(ctxObj.clientDelta).slice(0, 80)}` : '',
+    ctxObj.auditGap ? `Gap: ${String(ctxObj.auditGap).slice(0, 80)}` : '',
+    ctxObj.pfx ? `Prefix: ${ctxObj.pfx}` : ''
+  ].filter(Boolean);
+  return parts.join(' · ');
+}
+function buildScopedSourceSummary(req, limit) {
+  const n = limit || 0;
+  if (!n) return '';
+  const ranked = rankChunks(req);
+  const top = ranked.slice(0, n);
+  if (!top.length) return '';
+  return 'Ranked regulatory sources (scope/QC — cite only these, do not invent):\n' +
+    top.map(c => `- ${c.reg} ${c.sec}: ${c.title} (score ${c._qc?.relevanceScore ?? 0})`).join('\n');
+}
+
+/* ════════════════════════════════════════════════════════════════════
    AGENT SYSTEM PROMPTS
    Each prompt enforces the agent's role, output schema, and guardrails.
    Harness calls these — never passed to end user.
    ════════════════════════════════════════════════════════════════════ */
-function buildPrompts(ctx, req) {
+function buildPrompts(ctx, req, profile) {
+  const prof = profile || getLiveHarnessProfile('default');
+  const ctxBlock = prof.omitContextInSystemPrompt ? '' : `CONTEXT: ${ctx}\n`;
   const bil = needsBilingual();
   const bilNote = bil.japanese
     ? 'Generate business PBI titles and text in BOTH English AND Japanese (日本語). English first, then Japanese.'
@@ -2987,8 +3056,7 @@ function buildPrompts(ctx, req) {
     /* ── Loop 1, Step A: Regulatory Intake ── */
     intake: `You are the Regulatory Intake Agent in MARAS.
 ROLE: Parse, classify, and validate regulatory requirements from the user's input.
-CONTEXT: ${ctx}
-GUARDRAILS:
+${ctxBlock}GUARDRAILS:
   · Never infer or hallucinate requirements — flag ambiguous items, never guess
   · Every requirement must trace to a real regulatory source
   · Flag INCOMPLETE items rather than inventing intent
@@ -3006,8 +3074,7 @@ OUTPUT (strict JSON in a \`\`\`json\`\`\` block):
     /* ── Loop 1, Step B: Agile Governance (interpretation + FMEA) ── */
     governance: `You are the Agile Governance Agent in MARAS.
 ROLE: Score regulatory interpretation alignment (0-100) and run FMEA risk assessment.
-CONTEXT: ${ctx}
-GUARDRAILS:
+${ctxBlock}GUARDRAILS:
   · Alignment score < 60 = ESCALATE (flag, do not block pipeline for this demo)
   · RPN > 200 (Severity × Occurrence × Detection) = CRITICAL risk
   · Grey areas must be flagged — never autonomously resolved
@@ -3019,7 +3086,17 @@ OUTPUT (strict JSON in \`\`\`json\`\`\` block):
 }`,
 
     /* ── Loop 2, Step A: Agile Decomposition ── */
-    decomposition: `You are the Business Assurance Decomposition Agent in MARAS.
+    decomposition: prof.compact
+      ? `You are the Business Assurance Decomposition Agent in MARAS.
+ROLE: Decompose Regulatory Objects into traceable business PBIs with BOI/ACCEPT/INVEST/3C where applicable.
+${ctxBlock}STORY PREFIX: ${autoPrefix()}
+${bilNote}
+GUARDRAILS:
+  · PBIs only from explicit regulatory/source requirements — no filler
+  · Every PBI: req_id + regulatory source traceability; INVEST pass; effort ESTIMATION_PENDING
+OUTPUT (strict JSON in \`\`\`json\`\`\` block):
+[{"id":"${autoPrefix()}-001","num":1,"title":"...","type":"business-control|compliance-control|integration-control|evidence-enabler","frameworks_applied":["BOI","ACCEPT","INVEST","3C"],"regulation":"21 CFR Part 11","section":"§11.10(e)","regRef":"REQ-001 · 21 CFR Part 11 §11.10(e)","epic":"...","boi":{"business_area":"...","outcome":"...","impact":"..."},"story":"For [business process/system], the business must [control/action] so that [measurable regulatory or operational outcome].","invest":{"independent":"yes|no","negotiable":"yes","valuable":"...","estimable":"yes","small":"yes","testable":"yes"},"ac":["Given [...] When [...] Then [...]"],"accept":{"action":"...","criteria":["..."],"expected":"...","pass_fail":"...","traceable":"REQ-001 · 21 CFR Part 11 §11.10(e)"},"constraints":{"security":"...","performance":"...","permissions":"..."},"gamp":"Cat.4 — Configured Software","phase":"Evidence Stage: Operational Qualification","labels":["audit-trail","cfr-11"]}]`
+      : `You are the Business Assurance Decomposition Agent in MARAS.
 ROLE: Decompose Regulatory Objects into business-specific PBIs, controls, test obligations and evidence needs.
 FRAMEWORKS (apply selectively by PBI type — harness rule, never ignore):
   Business control PBIs  → BOI + ACCEPT + INVEST + 3C
@@ -3030,8 +3107,7 @@ BOI  = Business Outcome–Impact (business capability, operating risk reduced, m
 ACCEPT = Action–Criteria–Expected–Pass/Fail–Traceable (compliance "done" definition)
 INVEST = Independent·Negotiable·Valuable·Estimable·Small·Testable (DoR gate)
 3C = Card·Conversation·Confirmation (Given/When/Then acceptance criteria)
-CONTEXT: ${ctx}
-STORY PREFIX: ${autoPrefix()}
+${ctxBlock}STORY PREFIX: ${autoPrefix()}
 ${bilNote}
 GUARDRAILS:
   · Generate detailed PBIs only from explicit regulatory/source requirements; never invent filler items
@@ -3072,8 +3148,7 @@ OUTPUT (strict JSON in \`\`\`json\`\`\` block):
     /* ── Loop 2, Step C: Board Recommendation ── */
     board: `You are the Evidence Workflow Recommendation Agent in MARAS.
 ROLE: Recommend a control-to-evidence workflow grounded in regulatory compliance requirements.
-CONTEXT: ${ctx}
-OUTPUT (JSON in \`\`\`json\`\`\` block):
+${ctxBlock}OUTPUT (JSON in \`\`\`json\`\`\` block):
 {
   "columns":["Source Validated","Control Defined","PBI Ready","Evidence Needed","QA Review","Business Approved"],
   "swimlanes":[{"name":"audit-trail","pbis":["${autoPrefix()}-001"]}],
@@ -3085,8 +3160,7 @@ OUTPUT (JSON in \`\`\`json\`\`\` block):
     /* ── Loop 3, Step A: Assurance Analytics ── */
     analytics: `You are the Business Assurance Analytics Agent in MARAS.
 ROLE: Generate productivity impact, P0 coverage, compliance domain analysis, and risk trend.
-CONTEXT: ${ctx}
-OUTPUT (JSON in \`\`\`json\`\`\` block):
+${ctxBlock}OUTPUT (JSON in \`\`\`json\`\`\` block):
 {
   "productivity":{"effort_baseline":N,"notes":"Baseline package — effort estimate remains pending team confirmation"},
   "p0_completion_rate":N,
@@ -3644,8 +3718,10 @@ function tick() { return new Promise(r => setTimeout(r, 0)); }
 /* ─── LIVE ORCHESTRATOR ─────────────────────────────────────────── */
 async function orchestratorLive(req, ctx) {
   const m = MODELS.find(x => x.id === selModel);
-  const prompts = buildPrompts(ctx, req);
-  const pfx = autoPrefix();
+  const profile = getLiveHarnessProfile(m?.id || 'default');
+  const prompts = buildPrompts(ctx, req, profile);
+  const scopedSources = buildScopedSourceSummary(req, profile.scopedSourceChunks);
+  const tokenKey = { intake:'intake', govern:'govern', decomp:'decomp', backlog:'backlog', board:'board', analytics:'analytics', review:'review', retro:'retro' };
   let prevOutput = '';
 
   async function runAgent(stepId, promptKey, userMsg) {
@@ -3653,10 +3729,18 @@ async function orchestratorLive(req, ctx) {
     setStep(stepId,'run');
     setStatus('run', PIPELINE_STEPS.find(s=>s.id===stepId)?.name+'…');
     try {
-      // Harness passes pre-snapshotted context — agents never re-read DOM
-      const hCtx = `Requirement: ${H.ctx.req}\nSystem: ${H.ctx.sys}\nFramework: ${H.ctx.fw}\nBusiness outcome: ${H.ctx.outcome||'Not specified'}\nClient operating region: ${H.ctx.clientRegion||'Not specified'}\nClient process delta: ${H.ctx.clientDelta||'Not specified'}\nPast backlog/audit gap: ${H.ctx.auditGap||'Not specified'}\nPrefix: ${H.ctx.pfx}\nFull context: ${H.ctx.ctx}`;
-      const txt = await callLLM(m, prompts[promptKey],
-        `${hCtx}${prevOutput?'\n\nPrevious agent output:\n'+prevOutput.slice(0,600):''}${userMsg?'\n\n'+userMsg:''}`);
+      const hLine = buildHarnessContextLine(H.ctx);
+      const prevLim = getPrevOutputLimit(profile, stepId);
+      const prevSlice = prevOutput && prevLim > 0 ? prevOutput.slice(0, prevLim) : '';
+      const scopedBlock = (stepId === 'decomp' && scopedSources) ? '\n\n'+scopedSources : '';
+      const userPayload = [
+        hLine,
+        prevSlice ? 'Previous agent output:\n'+prevSlice : '',
+        userMsg || '',
+        scopedBlock
+      ].filter(Boolean).join('\n\n');
+      const maxTok = profile.maxTokens[tokenKey[stepId] || promptKey] || 2000;
+      const txt = await callLLM(m, prompts[promptKey], userPayload, maxTok);
       setStep(stepId,'done',txt);
       prevOutput = txt;
       return txt;
@@ -3719,26 +3803,28 @@ async function orchestratorLive(req, ctx) {
 }
 
 /* ─── LLM CALLER ────────────────────────────────────────────────── */
-async function callLLM(m, sys, userMsg) {
+async function callLLM(m, sys, userMsg, maxTokens = 2000) {
+  const model = m.model || 'gpt-4o';
+  const url = m.url || '';
   if (m.id==='claude') {
-    const r = await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
+    const r = await fetch(url || 'https://api.anthropic.com/v1/messages',{method:'POST',
       headers:{'Content-Type':'application/json','x-api-key':apiKeys[m.id],
                'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:2000,system:sys,messages:[{role:'user',content:userMsg}]})});
+      body:JSON.stringify({model,max_tokens:maxTokens,system:sys,messages:[{role:'user',content:userMsg}]})});
     const d=await r.json(); if(d.error)throw new Error(d.error.message);
     return d.content?.map(b=>b.text||'').join('')||'';
   } else if (m.id==='gemini') {
-    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${apiKeys[m.id]}`,
+    const gemUrl = url || 'https://generativelanguage.googleapis.com';
+    const r = await fetch(`${gemUrl}/v1beta/models/${model}:generateContent?key=${apiKeys[m.id]}`,
       {method:'POST',headers:{'Content-Type':'application/json'},
        body:JSON.stringify({contents:[{parts:[{text:sys+'\n\n'+userMsg}]}]})});
     const d=await r.json(); if(d.error)throw new Error(d.error.message);
     return d.candidates?.[0]?.content?.parts?.[0]?.text||'';
   } else {
-    const URLS={openai:'https://api.openai.com/v1/chat/completions',deepseek:'https://api.deepseek.com/v1/chat/completions',glm:'https://open.bigmodel.cn/api/paas/v4/chat/completions'};
-    const MODS={openai:'gpt-4o',deepseek:'deepseek-chat',glm:'glm-4'};
-    const r = await fetch(URLS[m.id],{method:'POST',
+    const chatUrl = url || 'https://api.openai.com/v1/chat/completions';
+    const r = await fetch(chatUrl,{method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKeys[m.id]},
-      body:JSON.stringify({model:MODS[m.id],max_tokens:2000,messages:[{role:'system',content:sys},{role:'user',content:userMsg}]})});
+      body:JSON.stringify({model,max_tokens:maxTokens,messages:[{role:'system',content:sys},{role:'user',content:userMsg}]})});
     const d=await r.json(); if(d.error)throw new Error(d.error.message||JSON.stringify(d.error));
     return d.choices?.[0]?.message?.content||'';
   }
