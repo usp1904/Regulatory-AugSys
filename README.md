@@ -85,7 +85,7 @@ export NEXT_PUBLIC_API_URL=http://localhost:8000
 npm run dev
 ```
 
-Open http://localhost:3000 — the health page shows web status and polls the API. Evidence review UI: `/evidence/review/{id}` (side-by-side source text and review form). Capture evidence from `/documents/{id}`.
+Open http://localhost:3000 — the health page shows web status and polls the API. Evidence review UI: `/evidence/review/{id}` (side-by-side source text and review form). Capture evidence from `/documents/{id}`. Dossier export: `/dossiers`.
 
 ```bash
 npm run typecheck
