@@ -465,6 +465,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .assurance-note{font-size:11px;color:var(--ink3);line-height:1.5;background:var(--amber-t);border:1px solid rgba(146,64,14,.18);border-radius:var(--r);padding:10px;margin-top:10px}
 .compare-view{display:none;padding:16px 20px 48px;max-width:1180px;margin:0 auto;width:100%}
 .readiness-view{display:none;padding:16px 20px 48px;max-width:1180px;margin:0 auto;width:100%}
+.ctd-view{display:none;padding:16px 20px 48px;max-width:1180px;margin:0 auto;width:100%}
 .rd-gap-row{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--r);margin-bottom:6px;background:#fff}
 .rd-gap-row.warn{border-color:rgba(146,64,14,.35);background:var(--amber-t)}
 .rd-gap-row.fail{border-color:rgba(220,38,38,.35);background:var(--red-t)}
@@ -533,6 +534,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
     <button class="nav-tab" id="ntab-assurance" onclick="goTab('assurance',this)">Assurance</button>
     <button class="nav-tab" id="ntab-compare" onclick="goTab('compare',this)">Global Compare</button>
     <button class="nav-tab" id="ntab-readiness" onclick="goTab('readiness',this)">Readiness</button>
+    <button class="nav-tab" id="ntab-ctd" onclick="goTab('ctd',this)">CTD/eCTD Engine</button>
     <button class="nav-tab" id="ntab-saved" onclick="goTab('saved',this)">Saved Packages</button>
   </div>
   <div class="nav-right">
@@ -1029,6 +1031,49 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
   </div>
 </div>
 
+<!-- CTD / eCTD ENGINE — in-house documents · scoped regulatory validation · Module 3.2.S mapping -->
+<div id="view-ctd" class="ctd-view">
+  <div class="assurance-hero">
+    <div class="assurance-kicker">CMC dossier readiness</div>
+    <div class="assurance-title">CTD / eCTD Engine — Module 3.2.S Drug Substance</div>
+    <div class="assurance-sub">Store in-house controlled documents, validate coverage against regulatory sources scoped by your <b>Regulatory Framework</b> and <b>Jurisdiction</b> filters (Project Context). Outputs are draft mapping suggestions — not eCTD-validated, not submission-ready.</div>
+    <div class="cmp-graph">In-house docs → <b>3.2.S taxonomy</b> → Framework / jurisdiction-scoped regulatory corpus → Gap report</div>
+    <div class="assurance-actions">
+      <button class="assurance-btn" onclick="runCtdEngineValidation()">Run validation</button>
+      <button class="assurance-btn secondary" onclick="dlCtdMappingJson()">Download mapping JSON</button>
+      <button class="assurance-btn secondary" onclick="dlCtdGapsCsv()">Download gaps CSV</button>
+    </div>
+    <div class="metric-row" id="ctd-engine-metrics"></div>
+  </div>
+  <div class="assurance-section">
+    <div class="assurance-section-h">
+      <div class="assurance-section-t">1. Active scope (from Project Context)</div>
+      <div class="assurance-section-s">Regulatory Framework and Jurisdiction filters drive which library sources validate your in-house documents</div>
+    </div>
+    <div class="assurance-body"><div id="ctd-scope-summary" class="assurance-note"></div></div>
+  </div>
+  <div class="assurance-section">
+    <div class="assurance-section-h">
+      <div class="assurance-section-t">2. In-house document store</div>
+      <div class="assurance-section-s">Internal controlled drafts (SOPs, reports, specs) — SHA-256 hashed, session-persisted</div>
+    </div>
+    <div class="assurance-body">
+      <div class="save-bar" style="margin-bottom:10px">
+        <input type="file" id="ctd-house-input" multiple accept=".pdf,.docx,.doc,.xlsx,.xls,.txt,.csv,.json" onchange="handleCtdHouseDocs(this.files)" aria-label="Upload in-house documents for CTD mapping">
+        <span class="save-bar-note">TXT/CSV/JSON parsed in-browser. PDF/DOCX held for SME review. Max 12 documents.</span>
+      </div>
+      <div id="ctd-house-docs"></div>
+    </div>
+  </div>
+  <div class="assurance-section">
+    <div class="assurance-section-h">
+      <div class="assurance-section-t">3. Module 3.2.S taxonomy &amp; validation outcome</div>
+      <div class="assurance-section-s">Section coverage vs scoped regulatory references — gaps flagged for RA / CMC review</div>
+    </div>
+    <div class="assurance-body"><div id="ctd-validation-grid"></div></div>
+  </div>
+</div>
+
 </div><!-- rpanel -->
 </div><!-- layout -->
 
@@ -1470,10 +1515,11 @@ const compareMarketSel=new Set(['US','EU','UK','INT','HIPAA','GDPR']);
 let demoMode=true,selItems=new Set(),selCatsSet=new Set(),selDomain='',selApp='';
 let selFrameworks=new Set(['FDA']);
 let selJurisdictions=new Set(['United States']);
-let selModel='claude',apiKeys={},sbDocs=[],reqFiles=[],allStories=[],running=false;
+let selModel='claude',apiKeys={},sbDocs=[],reqFiles=[],ctdHouseDocs=[],ctdEngineResult=null,allStories=[],running=false;
 const INGESTED_SOURCE_META={};
 const INGEST_MAX_BYTES=2*1024*1024;
 const INGEST_MAX_SOURCES=8;
+const CTD_HOUSE_MAX=12;
 const INGEST_MAX_REQS=4;
 
 /* ─── INIT ──────────────────────────────────────────────────────── */
@@ -1749,6 +1795,7 @@ function toggleJurisdiction(name){
   }
   renderJurisdictionChips();
   syncJurisdictionField();
+  if(document.getElementById('view-ctd')?.style.display==='block') buildCtdEngineView();
 }
 function syncMainApiKey(){
   const v=document.getElementById('main-key-inp')?.value||'';
@@ -1874,6 +1921,7 @@ function toggleChip(el,type){
 }
 function onHealthcareScopeChange(){
   refreshCompareView(document.getElementById('view-compare')?.style.display==='block');
+  if(document.getElementById('view-ctd')?.style.display==='block') buildCtdEngineView();
 }
 function applySelectedFrameworks(opts){
   const resetJur=opts&&opts.resetJurisdictions;
@@ -1897,6 +1945,7 @@ function applySelectedFrameworks(opts){
   if(jurUnion.size) selJurisdictions=jurUnion;
   buildFrameworkChips();
   renderJurisdictionChips();
+  if(document.getElementById('view-ctd')?.style.display==='block') buildCtdEngineView();
 }
 function applyFramework(fw){
   selFrameworks=new Set([fw]);
@@ -2023,7 +2072,7 @@ function restoreSessionKeys(){
 
 /* ─── TABS ──────────────────────────────────────────────────────── */
 function goTab(t,btn){
-  ['gen','results','saved','assurance','compare','readiness'].forEach(id=>{
+  ['gen','results','saved','assurance','compare','readiness','ctd'].forEach(id=>{
     const target=document.getElementById('view-'+id);
     if(target) target.style.display=id===t?'block':'none';
   });
@@ -2031,6 +2080,7 @@ function goTab(t,btn){
   btn.classList.add('on');
   if(t==='compare') refreshCompareView(true);
   if(t==='readiness') buildReadinessView();
+  if(t==='ctd') buildCtdEngineView();
 }
 
 /* ─── FILE UPLOAD ────────────────────────────────────────────────── */
@@ -2208,7 +2258,8 @@ function persistIngestMemory(){
   try{
     const slim={
       sbDocs:sbDocs.map(d=>({ name:d.name, size:d.size, ext:d.ext, fileHash:d.fileHash, parseStatus:d.parseStatus, gate:d.gate, chunk:d.chunk, sourceKey:d.sourceKey, meta:d.meta, text:(d.text||'').slice(0,4000) })),
-      reqFiles:reqFiles.map(d=>({ name:d.name, size:d.size, ext:d.ext, fileHash:d.fileHash, parseStatus:d.parseStatus, gate:d.gate, text:(d.text||'').slice(0,4000) }))
+      reqFiles:reqFiles.map(d=>({ name:d.name, size:d.size, ext:d.ext, fileHash:d.fileHash, parseStatus:d.parseStatus, gate:d.gate, text:(d.text||'').slice(0,4000) })),
+      ctdHouseDocs:ctdHouseDocs.map(d=>({ name:d.name, size:d.size, ext:d.ext, fileHash:d.fileHash, parseStatus:d.parseStatus, text:(d.text||'').slice(0,8000), uploadedAt:d.uploadedAt }))
     };
     sessionStorage.setItem('maras_ingest_v641', JSON.stringify(slim));
   }catch(_){}
@@ -2220,9 +2271,11 @@ function restoreIngestMemory(){
     const slim=JSON.parse(raw);
     sbDocs=Array.isArray(slim.sbDocs)?slim.sbDocs:[];
     reqFiles=Array.isArray(slim.reqFiles)?slim.reqFiles:[];
+    ctdHouseDocs=Array.isArray(slim.ctdHouseDocs)?slim.ctdHouseDocs:[];
     sbDocs.forEach(d=>{ if(d.sourceKey && d.meta) INGESTED_SOURCE_META[d.sourceKey]=d.meta; });
     renderSBDocs();
     renderReqFiles();
+    renderCtdHouseDocs();
   }catch(_){}
 }
 
@@ -4403,7 +4456,8 @@ const MVP_VALIDATION_ROWS=[
   {id:'MVP-12',label:'Exports draft-watermarked',check:()=>true},
   {id:'MVP-16',label:'Global Compare tab',check:()=>document.getElementById('view-compare')},
   {id:'MVP-17',label:'SOP & policy mapper',check:()=>document.getElementById('sop-mapper-grid')},
-  {id:'MVP-18',label:'Inspection readiness assistant',check:()=>document.getElementById('inspection-pack-grid')}
+  {id:'MVP-18',label:'Inspection readiness assistant',check:()=>document.getElementById('inspection-pack-grid')},
+  {id:'MVP-22',label:'CTD/eCTD Engine tab',check:()=>document.getElementById('view-ctd')&&typeof buildCtdEngineValidation==='function'}
 ];
 function sopLibraryAnchorText(){
   if(!selItems.size) return '';
@@ -4697,6 +4751,271 @@ function dlReadinessGapsCsv(){
 function dlInspectionPackJson(){
   const b=new Blob([JSON.stringify(buildReadinessSnapshot().insp,null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='DRAFT-MARAS-Mock-Inspection-Pack.json';a.click();URL.revokeObjectURL(a.href);
+}
+
+/* CTD / eCTD ENGINE — Module 3.2.S in-house document validation */
+const CTD_MODULE_32S=[
+  {code:'3.2.S',title:'Drug Substance',parent:'',sort:1},
+  {code:'3.2.S.1',title:'General Information',parent:'3.2.S',sort:1},
+  {code:'3.2.S.1.1',title:'Nomenclature',parent:'3.2.S.1',sort:1},
+  {code:'3.2.S.1.2',title:'Structure',parent:'3.2.S.1',sort:2},
+  {code:'3.2.S.1.3',title:'General Properties',parent:'3.2.S.1',sort:3},
+  {code:'3.2.S.2',title:'Manufacture',parent:'3.2.S',sort:2},
+  {code:'3.2.S.2.1',title:'Manufacturer(s)',parent:'3.2.S.2',sort:1},
+  {code:'3.2.S.2.2',title:'Description of Manufacturing Process and Process Controls',parent:'3.2.S.2',sort:2},
+  {code:'3.2.S.2.3',title:'Control of Materials',parent:'3.2.S.2',sort:3},
+  {code:'3.2.S.2.4',title:'Controls of Critical Steps and Intermediates',parent:'3.2.S.2',sort:4},
+  {code:'3.2.S.2.5',title:'Process Validation and/or Evaluation',parent:'3.2.S.2',sort:5},
+  {code:'3.2.S.2.6',title:'Manufacturing Process Development',parent:'3.2.S.2',sort:6},
+  {code:'3.2.S.3',title:'Characterisation',parent:'3.2.S',sort:3},
+  {code:'3.2.S.3.1',title:'Elucidation of Structure and Other Characteristics',parent:'3.2.S.3',sort:1},
+  {code:'3.2.S.3.2',title:'Impurities',parent:'3.2.S.3',sort:2},
+  {code:'3.2.S.4',title:'Control of Drug Substance',parent:'3.2.S',sort:4},
+  {code:'3.2.S.4.1',title:'Specification',parent:'3.2.S.4',sort:1},
+  {code:'3.2.S.4.2',title:'Analytical Procedures',parent:'3.2.S.4',sort:2},
+  {code:'3.2.S.4.3',title:'Validation of Analytical Procedures',parent:'3.2.S.4',sort:3},
+  {code:'3.2.S.4.4',title:'Batch Analyses',parent:'3.2.S.4',sort:4},
+  {code:'3.2.S.4.5',title:'Justification of Specification',parent:'3.2.S.4',sort:5},
+  {code:'3.2.S.5',title:'Reference Standards or Materials',parent:'3.2.S',sort:5},
+  {code:'3.2.S.6',title:'Container Closure System',parent:'3.2.S',sort:6},
+  {code:'3.2.S.7',title:'Stability',parent:'3.2.S',sort:7},
+  {code:'3.2.S.7.1',title:'Stability Summary and Conclusions',parent:'3.2.S.7',sort:1},
+  {code:'3.2.S.7.2',title:'Post-approval Stability Protocol and Stability Commitment',parent:'3.2.S.7',sort:2},
+  {code:'3.2.S.7.3',title:'Stability Data',parent:'3.2.S.7',sort:3}
+];
+const CTD_SECTION_SIGNALS={
+  '3.2.S.1.1':['nomenclature','inn','cas','chemical name','generic name'],
+  '3.2.S.1.2':['structure','stereochemistry','conformation','molecular formula'],
+  '3.2.S.1.3':['general propert','physicochemical','solubility','polymorph'],
+  '3.2.S.2.1':['manufacturer','manufacturing site','facility','gmp site'],
+  '3.2.S.2.2':['manufacturing process','process control','flow diagram','synthesis'],
+  '3.2.S.2.3':['control of material','raw material','starting material','reagent'],
+  '3.2.S.2.4':['critical step','intermediate','in-process','ipc'],
+  '3.2.S.2.5':['process validation','ppq','process performance'],
+  '3.2.S.2.6':['process development','design space','qbd'],
+  '3.2.S.3.1':['elucidation','characterisation','spectroscop','nmr','ir'],
+  '3.2.S.3.2':['impurit','degradant','genotoxic','residual solvent'],
+  '3.2.S.4.1':['specification','acceptance criterion','limit test'],
+  '3.2.S.4.2':['analytical procedure','hplc','assay method','test method'],
+  '3.2.S.4.3':['method validation','ich q2','linearity','accuracy','precision'],
+  '3.2.S.4.4':['batch analys','batch result','coa','release data'],
+  '3.2.S.4.5':['justification of specification','spec rationale'],
+  '3.2.S.5':['reference standard','reference material','working standard'],
+  '3.2.S.6':['container closure','packaging','primary container'],
+  '3.2.S.7.1':['stability summary','shelf life','storage condition'],
+  '3.2.S.7.2':['stability protocol','stability commitment','post-approval'],
+  '3.2.S.7.3':['stability data','stability study','accelerated','long-term']
+};
+function ctdSectionSignals(code,title){
+  const custom=CTD_SECTION_SIGNALS[code];
+  if(custom) return custom;
+  return String(title||'').toLowerCase().replace(/[^a-z0-9\s]/g,' ').split(/\s+/).filter(w=>w.length>3);
+}
+function ctdRegionFromScope(jurs){
+  const list=[...jurs];
+  if(!list.length||list.includes('Multi-Regional')) return 'multi-regional';
+  if(list.includes('United States')) return 'US-FDA';
+  if(list.includes('European Union')) return 'EU-EMA';
+  if(list.includes('United Kingdom')) return 'UK-MHRA';
+  if(list.includes('Japan')) return 'JP-PMDA';
+  return 'multi-regional';
+}
+function getCtdScopedRegulatoryChunks(){
+  const scope=resolveScopeControls();
+  const query='drug substance manufacture specification stability impurity validation analytical cmc ich q2 q3 process control';
+  const ranked=(rankChunks(query)||[]).filter(c=>!c.licenseGate);
+  return ranked.filter(c=>{
+    const meta=sourceMetaFor(c.reg,c.sourceKey);
+    const nation=normalizeJurisdictionNation(meta.nation);
+    if(!scope.allowedNations) return true;
+    return scope.allowedNations.has(nation)||nation==='International';
+  });
+}
+async function ingestInHouseDoc(file){
+  const ext=fileExt(file.name);
+  const raw=await readIngestBuffer(file);
+  if(raw.error==='TOO_LARGE') return { name:file.name,size:raw.size,ext,fileHash:'',parseStatus:'TOO_LARGE',text:'',uploadedAt:new Date().toISOString() };
+  const binary=looksBinaryBytes(raw.bytes)||['pdf','docx','doc','xlsx','xls'].includes(ext);
+  const text=binary?'':cleanExtractedText(decodeUtf8Bytes(raw.bytes));
+  const parsed=binary?{parseStatus:'UNSUPPORTED_BINARY',text:''}:parseRequirementPayload(ext,text);
+  return {
+    name:file.name,size:file.size,ext,fileHash:raw.hash||'',
+    parseStatus:parsed.parseStatus|| (binary?'UNSUPPORTED_BINARY':'PARSED'),
+    text:(parsed.text||text||'').slice(0,8000),
+    uploadedAt:new Date().toISOString()
+  };
+}
+async function handleCtdHouseDocs(files){
+  const incoming=Array.from(files||[]);
+  for(const f of incoming){
+    if(ctdHouseDocs.length>=CTD_HOUSE_MAX) break;
+    const rec=await ingestInHouseDoc(f);
+    if(!rec) continue;
+    const i=ctdHouseDocs.findIndex(d=>d.fileHash&&d.fileHash===rec.fileHash||d.name===rec.name);
+    if(i>=0) ctdHouseDocs[i]=rec; else ctdHouseDocs.push(rec);
+  }
+  const inp=document.getElementById('ctd-house-input');
+  if(inp) inp.value='';
+  renderCtdHouseDocs();
+  persistIngestMemory();
+}
+function removeCtdHouseDoc(i){
+  ctdHouseDocs.splice(i,1);
+  renderCtdHouseDocs();
+  persistIngestMemory();
+}
+function renderCtdHouseDocs(){
+  const el=document.getElementById('ctd-house-docs');
+  if(!el) return;
+  if(!ctdHouseDocs.length){
+    el.innerHTML='<div class="assurance-note">No in-house documents stored. Upload controlled drafts above.</div>';
+    return;
+  }
+  el.innerHTML=ctdHouseDocs.map((d,i)=>`
+    <div class="assurance-card" style="margin-bottom:8px">
+      <div class="assurance-card-h"><b>${d.name}</b> <span class="assurance-pill">${d.parseStatus||'—'}</span></div>
+      <div class="assurance-card-b" style="font-size:12px;color:var(--ink3)">
+        ${d.fileHash?`SHA-256: ${d.fileHash.slice(0,16)}… · `:''}${d.size?`${Math.round(d.size/1024)} KB · `:''}${d.uploadedAt?d.uploadedAt.slice(0,10):''}
+        <button class="save-bar-btn" style="margin-left:8px;padding:2px 8px;font-size:11px" onclick="removeCtdHouseDoc(${i})">Remove</button>
+      </div>
+    </div>`).join('');
+}
+function buildCtdEngineValidation(){
+  const scope=resolveScopeControls();
+  const fws=getSelectedFrameworks();
+  const jurs=getSelectedJurisdictions();
+  const houseBlob=ctdHouseDocs.map(d=>d.text||'').join('\n').toLowerCase();
+  const scopedRegs=getCtdScopedRegulatoryChunks();
+  const mappings=[],gaps=[],uncertainties=[];
+  const leafSections=CTD_MODULE_32S.filter(s=>s.code!=='3.2.S'&&!CTD_MODULE_32S.some(c=>c.parent===s.code));
+  leafSections.forEach(section=>{
+    const signals=ctdSectionSignals(section.code,section.title);
+    const houseDocs=ctdHouseDocs.filter(d=>signals.some(sig=>(d.text||'').toLowerCase().includes(sig)));
+    const houseHit=houseDocs.length>0||(signals.some(sig=>houseBlob.includes(sig))&&houseBlob.trim().length>12);
+    const regHits=scopedRegs.filter(c=>{
+      const blob=`${c.reg} ${c.sec} ${c.title} ${(c.kws||[]).join(' ')} ${(c.reqs||[]).join(' ')}`.toLowerCase();
+      return signals.some(sig=>blob.includes(sig));
+    });
+    let coverageLevel='gap';
+    if(houseHit&&regHits.length) coverageLevel='supports-section';
+    else if(houseHit) coverageLevel='partial';
+    else if(regHits.length) coverageLevel='placeholder-only';
+    else coverageLevel='gap';
+    const mapping={
+      mappingId:`MAP-${section.code.replace(/\./g,'')}`,
+      ctdModule:'3',
+      ctdSection:section.code,
+      sectionTitle:section.title,
+      ectdLeafTitle:null,
+      coverageLevel,
+      placementRationale:houseHit&&regHits.length
+        ? `In-house text and ${regHits.length} scoped regulatory reference(s) may support ${section.code}; SME review required for dossier completeness.`
+        : houseHit
+          ? `In-house document(s) touch ${section.code} topics but no matching regulatory source in current framework/jurisdiction scope — gap review required.`
+          : regHits.length
+            ? `Scoped regulatory references exist for ${section.code} but no in-house document evidence uploaded.`
+            : `No in-house or scoped regulatory evidence identified for ${section.code}.`,
+      sourceRefs:{
+        inHouseDocuments:houseDocs.map(d=>({name:d.name,fileHash:d.fileHash||null,parseStatus:d.parseStatus})),
+        regulatoryReferences:regHits.slice(0,4).map(c=>({regulation:c.reg,section:c.sec,title:c.title,chunkId:c.id}))
+      }
+    };
+    mappings.push(mapping);
+    if(coverageLevel==='gap'||coverageLevel==='partial')
+      gaps.push({section:section.code,title:section.title,coverageLevel,detail:mapping.placementRationale});
+    if(coverageLevel==='placeholder-only')
+      uncertainties.push(`${section.code}: regulatory scope present — upload in-house evidence`);
+  });
+  const supported=mappings.filter(m=>m.coverageLevel==='supports-section').length;
+  const partial=mappings.filter(m=>m.coverageLevel==='partial').length;
+  const gapCount=mappings.filter(m=>m.coverageLevel==='gap').length;
+  return {
+    schemaVersion:'maras.ctd-mapping.v1',
+    recordId:`CTD-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-32S`,
+    status:'needs-review',
+    packageStatus:'DRAFT_NOT_CONTROLLED',
+    submissionContext:{
+      region:ctdRegionFromScope(jurs),
+      productType:'small-molecule',
+      applicationType:'unknown',
+      ectdSpecification:null,
+      submissionUnit:null
+    },
+    scope:{
+      frameworks:[...fws],
+      jurisdictions:[...jurs],
+      scopeLabel:scope.scopeLabel,
+      selectedRegulations:scope.selectedRegNames.slice(0,16),
+      regulatoryChunksInScope:scopedRegs.length
+    },
+    mappings,
+    gaps:gaps.map(g=>g.detail),
+    unmappedSources:ctdHouseDocs.filter(d=>!mappings.some(m=>m.sourceRefs.inHouseDocuments.some(x=>x.name===d.name))).map(d=>({name:d.name,reason:'No CTD section keyword match — manual mapping required'})),
+    coverageNotes:[
+      `${supported} section(s) with in-house + scoped regulatory support`,
+      `${partial} section(s) partial — in-house only`,
+      `${gapCount} section gap(s) under current scope`
+    ],
+    uncertainties,
+    reviewerActionNeeded:['Confirm CTD section placement with RA/CMC SME','Verify framework/jurisdiction filters match intended submission region','Do not treat as eCTD-validated or submission-ready'],
+    mappedAt:new Date().toISOString(),
+    metrics:{supported,partial,gapCount,houseDocCount:ctdHouseDocs.length,regRefsInScope:scopedRegs.length}
+  };
+}
+function runCtdEngineValidation(){
+  ctdEngineResult=buildCtdEngineValidation();
+  buildCtdEngineView();
+}
+function buildCtdEngineView(){
+  const scopeEl=document.getElementById('ctd-scope-summary');
+  const metricsEl=document.getElementById('ctd-engine-metrics');
+  const gridEl=document.getElementById('ctd-validation-grid');
+  if(!scopeEl||!gridEl) return;
+  const fws=getSelectedFrameworks();
+  const jurs=getSelectedJurisdictions();
+  const scope=resolveScopeControls();
+  scopeEl.innerHTML=`
+    <b>Frameworks:</b> ${fws.length?fws.join(', '):'—'}<br>
+    <b>Jurisdictions:</b> ${jurs.length?jurs.join(', '):'—'}<br>
+    <b>Library selections:</b> ${selItems.size?`${selItems.size} item(s)`:'Full curated library (framework-driven)'}<br>
+    <b>Scope:</b> ${scope.scopeLabel}`;
+  renderCtdHouseDocs();
+  if(!ctdEngineResult) ctdEngineResult=buildCtdEngineValidation();
+  const r=ctdEngineResult;
+  const m=r.metrics||{};
+  if(metricsEl) metricsEl.innerHTML=[
+    {l:'In-house docs',v:m.houseDocCount??ctdHouseDocs.length},
+    {l:'Scoped reg refs',v:m.regRefsInScope??0},
+    {l:'Supported sections',v:m.supported??0},
+    {l:'Partial / gaps',v:(m.partial??0)+(m.gapCount??0)}
+  ].map(x=>`<div class="metric-card"><div class="metric-v">${x.v}</div><div class="metric-l">${x.l}</div></div>`).join('');
+  const covClass=l=>l==='supports-section'?'status-pass':l==='partial'?'status-partial':l==='placeholder-only'?'status-gate':'status-gate';
+  gridEl.innerHTML=`
+    <div class="assurance-note" style="margin-bottom:12px">Status: <b>${r.status}</b> · ${r.packageStatus} · Record ${r.recordId}</div>
+    <div class="sop-mapper-grid">${(r.mappings||[]).map(row=>`
+      <div class="assurance-card">
+        <div class="assurance-card-h"><span class="assurance-pill ${covClass(row.coverageLevel)}">${row.coverageLevel}</span> <b>${row.ctdSection}</b> — ${row.sectionTitle}</div>
+        <div class="assurance-card-b" style="font-size:12px">${row.placementRationale}</div>
+        <div class="assurance-card-b" style="font-size:11px;color:var(--ink4);margin-top:4px">
+          In-house: ${row.sourceRefs.inHouseDocuments.length?row.sourceRefs.inHouseDocuments.map(d=>d.name).join('; '):'—'} ·
+          Regulatory: ${row.sourceRefs.regulatoryReferences.length?row.sourceRefs.regulatoryReferences.map(x=>`${x.regulation} ${x.section}`).join('; '):'—'}
+        </div>
+      </div>`).join('')}</div>`;
+}
+function dlCtdMappingJson(){
+  const payload=ctdEngineResult||buildCtdEngineValidation();
+  const b=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='DRAFT-MARAS-CTD-Mapping-3.2.S.json';a.click();URL.revokeObjectURL(a.href);
+}
+function dlCtdGapsCsv(){
+  const payload=ctdEngineResult||buildCtdEngineValidation();
+  const esc=v=>`"${String(v??'').replace(/"/g,'""')}"`;
+  const lines=[['Section','Title','Coverage','Detail'].map(esc).join(',')];
+  (payload.mappings||[]).filter(m=>m.coverageLevel!=='supports-section').forEach(m=>{
+    lines.push([m.ctdSection,m.sectionTitle,m.coverageLevel,m.placementRationale].map(esc).join(','));
+  });
+  const b=new Blob([lines.join('\n')],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='DRAFT-MARAS-CTD-Gaps-3.2.S.csv';a.click();URL.revokeObjectURL(a.href);
 }
 
 /* ASSURANCE */

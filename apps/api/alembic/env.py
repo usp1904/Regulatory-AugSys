@@ -7,7 +7,7 @@ from sqlalchemy import engine_from_config, pool
 from alembic import context
 from app.core.config import get_settings
 from app.core.database import Base
-from app.models import CtdSection  # noqa: F401 — register metadata
+from app.models import CtdSection, Document  # noqa: F401 — register metadata
 
 config = context.config
 

@@ -10,7 +10,7 @@ from sqlalchemy.pool import StaticPool
 
 from app.core.database import Base, get_db
 from app.main import app
-from app.models import CtdSection  # noqa: F401 — register metadata
+from app.models import CtdSection, Document  # noqa: F401 — register metadata
 from app.services.ctd_seed import seed_ctd_module_32s
 
 

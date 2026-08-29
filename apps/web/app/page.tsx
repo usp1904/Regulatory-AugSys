@@ -94,6 +94,10 @@ export default async function HealthPage() {
           <CardTitle>CTD Module 3.2.S — Drug Substance</CardTitle>
           <CardDescription>
             Controlled taxonomy for CMC evidence mapping (draft reference; not eCTD-validated).
+            {" "}
+            <a href="/ctd" className="text-primary hover:underline">
+              Open CTD/eCTD Engine →
+            </a>
           </CardDescription>
         </CardHeader>
         <CardContent>

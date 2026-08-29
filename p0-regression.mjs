@@ -58,6 +58,9 @@ check('readiness tab with SOP mapper', html.includes('id="view-readiness"') && h
 check('inspection readiness assistant', html.includes('function buildInspectionReadinessPack') && html.includes('maras.inspection-readiness.v1') && html.includes('dlInspectionPackJson'));
 check('SOP mapper uses library anchors', html.includes('SOP_CHUNK_LIBRARY_LINKS') && html.includes('auditContextMapsChunk') && html.includes('buildReadinessSnapshot'));
 check('readiness gap downloads', html.includes('maras.readiness-gaps.v1') && html.includes('dlReadinessGapsCsv'));
+check('CTD eCTD Engine tab is present', html.includes('id="view-ctd"') && html.includes('ntab-ctd') && html.includes('CTD/eCTD Engine'));
+check('CTD engine validates against framework jurisdiction scope', html.includes('function buildCtdEngineValidation') && html.includes('function getCtdScopedRegulatoryChunks') && html.includes('CTD_MODULE_32S') && html.includes('function handleCtdHouseDocs'));
+check('CTD mapping export is draft watermarked', html.includes('DRAFT-MARAS-CTD-Mapping-3.2.S.json') && html.includes("packageStatus:'DRAFT_NOT_CONTROLLED'") && html.includes('maras.ctd-mapping.v1'));
 check('Agents.md default instructions', fs.existsSync('Agents.md') && fs.readFileSync('Agents.md','utf8').includes('CRS Mode') && fs.readFileSync('Agents.md','utf8').includes('Graphiffy'));
 
 export const result = { status: 'PASS', checks: checks.length, systemsValidated: 15, names: checks };

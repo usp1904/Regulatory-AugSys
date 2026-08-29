@@ -23,7 +23,11 @@ docker compose up --build
 | Service | URL |
 |---------|-----|
 | Web (Next.js health page) | http://localhost:3000 |
+| Web CTD/eCTD Engine | http://localhost:3000/ctd |
 | API (FastAPI `/health`) | http://localhost:8000/health |
+| API CTD sections | `GET /api/v1/ctd-sections` |
+| API document store | `POST /api/v1/documents`, `GET /api/v1/documents` |
+| API CTD validation | `POST /api/v1/ctd-engine/validate` |
 | PostgreSQL | `localhost:5432` (user/db: `regulatory` / `regulatory_augsys`) |
 
 Run database migrations inside the API container:
@@ -153,6 +157,7 @@ docker-compose.yml
 | MVP-19 | Library and outcome example accessibility | Regulatory Library uses **one** scrollbar for the full library (tree is not a nested scroller). A 20px gap sits between that scrollbar and the resize handle so they do not read as overlapping slivers at 80–100% zoom. Every **Define the business compliance outcome** example is selectable from the dropdown and Try chips |
 | MVP-20 | Multi-select regulatory framework and jurisdiction | **Regulatory Framework** and **Jurisdiction** are closed multi-select dropdowns (zero/one/many). Selected frameworks union library sources; selected markets union QC `allowedNations`. Graph: `Frameworks → union library → Jurisdictions → QC nation filter → PBI (DRAFT_NOT_CONTROLLED)`. Verified in `p0-regression.mjs` and `qc-compat-regression.mjs` |
 | MVP-21 | Live AI harness token optimization (DeepSeek / low-cost) | CRS harness: compact context line (`buildHarnessContextLine`), scoped `rankChunks` sources for decomposition only, per-agent `max_tokens` and prev-output limits via `LIVE_HARNESS_CONFIG` / `getLiveHarnessProfile`; `callLLM` uses `MODELS[].url` + `MODELS[].model`. Graph: `Scope → Intake → Govern → Decompose → QC → Evidence`. Verified in `p0-regression.mjs` |
+| MVP-22 | CTD / eCTD Engine tab | **CTD/eCTD Engine** tab stores in-house documents (SHA-256, session-persisted), validates Module 3.2.S coverage against regulatory corpus scoped by **Regulatory Framework** and **Jurisdiction** filters, exports `DRAFT_NOT_CONTROLLED` mapping JSON/CSV. Platform API: `POST /api/v1/documents`, `POST /api/v1/ctd-engine/validate`, web route `/ctd`. Verified in `p0-regression.mjs` |
 
 ## Stakeholder demo script
 
