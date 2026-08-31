@@ -17,6 +17,7 @@
     "compactContextMaxChars": 280,
     "preferExistingModules": [
       "app.services.ctd_ordering",
+      "app.services.evidence_queries",
       "app.services.evidence",
       "app.services.dossier_export",
       "app.services.document_storage"

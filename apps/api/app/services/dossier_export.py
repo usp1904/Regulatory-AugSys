@@ -11,17 +11,17 @@ from docx import Document as DocxDocument
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Pt, RGBColor
 from sqlalchemy import func, select
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.models.ctd_section import CtdSection
 from app.models.document import Document
 from app.models.dossier_export import EXPORT_FORMATS, DossierExport
-from app.models.evidence_item import GAP_EXPORT_TYPES, EvidenceItem
+from app.models.evidence_item import GAP_EXPORT_TYPES
 from app.schemas.dossier_export import DossierExportResponse, ExportManifest
 from app.services.audit import record_audit_event
-from app.services.ctd_ordering import ctd_code_sort_key
 from app.services.document_storage import persist_original_bytes
+from app.services.evidence_queries import list_approved_evidence_for_dossier
 
 WATERMARK = "TRAINING / INTERNAL REVIEW ONLY — NOT A REGULATORY SUBMISSION"
 SECTION_INTRO = "The following approved evidence items are recorded for this CTD section."
@@ -79,12 +79,7 @@ def _next_dossier_version(db: Session, dossier_id: str) -> int:
 
 
 def collect_approved_evidence(db: Session, dossier_id: str) -> list[ExportEvidenceRow]:
-    items = db.scalars(
-        select(EvidenceItem)
-        .options(joinedload(EvidenceItem.source_document))
-        .where(EvidenceItem.dossier_id == dossier_id)
-        .where(EvidenceItem.review_status == "APPROVED")
-    ).all()
+    items = list_approved_evidence_for_dossier(db, dossier_id, load_source=True)
     ctd_titles = _load_ctd_titles(db)
     rows: list[ExportEvidenceRow] = []
     for item in items:
@@ -106,7 +101,6 @@ def collect_approved_evidence(db: Session, dossier_id: str) -> list[ExportEviden
                 is_gap_block=item.evidence_type in GAP_EXPORT_TYPES,
             )
         )
-    rows.sort(key=lambda row: (ctd_code_sort_key(row.ctd_section_code), row.evidence_id))
     return rows
 
 

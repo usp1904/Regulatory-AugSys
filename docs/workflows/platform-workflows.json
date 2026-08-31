@@ -21,7 +21,7 @@
       "graph": "Upload → Hash → Parse → Store → Audit",
       "api": ["POST /api/v1/documents", "GET /api/v1/documents/{id}"],
       "web": ["/documents/{id}"],
-      "verification": ["apps/api/tests/test_documents.py", "pytest"]
+      "verification": ["apps/api/tests/test_document_ingestion.py", "pytest"]
     },
     {
       "id": "WF-PLATFORM-EVIDENCE",

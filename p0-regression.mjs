@@ -65,5 +65,8 @@ check('Agents.md default instructions', fs.existsSync('Agents.md') && fs.readFil
 check('platform workflow registry', fs.existsSync('docs/workflows/platform-workflows.json') && fs.readFileSync('docs/workflows/platform-workflows.json','utf8').includes('WF-PLATFORM-EVIDENCE'));
 check('platform harness config', fs.existsSync('docs/harness/platform-harness-config.json') && fs.readFileSync('docs/harness/platform-harness-config.json','utf8').includes('deepseekProfile'));
 check('notion workflow generator', fs.existsSync('scripts/generate-notion-workflows.mjs') && fs.existsSync('docs/workflows/notion-export/00-index.md'));
+check('capabilities inventory', fs.existsSync('docs/CAPABILITIES.md') && fs.readFileSync('docs/CAPABILITIES.md','utf8').includes('verify-all.mjs'));
+check('unified verify script', fs.existsSync('scripts/verify-all.mjs'));
+check('self-heal script', fs.existsSync('scripts/self-heal.mjs'));
 
 export const result = { status: 'PASS', checks: checks.length, systemsValidated: 15, names: checks };

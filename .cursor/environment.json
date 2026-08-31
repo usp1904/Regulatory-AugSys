@@ -1,6 +1,6 @@
 {
   "name": "MARAS MVP",
-  "install": "node p0-regression.mjs\nnode qc-compat-regression.mjs\nnode scripts/generate-notion-workflows.mjs",
+  "install": "node scripts/verify-all.mjs",
   "start": "true",
   "terminals": [
     {

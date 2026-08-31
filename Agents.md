@@ -54,4 +54,6 @@ Repository-managed Cloud Agent setup: `.cursor/environment.json`
 - Registry: `docs/workflows/platform-workflows.json`
 - Harness config: `docs/harness/platform-harness-config.json`
 - Platform agents: `docs/prompts/platform-harness.md`
+- **Full inventory:** `docs/CAPABILITIES.md` (skills, MCP, tools, verification)
 - Regenerate Notion import pages: `node scripts/generate-notion-workflows.mjs` → `docs/workflows/notion-export/`
+- Verify everything: `node scripts/verify-all.mjs`

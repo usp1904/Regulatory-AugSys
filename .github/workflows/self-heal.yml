@@ -1,28 +1,28 @@
-name: CI
+name: Self-heal check
 
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * 1'
 
 jobs:
-  verify:
+  self-heal:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: '22'
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: '3.12'
       - name: Install API dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -e "./apps/api[dev]"
+        working-directory: .
       - name: Install web dependencies
         run: npm ci
         working-directory: apps/web
-      - name: Run all verification gates
-        run: node scripts/verify-all.mjs
+      - name: Self-heal check (verify only)
+        run: node scripts/self-heal.mjs --check

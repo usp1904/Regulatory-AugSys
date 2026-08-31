@@ -98,9 +98,11 @@ npm run build
 ```text
 apps/api/     FastAPI, SQLAlchemy 2, Alembic
 apps/web/     Next.js, TypeScript, Tailwind, shadcn/ui (Card)
-docs/prompts/ Cursor master prompt and slice guidance
-docker-compose.yml
+docs/         Schemas, prompts, workflows, CAPABILITIES.md
+scripts/      verify-all.mjs, generate-notion-workflows.mjs
 ```
+
+**Git-only verification:** `node scripts/verify-all.mjs` (see `docs/CAPABILITIES.md` for skills, MCP, and tools).
 
 ---
 
