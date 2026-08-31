@@ -111,7 +111,22 @@ MVP requirement IDs: `README.md` RTK table (MVP-01 … MVP-25).
 
 ---
 
-## 8. What not to break
+## 8. Git branch hygiene
+
+`main` is the only branch that should track active development. Stale `cursor/*` feature branches that are already merged cause GitHub to show false “merge conflict” or “behind main” warnings.
+
+| Check | Command |
+|-------|---------|
+| Confirm `main` is current | `git fetch origin && git status` — should show `main...origin/main` with no ahead/behind |
+| Scan for conflict markers | `rg '<<<<<<<' --glob '!node_modules'` — must return zero hits |
+| Prune merged feature branches | `bash scripts/prune-merged-branches.sh` |
+| Full gate after cleanup | `node scripts/verify-all.mjs` |
+
+**Resolved Aug 2026:** 22 merged `cursor/*` branches and the superseded `cursor/maras-quality-controls-c819` head (old PR #1, QC layer already on `main`) were deleted from `origin`. Close PR #1 manually in GitHub if it still appears open — its head branch no longer exists.
+
+---
+
+## 9. What not to break
 
 - Legacy `index.html` GitHub Pages MVP must keep passing `p0-regression.mjs`
 - All exports remain `DRAFT_NOT_CONTROLLED` / training watermark
