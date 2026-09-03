@@ -18,6 +18,11 @@ from app.models import (  # noqa: F401
     DocumentParagraph,
     DossierExport,
     EvidenceItem,
+    StoryMap,
+    StoryMapBackbone,
+    StoryMapReleaseSlice,
+    StoryMapStory,
+    StoryMapTraceLink,
 )
 from app.services.ctd_seed import seed_ctd_module_32s
 

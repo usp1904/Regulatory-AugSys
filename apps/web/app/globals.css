@@ -47,4 +47,21 @@
   .panel {
     @apply rounded-xl border bg-card p-6 shadow-sm;
   }
+
+  @media print {
+    header,
+    .story-map-print-root > .rounded-lg:first-child,
+    aside,
+    button {
+      display: none !important;
+    }
+
+    .story-map-print-root {
+      padding: 0;
+    }
+
+    .story-map-view-panel {
+      display: block !important;
+    }
+  }
 }

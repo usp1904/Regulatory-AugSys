@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
   { href: "/", label: "Dashboard" },
+  { href: "/story-map", label: "Story Map" },
   { href: "/ctd", label: "CTD Engine" },
   { href: "/dossiers", label: "Dossier Export" },
 ] as const;
@@ -41,7 +42,7 @@ export function SiteShell({
               Regulatory-AugSys
             </Link>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              Evidence capture · CTD mapping · dossier export
+              Evidence capture · Story maps · CTD mapping · dossier export
             </p>
           </div>
           <nav className="flex flex-wrap gap-1">
