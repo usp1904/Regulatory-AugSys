@@ -303,7 +303,11 @@ def delete_story(db: Session, story_id: int) -> None:
     db.commit()
 
 
-def add_trace_link(db: Session, story_id: int, payload: TraceLinkCreateRequest) -> StoryMapTraceLink:
+def add_trace_link(
+    db: Session,
+    story_id: int,
+    payload: TraceLinkCreateRequest,
+) -> StoryMapTraceLink:
     story = db.get(StoryMapStory, story_id)
     if story is None:
         raise StoryMapServiceError("Story not found")

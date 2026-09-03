@@ -99,13 +99,21 @@ def upgrade() -> None:
             server_default=sa.text("CURRENT_TIMESTAMP"),
         ),
         sa.ForeignKeyConstraint(["backbone_id"], ["story_map_backbones.id"], ondelete="SET NULL"),
-        sa.ForeignKeyConstraint(["release_slice_id"], ["story_map_release_slices.id"], ondelete="SET NULL"),
+        sa.ForeignKeyConstraint(
+            ["release_slice_id"],
+            ["story_map_release_slices.id"],
+            ondelete="SET NULL",
+        ),
         sa.ForeignKeyConstraint(["story_map_id"], ["story_maps.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index("ix_story_map_stories_story_map_id", "story_map_stories", ["story_map_id"])
     op.create_index("ix_story_map_stories_backbone_id", "story_map_stories", ["backbone_id"])
-    op.create_index("ix_story_map_stories_release_slice_id", "story_map_stories", ["release_slice_id"])
+    op.create_index(
+        "ix_story_map_stories_release_slice_id",
+        "story_map_stories",
+        ["release_slice_id"],
+    )
 
     op.create_table(
         "story_map_trace_links",

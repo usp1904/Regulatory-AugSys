@@ -149,7 +149,10 @@ class StoryMapReleaseSlice(Base):
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
     story_map: Mapped[StoryMap] = relationship("StoryMap", back_populates="release_slices")
-    stories: Mapped[list[StoryMapStory]] = relationship("StoryMapStory", back_populates="release_slice")
+    stories: Mapped[list[StoryMapStory]] = relationship(
+        "StoryMapStory",
+        back_populates="release_slice",
+    )
 
 
 class StoryMapStory(Base):
@@ -190,7 +193,10 @@ class StoryMapStory(Base):
     )
 
     story_map: Mapped[StoryMap] = relationship("StoryMap", back_populates="stories")
-    backbone: Mapped[StoryMapBackbone | None] = relationship("StoryMapBackbone", back_populates="stories")
+    backbone: Mapped[StoryMapBackbone | None] = relationship(
+        "StoryMapBackbone",
+        back_populates="stories",
+    )
     release_slice: Mapped[StoryMapReleaseSlice | None] = relationship(
         "StoryMapReleaseSlice",
         back_populates="stories",
