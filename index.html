@@ -345,6 +345,11 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .rag-label.contextual{background:#f3f4f6;color:#4b5563}
 .rag-label.suppressed{background:#fffbeb;color:#92400e}
 .rag-label.not_applicable{background:#fef2f2;color:#991b1b}
+.hybrid-route{font-size:10px;color:var(--ink3);margin-top:4px;line-height:1.5}
+.prov-badge{display:inline-block;font-size:8px;font-weight:700;padding:1px 5px;border-radius:6px;margin-right:3px;text-transform:uppercase}
+.prov-det{background:#ecfdf5;color:#166534}
+.prov-graph{background:#eff6ff;color:#1d4ed8}
+.prov-vector{background:#f5f3ff;color:#5b21b6}
 .qg-panel{margin:8px 0;padding:8px 10px;background:#fffbeb;border-radius:5px;border-left:3px solid #ca8a04}
 .qg-title{font-size:9px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px}
 .qg-grid{display:flex;flex-wrap:wrap;gap:6px;font-size:10px}
@@ -2370,7 +2375,12 @@ const RAG_GRAPH_CONFIG = {
   maxActive: 8,
   primaryThreshold: 8,
   supportingThreshold: 3,
-  storageKey: 'maras_rag_graph_v1'
+  storageKey: 'maras_rag_graph_v1',
+  hybridMaxCandidates: 20,
+  deterministicMinBeforeVector: 4,
+  graphMaxDepth: 2,
+  graphMaxExpand: 6,
+  vectorTopK: 8
 };
 let ragGraphEnabled = true;
 
@@ -2447,8 +2457,20 @@ function ragParse(req, ctxSnap) {
     it_scope: ragDetectItScope(raw, sys),
     ambiguities,
     missing_information: missing,
+    explicit_refs: ragExtractExplicitRefs(raw),
     parsedAt: new Date().toISOString()
   };
+}
+function ragExtractExplicitRefs(text) {
+  const refs = [];
+  const t = String(text || '');
+  [/§\s*11\.\d+(?:\([a-z]\))?/gi, /\b21\s*cfr\s*part\s*11\b/gi, /\bpart\s*11\b/gi,
+   /\bannex\s*11\b/gi, /\bich\s*e6(?:\(r3\))?/gi, /\balcoa\+?\b/gi, /\b§\s*164\.\d+/gi,
+   /\bgdpr\b/gi, /\bhipaa\b/gi, /\bcapa\b/gi, /\b§\s*11\.50\b/gi].forEach(p => {
+    const m = t.match(p);
+    if (m) m.forEach(x => refs.push(x.toLowerCase().replace(/\s+/g, ' ').trim()));
+  });
+  return [...new Set(refs)];
 }
 function ragChunkCite(chunk) {
   const meta = sourceMetaFor(chunk.reg, chunk.sourceKey);
@@ -2466,20 +2488,290 @@ function ragChunkCite(chunk) {
     license_tag: meta.licenseTag || ''
   };
 }
-function ragRetrieve(req, _parseOut) {
-  const scope = resolveScopeControls();
-  const ranked = rankChunks(req);
-  const candidates = ranked.slice(0, RAG_GRAPH_CONFIG.maxRetrieve).map(chunk => ({
-    chunk,
-    cite: ragChunkCite(chunk),
-    relevanceScore: chunk._qc?.relevanceScore ?? 0
-  }));
-  return {
-    scope,
-    candidates,
-    totalCandidates: ranked.length,
-    suppressedJurisdiction: ranked._jurisdictionSuppressed || []
+
+/* ── Hybrid Retrieval: OKF v0.2 adapter + Graph RAG + pseudo-vector (TF-IDF) ── */
+let _okfIndex = null;
+let _regGraph = null;
+let _hybridIdf = null;
+
+function hybridAllChunks() {
+  return GXP_CHUNKS.concat(typeof ingestedGenerationChunks === 'function' ? ingestedGenerationChunks() : []).filter(c => !c.licenseGate);
+}
+function hybridBuildIdf(chunks) {
+  const df = {};
+  chunks.forEach(c => {
+    const toks = new Set(qcNormText([c.title, c.reg, c.sec, ...(c.kws || []), ...(c.reqs || [])].join(' ')).split(' ').filter(t => t.length > 2));
+    toks.forEach(t => { df[t] = (df[t] || 0) + 1; });
+  });
+  const n = chunks.length || 1;
+  const idf = {};
+  Object.keys(df).forEach(t => { idf[t] = Math.log(1 + n / df[t]); });
+  return { idf, n };
+}
+function hybridTfidfVec(text, idf) {
+  const tokens = qcNormText(text).split(' ').filter(t => t.length > 2);
+  const tf = {};
+  tokens.forEach(t => { tf[t] = (tf[t] || 0) + 1; });
+  const vec = {};
+  Object.keys(tf).forEach(t => { vec[t] = tf[t] * (idf[t] || 1); });
+  return vec;
+}
+function hybridCosine(vecA, vecB) {
+  let dot = 0, na = 0, nb = 0;
+  const keys = new Set([...Object.keys(vecA), ...Object.keys(vecB)]);
+  keys.forEach(k => {
+    const a = vecA[k] || 0, b = vecB[k] || 0;
+    dot += a * b; na += a * a; nb += b * b;
+  });
+  if (!na || !nb) return 0;
+  return dot / (Math.sqrt(na) * Math.sqrt(nb));
+}
+function ensureHybridIndices() {
+  if (_okfIndex && _regGraph && _hybridIdf) return { okf: _okfIndex, graph: _regGraph, idf: _hybridIdf };
+  const chunks = hybridAllChunks();
+  const byDoc = {};
+  const nodes = [];
+  chunks.forEach(chunk => {
+    const meta = sourceMetaFor(chunk.reg, chunk.sourceKey);
+    const docId = chunk.sourceKey || qcNormText(chunk.reg).replace(/\s+/g, '_').slice(0, 48);
+    if (!byDoc[docId]) {
+      byDoc[docId] = {
+        okfVersion: '0.2', documentId: docId, title: chunk.reg,
+        authority: meta.authority || '', documentClass: meta.sourceType || 'Guideline',
+        effectiveDate: meta.effectiveDate || null,
+        jurisdiction: [normalizeJurisdictionNation(meta.nation)],
+        language: 'en', nodes: []
+      };
+    }
+    const node = {
+      id: chunk.id, type: 'section', anchor: qcNormText(chunk.sec),
+      path: chunk.reg + ' / ' + chunk.sec, title: chunk.title,
+      text: (chunk.reqs || []).join(' '), scopeTags: [chunk.cat, ...(chunk.kws || []).slice(0, 5)],
+      chunkRef: chunk.id
+    };
+    byDoc[docId].nodes.push(node);
+    nodes.push({ ...node, documentId: docId });
+  });
+  const edges = [];
+  for (let i = 0; i < chunks.length; i++) {
+    for (let j = i + 1; j < chunks.length; j++) {
+      const a = chunks[i], b = chunks[j];
+      if (a.sourceKey && a.sourceKey === b.sourceKey) edges.push({ from: a.id, to: b.id, type: 'cites', weight: 4 });
+      if (a.cat === b.cat) {
+        const shared = (a.kws || []).filter(k => (b.kws || []).includes(k));
+        if (shared.length >= 2) edges.push({ from: a.id, to: b.id, type: 'related_process', weight: 2 });
+      }
+      if (qcJaccard((a.reqs || []).join(' '), (b.reqs || []).join(' ')) > 0.42) {
+        edges.push({ from: a.id, to: b.id, type: 'implements', weight: 3 });
+      }
+    }
+  }
+  if (typeof SOP_CHUNK_LIBRARY_LINKS !== 'undefined') {
+    Object.entries(SOP_CHUNK_LIBRARY_LINKS).forEach(([chunkId, libIds]) => {
+      (libIds || []).forEach(lid => {
+        if (chunks.some(c => c.id === chunkId)) edges.push({ from: chunkId, to: lid, type: 'related_process', weight: 1, library: true });
+      });
+    });
+  }
+  _okfIndex = { documents: Object.values(byDoc), nodes };
+  _regGraph = {
+    nodes: chunks.map(c => ({ id: c.id, reg: c.reg, cat: c.cat, authority: ragAuthorityLevel(sourceMetaFor(c.reg, c.sourceKey)) })),
+    edges
   };
+  _hybridIdf = hybridBuildIdf(chunks);
+  return { okf: _okfIndex, graph: _regGraph, idf: _hybridIdf };
+}
+function hybridChunkById(id) {
+  return hybridAllChunks().find(c => c.id === id) || null;
+}
+function hybridGraphExpand(seedIds, graph, maxDepth, maxNodes) {
+  const seen = new Set(seedIds);
+  const queue = seedIds.map(id => ({ id, depth: 0 }));
+  const expanded = [];
+  while (queue.length && expanded.length < maxNodes) {
+    const { id, depth } = queue.shift();
+    if (!id || id.startsWith('lib:')) continue;
+    graph.edges.forEach(e => {
+      let next = null, edge = e;
+      if (e.from === id && !seen.has(e.to) && !e.library) next = e.to;
+      if (e.to === id && !seen.has(e.from)) next = e.from;
+      if (next && depth < maxDepth) {
+        seen.add(next);
+        expanded.push({ id: next, edge, depth: depth + 1 });
+        queue.push({ id: next, depth: depth + 1 });
+      }
+    });
+  }
+  return expanded;
+}
+function hybridOkfMatch(parsed, okf) {
+  const refs = parsed?.explicit_refs || [];
+  const normReq = parsed?.normalized_text || '';
+  const hits = [];
+  okf.nodes.forEach(n => {
+    const anchor = n.anchor || '';
+    const path = qcNormText(n.path || '');
+    let score = 0;
+    refs.forEach(r => {
+      if (anchor.includes(qcNormText(r)) || path.includes(qcNormText(r)) || qcNormText(r).includes(anchor)) score += 10;
+    });
+    if (normReq.includes(anchor) && anchor.length > 2) score += 6;
+    (n.scopeTags || []).forEach(tag => { if (normReq.includes(qcNormText(tag))) score += 2; });
+    if (score > 0) hits.push({ chunkId: n.chunkRef, score, okfNode: n.id });
+  });
+  hits.sort((a, b) => b.score - a.score);
+  return hits;
+}
+function hybridDeterministicRetrieve(parsed, req, scope, ranked) {
+  const refs = parsed?.explicit_refs || [];
+  const hits = [];
+  const chunkMap = new Map(ranked.map(c => [c.id, c]));
+  ranked.forEach(c => {
+    let boost = 0;
+    const regL = (c.reg || '').toLowerCase();
+    const secL = (c.sec || '').toLowerCase();
+    refs.forEach(r => {
+      if (regL.includes(r) || secL.includes(r.replace(/§/g, '')) || r.includes(secL.replace(/\s/g, ''))) boost += 15;
+      if (r.includes('part 11') && regL.includes('part 11')) boost += 12;
+      if (r.includes('annex 11') && regL.includes('annex 11')) boost += 12;
+    });
+    const base = c._qc?.relevanceScore ?? 0;
+    const score = base + boost;
+    if (!c._qc?.inScopeCategory) return;
+    if (boost > 0 || base >= 1) hits.push({ chunk: c, score, method: 'deterministic' });
+  });
+  const { okf } = ensureHybridIndices();
+  hybridOkfMatch(parsed, okf).forEach(h => {
+    const c = chunkMap.get(h.chunkId);
+    if (c) hits.push({ chunk: c, score: h.score + (c._qc?.relevanceScore ?? 0), method: 'deterministic', okfNode: h.okfNode });
+  });
+  const byId = new Map();
+  hits.forEach(h => {
+    const prev = byId.get(h.chunk.id);
+    if (!prev || h.score > prev.score) byId.set(h.chunk.id, h);
+  });
+  const merged = [...byId.values()].sort((a, b) => b.score - a.score).slice(0, 12);
+  const confidence = merged.length ? Math.min(100, merged[0].score * 5) : 0;
+  return { items: merged, count: merged.length, confidence };
+}
+function hybridGraphRetrieve(parsed, req, seedIds, graph) {
+  const expanded = hybridGraphExpand(seedIds, graph, RAG_GRAPH_CONFIG.graphMaxDepth, RAG_GRAPH_CONFIG.graphMaxExpand);
+  const items = [];
+  expanded.forEach(({ id, edge, depth }) => {
+    const chunk = hybridChunkById(id);
+    if (!chunk || chunk.licenseGate) return;
+    const _qc = scoreSourceRelevance(chunk, req, resolveScopeControls());
+    const chunkScored = { ...chunk, _qc };
+    if (!_qc.inScopeCategory) return;
+    const authW = edge.weight || 1;
+    items.push({ chunk: chunkScored, score: (_qc.relevanceScore ?? 0) + authW * 2 - depth, method: 'graph', edgeType: edge.type });
+  });
+  return { items, count: items.length, confidence: items.length ? 55 : 0 };
+}
+function hybridVectorRetrieve(parsed, req, excludeIds) {
+  const { idf } = ensureHybridIndices();
+  const qVec = hybridTfidfVec([parsed?.raw_text, req].filter(Boolean).join(' '), idf.idf);
+  const exclude = new Set(excludeIds || []);
+  const items = [];
+  hybridAllChunks().forEach(c => {
+    if (exclude.has(c.id) || c.licenseGate) return;
+    const scope = resolveScopeControls();
+    const _qc = scoreSourceRelevance(c, req, scope);
+    if (!_qc.inScopeCategory) return;
+    const blob = [c.title, c.reg, c.sec, ...(c.reqs || []), ...(c.kws || [])].join(' ');
+    const sim = hybridCosine(qVec, hybridTfidfVec(blob, idf.idf));
+    if (sim > 0.05) items.push({ chunk: { ...c, _qc }, score: sim * 100 + (_qc.relevanceScore ?? 0) * 0.5, method: 'vector', vectorLabel: 'tfidf-cosine' });
+  });
+  items.sort((a, b) => b.score - a.score);
+  const top = items.slice(0, RAG_GRAPH_CONFIG.vectorTopK);
+  return { items: top, count: top.length, confidence: top[0]?.score ?? 0, vectorType: 'tfidf-cosine-pseudo' };
+}
+function hybridMergeCandidates(routeResults, provenance) {
+  const byId = new Map();
+  routeResults.forEach(r => {
+    (r.items || []).forEach(item => {
+      const id = item.chunk.id;
+      if (!provenance[id]) provenance[id] = [];
+      if (!provenance[id].includes(item.method)) provenance[id].push(item.method);
+      const prev = byId.get(id);
+      if (!prev || item.score > prev.relevanceScore) {
+        byId.set(id, {
+          chunk: item.chunk,
+          cite: ragChunkCite(item.chunk),
+          relevanceScore: item.score,
+          provenance: [...provenance[id]]
+        });
+      } else {
+        prev.provenance = [...new Set([...prev.provenance, ...provenance[id]])];
+      }
+    });
+  });
+  return [...byId.values()].sort((a, b) => b.relevanceScore - a.relevanceScore).slice(0, RAG_GRAPH_CONFIG.hybridMaxCandidates);
+}
+function hybridRetrieve(parsed, req, scope, options) {
+  const ranked = rankChunks(req);
+  const route_log = [];
+  const provenance = {};
+  const det = hybridDeterministicRetrieve(parsed, req, scope, ranked);
+  route_log.push({ stage: 'deterministic', method: 'scope+refs+okf', count: det.count, confidence: det.confidence });
+  let seedIds = det.items.slice(0, 6).map(i => i.chunk.id);
+  const { graph } = ensureHybridIndices();
+  let graphOut = { items: [], count: 0, confidence: 0 };
+  const needGraph = det.confidence < 70 || (parsed?.ambiguities?.length > 0) || (parsed?.explicit_refs?.length > 0);
+  if (needGraph && seedIds.length) {
+    graphOut = hybridGraphRetrieve(parsed, req, seedIds, graph);
+    route_log.push({ stage: 'graph', method: 'bounded-traverse', count: graphOut.count, confidence: graphOut.confidence });
+  }
+  const excludeIds = [...det.items, ...graphOut.items].map(i => i.chunk.id);
+  let vectorOut = { items: [], count: 0, confidence: 0, vectorType: 'tfidf-cosine-pseudo' };
+  const vague = (parsed?.raw_text || '').length < 80 || (parsed?.ambiguities?.length > 0);
+  const skipVector = det.count >= RAG_GRAPH_CONFIG.deterministicMinBeforeVector && parsed?.explicit_refs?.length > 0 && !vague;
+  if (!skipVector) {
+    vectorOut = hybridVectorRetrieve(parsed, req, excludeIds);
+    route_log.push({ stage: 'vector', method: vectorOut.vectorType, count: vectorOut.count, confidence: vectorOut.confidence });
+  } else {
+    route_log.push({ stage: 'vector', method: 'skipped-explicit-refs', count: 0, confidence: 0 });
+  }
+  const candidates = hybridMergeCandidates([det, graphOut, vectorOut], provenance);
+  route_log.push({ stage: 'merge', method: 'dedupe', count: candidates.length, confidence: candidates[0]?.relevanceScore ?? 0 });
+  return {
+    route_log,
+    candidates,
+    provenance,
+    totalCandidates: ranked.length,
+    suppressedJurisdiction: ranked._jurisdictionSuppressed || [],
+    hybrid: true,
+    vectorNote: 'Client-side TF-IDF cosine pseudo-vector; no external embedding API'
+  };
+}
+function ragRetrieve(req, parseOut) {
+  const scope = resolveScopeControls();
+  if (!ragGraphEnabled) {
+    const ranked = rankChunks(req);
+    return {
+      scope,
+      candidates: ranked.slice(0, RAG_GRAPH_CONFIG.maxRetrieve).map(chunk => ({
+        chunk, cite: ragChunkCite(chunk), relevanceScore: chunk._qc?.relevanceScore ?? 0, provenance: ['legacy']
+      })),
+      totalCandidates: ranked.length,
+      suppressedJurisdiction: ranked._jurisdictionSuppressed || []
+    };
+  }
+  try {
+    const hybrid = hybridRetrieve(parseOut || ragParse(req, H.ctx || {}), req, scope);
+    return { scope, ...hybrid, candidates: hybrid.candidates.slice(0, RAG_GRAPH_CONFIG.maxRetrieve) };
+  } catch (_e) {
+    const ranked = rankChunks(req);
+    return {
+      scope,
+      candidates: ranked.slice(0, RAG_GRAPH_CONFIG.maxRetrieve).map(chunk => ({
+        chunk, cite: ragChunkCite(chunk), relevanceScore: chunk._qc?.relevanceScore ?? 0, provenance: ['legacy-fallback']
+      })),
+      totalCandidates: ranked.length,
+      suppressedJurisdiction: ranked._jurisdictionSuppressed || [],
+      route_log: [{ stage: 'fallback', method: 'rankChunks', count: ranked.length, confidence: 0 }]
+    };
+  }
 }
 function ragRerank(req, retrieveOut, parseOut, overrides) {
   const ov = overrides || { forceInclude: [], exclude: [] };
@@ -2487,7 +2779,7 @@ function ragRerank(req, retrieveOut, parseOut, overrides) {
   const forceSet = new Set(ov.forceInclude || []);
   const items = retrieveOut.candidates.map(c => {
     const chunk = c.chunk;
-    const score = chunk._qc?.relevanceScore ?? 0;
+    const score = c.relevanceScore ?? chunk._qc?.relevanceScore ?? 0;
     const meta = sourceMetaFor(chunk.reg, chunk.sourceKey);
     let label = 'contextual';
     if (!chunk._qc?.inScopeCategory || chunk._qc?.domainMismatch) label = 'not_applicable';
@@ -2498,7 +2790,8 @@ function ragRerank(req, retrieveOut, parseOut, overrides) {
     if (excludeSet.has(chunk.id)) label = 'suppressed';
     const dateBoost = meta.effectiveDate ? 2 : 0;
     const confidence = Math.min(100, Math.max(0, score * 4 + ragAuthorityLevel(meta) * 3 + dateBoost));
-    return { ...c, label, confidence, cite: ragChunkCite(chunk) };
+    const prov = c.provenance || ['deterministic'];
+    return { ...c, label, confidence, cite: ragChunkCite(chunk), provenance: prov };
   });
   items.sort((a, b) => {
     const order = { primary: 0, supporting: 1, contextual: 2, suppressed: 3, not_applicable: 4 };
@@ -2622,9 +2915,21 @@ function ragReplaySummaryHtml() {
   const r = st.rerank?.output;
   const s = st.synthesize?.output;
   const v = st.verify?.output;
+  const ret = st.retrieve?.output;
+  const routeLines = (ret?.route_log || []).map(rl =>
+    '<div class="rag-pipe-step"><b>' + escapeHtml(rl.stage) + '</b> ' + escapeHtml(rl.method) + ': ' + rl.count + ' (conf ' + Math.round(rl.confidence || 0) + ')</div>'
+  ).join('');
+  const provSample = (ret?.candidates || []).slice(0, 4).map(c => {
+    const badges = (c.provenance || []).map(m =>
+      '<span class="prov-badge prov-' + (m === 'graph' ? 'graph' : m === 'vector' ? 'vector' : 'det') + '">' + escapeHtml(m) + '</span>'
+    ).join('');
+    return '<div class="hybrid-route">' + badges + escapeHtml(c.chunk?.reg + ' ' + c.chunk?.sec) + '</div>';
+  }).join('');
   return [
-    '<div class="rag-pipe-step"><b>Parse</b> ' + escapeHtml((p?.requirement_id || '') + ' · ' + (p?.personas || []).join(', ')) + '</div>',
-    '<div class="rag-pipe-step"><b>Retrieve</b> ' + (st.retrieve?.output?.candidates?.length || 0) + ' candidates from library</div>',
+    '<div class="rag-pipe-step"><b>Parse</b> ' + escapeHtml((p?.requirement_id || '') + ' · refs: ' + (p?.explicit_refs || []).join(', ')) + '</div>',
+    '<div class="rag-pipe-step"><b>Hybrid Retrieve</b> ' + (ret?.hybrid ? 'OKF+Graph+Vector' : 'legacy') + ' · ' + (ret?.candidates?.length || 0) + ' merged</div>',
+    routeLines,
+    provSample ? '<div style="margin-top:6px"><b style="font-size:9px">Provenance sample</b>' + provSample + '</div>' : '',
     '<div class="rag-pipe-step"><b>ReRank</b> ' + (r?.primaryCount || 0) + ' primary · ' + (r?.supportingCount || 0) + ' supporting · ' + (r?.suppressedCount || 0) + ' suppressed</div>',
     '<div class="rag-pipe-step"><b>Synthesize</b> ' + (s?.obligations?.length || 0) + ' obligations · IT scope: ' + escapeHtml(s?.it_scope || 'none') + '</div>',
     '<div class="rag-pipe-step"><b>Verify</b> ' + (v?.pass ? 'Draft checks passed' : ((v?.issues?.length || 0) + ' issue(s) flagged')) + ' · DRAFT_NOT_CONTROLLED</div>'
@@ -4289,7 +4594,8 @@ function renderStories(stories, pipelineResult) {
   </div>` : '';
 
   const ragBanner = (ragGraphEnabled && H.ragReplay?.stages) ? `<div class="rag-banner" id="rag-banner">
-    <b>RAG Graph (draft)</b> — Parse → Retrieve → ReRank → Synthesize → Verify ·
+    <b>RAG Graph (draft)</b> — Parse → Hybrid Retrieve → ReRank → Synthesize → Verify ·
+    ${H.ragReplay.stages.retrieve?.output?.hybrid ? 'OKF+Graph+TF-IDF' : 'legacy'} ·
     ${H.ragReplay.stages.rerank?.output?.primaryCount||0} primary sources ·
     ${H.ragReplay.stages.synthesize?.output?.obligations?.length||0} obligations ·
     ${H.ragReplay.stages.verify?.output?.pass ? 'verify OK (draft)' : 'verify flagged'} · DRAFT_NOT_CONTROLLED
