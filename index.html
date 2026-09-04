@@ -329,6 +329,30 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .rubric-check{font-size:9px;padding:2px 6px;border-radius:4px;background:#fff;border:1px solid var(--border);color:var(--ink3)}
 .rubric-check.ok{border-color:rgba(14,122,98,.35);color:#0e7a62;background:#ecfdf5}
 .rubric-check.no{opacity:.75}
+.rag-toggle-row{margin:0 0 10px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r2);background:#fff}
+.rag-toggle-lbl{display:flex;align-items:flex-start;gap:8px;font-size:11px;color:var(--ink2);cursor:pointer;line-height:1.45}
+.rag-toggle-lbl input{margin-top:2px;flex-shrink:0}
+.rag-graph-hint{font-size:10px;color:var(--teal);margin-top:6px;line-height:1.4}
+.rag-banner{background:linear-gradient(135deg,#f5f3ff 0%,#eff6ff 100%);border:1px solid rgba(67,56,202,.15);border-radius:var(--r2);padding:10px 12px;margin-bottom:12px;font-size:10px;color:var(--ink2);line-height:1.45}
+.rag-banner b{color:#4338ca}
+.rag-pipe-panel{display:none;margin:8px 0 0;padding:8px 10px;background:#fafafa;border:1px solid var(--border);border-radius:var(--r);font-size:10px;color:var(--ink2);line-height:1.5}
+.rag-pipe-panel.show{display:block}
+.rag-pipe-step{margin-bottom:4px}
+.rag-pipe-step b{color:var(--ink);font-size:9px;text-transform:uppercase;letter-spacing:.3px}
+.rag-label{display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:8px;margin-left:4px}
+.rag-label.primary{background:#ecfdf5;color:#166534}
+.rag-label.supporting{background:#eff6ff;color:#1d4ed8}
+.rag-label.contextual{background:#f3f4f6;color:#4b5563}
+.rag-label.suppressed{background:#fffbeb;color:#92400e}
+.rag-label.not_applicable{background:#fef2f2;color:#991b1b}
+.qg-panel{margin:8px 0;padding:8px 10px;background:#fffbeb;border-radius:5px;border-left:3px solid #ca8a04}
+.qg-title{font-size:9px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px}
+.qg-grid{display:flex;flex-wrap:wrap;gap:6px;font-size:10px}
+.qg-item{padding:3px 7px;border-radius:4px;background:#fff;border:1px solid var(--border)}
+.qg-item.ok{border-color:rgba(22,101,52,.3);color:#166534}
+.qg-item.no{color:#92400e}
+.qg-regen{margin-top:6px;font-size:10px;padding:4px 10px;border:1px solid var(--border);border-radius:var(--r);background:#fff;cursor:pointer;font-family:inherit;color:var(--ink2)}
+.qg-regen:hover{border-color:var(--blue);color:var(--blue)}
 .ftr-btn{padding:3px 10px;border-radius:20px;border:1px solid var(--border);background:#fff;color:var(--ink3);font-size:10px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .12s}
 .ftr-btn:hover{color:var(--ink);border-color:var(--border2)}
 .ftr-btn.v{background:var(--green-t);color:var(--green);border-color:rgba(22,101,52,.2)}
@@ -828,6 +852,13 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
   <!-- SUBMIT — full width, like Image 1 -->
   <div class="submit-footer">
     <div id="mvp-validation" role="alert" aria-live="assertive" tabindex="-1" style="display:none;margin:0 0 10px;padding:10px 12px;border:1px solid #dc2626;border-radius:7px;background:#fef2f2;color:#991b1b;font-size:12px;line-height:1.5"></div>
+    <div class="rag-toggle-row" id="rag-toggle-row">
+      <label class="rag-toggle-lbl">
+        <input type="checkbox" id="rag-graph-toggle" aria-describedby="rag-graph-hint" onchange="setRagGraphMode(this.checked)">
+        <span><b>RAG Graph pipeline (beta)</b> — Parse → Retrieve → ReRank → Synthesize → Verify → Replay. Default off preserves legacy PBI generator.</span>
+      </label>
+      <div id="rag-graph-hint" class="rag-graph-hint" style="display:none">Draft RAG flow active · SME/QA review still required · exports remain DRAFT_NOT_CONTROLLED</div>
+    </div>
     <button class="submit-btn demo" id="submit-btn" onclick="doGenerate()">
       <span class="sb-send-icon">🚀</span>
       <span id="submit-lbl">Create Business Assurance Package</span>
@@ -1537,6 +1568,8 @@ function init(){
   restoreSessionKeys();
   restoreIngestMemory();
   ensureValidModel();
+  initRagGraphFlag();
+  updateRagGraphToggleUI();
   // Auto-select FDA on first load
   applyFramework('FDA');
   updateMainApiKeyCard();
@@ -2305,6 +2338,7 @@ const H = {
   evidence:  {},   // evidence package from Loop 3
   qcReport:  null, // quality-control report (scope/rank/dedupe/jurisdiction/rubric)
   healthcarePackage: null, // standardized healthcare output schema package
+  ragReplay: null, // RAG Graph stage snapshots (when ragGraphEnabled)
   blocked:   false,
   blockReason: '',
 };
@@ -2329,6 +2363,296 @@ const QC_CONFIG = {
   hardFilterJurisdiction: true, // drop OOJ only when in-jurisdiction alternatives remain
   hardFilterLowRelevance: true
 };
+
+/* RAG_GRAPH_START — Parse → Retrieve → ReRank → Synthesize → Verify → Replay */
+const RAG_GRAPH_CONFIG = {
+  maxRetrieve: 16,
+  maxActive: 8,
+  primaryThreshold: 8,
+  supportingThreshold: 3,
+  storageKey: 'maras_rag_graph_v1'
+};
+let ragGraphEnabled = false;
+
+function initRagGraphFlag() {
+  try {
+    const qs = new URLSearchParams(location.search);
+    if (qs.get('rag') === '1') ragGraphEnabled = true;
+    else if (qs.get('rag') === '0') ragGraphEnabled = false;
+    else ragGraphEnabled = localStorage.getItem(RAG_GRAPH_CONFIG.storageKey) === '1';
+  } catch (_e) { ragGraphEnabled = false; }
+}
+function setRagGraphMode(on) {
+  ragGraphEnabled = !!on;
+  try { localStorage.setItem(RAG_GRAPH_CONFIG.storageKey, ragGraphEnabled ? '1' : '0'); } catch (_e) {}
+  updateRagGraphToggleUI();
+}
+function updateRagGraphToggleUI() {
+  const el = document.getElementById('rag-graph-toggle');
+  if (el) el.checked = ragGraphEnabled;
+  const hint = document.getElementById('rag-graph-hint');
+  if (hint) hint.style.display = ragGraphEnabled ? 'block' : 'none';
+}
+function ragAuthorityLevel(meta) {
+  const t = String(meta?.sourceType || '').toLowerCase();
+  if (t.includes('regulation')) return 5;
+  if (t.includes('guidance')) return 4;
+  if (t.includes('guideline')) return 3;
+  if (t.includes('licensed')) return 1;
+  return 2;
+}
+function ragDetectItScope(text, sys) {
+  const t = String(text || '').toLowerCase();
+  if (/\b(develop|development|custom code|software build|sprint|api endpoint|deploy)\b/.test(t)) return 'IT_DEVELOPMENT';
+  if (/\b(configur|parameter|setup|admin screen|workflow rule|master data)\b/.test(t)) return 'IT_CONFIGURATION';
+  if (['ERP / SAP', 'SCADA / DCS'].includes(sys)) return 'IT_CONFIGURATION';
+  return null;
+}
+function ragParse(req, ctxSnap) {
+  const sys = ctxSnap?.sys || document.getElementById('f-system')?.value || '';
+  const outcome = ctxSnap?.outcome || document.getElementById('f-outcome')?.value || '';
+  const raw = String(req || '').trim();
+  const scope = resolveScopeControls();
+  const personas = [];
+  if (/qa|quality/i.test(raw)) personas.push('QA Lead');
+  if (/validation|csv|iq|oq|pq/i.test(raw)) personas.push('Validation Engineer');
+  if (/regulatory|\bra\b/i.test(raw)) personas.push('Regulatory Affairs');
+  if (/capa|deviation/i.test(raw)) personas.push('Quality Event Owner');
+  if (!personas.length) personas.push('Business Owner');
+  const ambiguities = [];
+  const missing = [];
+  if (!outcome.trim()) missing.push('measurable business outcome');
+  if (raw.length < 40) ambiguities.push('Requirement text is brief — scope may be under-specified');
+  if (!scope.selectedRegIds.length && !selItems.size) missing.push('explicit regulatory library selection');
+  return {
+    requirement_id: 'REQ-RAG-' + Date.now().toString(36).toUpperCase(),
+    raw_text: raw,
+    normalized_text: qcNormText(raw),
+    personas,
+    business_problem: ctxSnap?.auditGap || document.getElementById('f-gap-input')?.value || '',
+    goal: outcome,
+    business_value: outcome,
+    scope_hints: {
+      jurisdiction: scope.allowedNations ? [...scope.allowedNations] : getSelectedJurisdictions(),
+      product_type: selDomain || '',
+      process: sys,
+      department: personas[0] || '',
+      lifecycle: /validation|iq|oq|pq/i.test(raw) ? 'validation' : /inspection|audit/i.test(raw) ? 'inspection-readiness' : /clinical|study|submission/i.test(raw) ? 'clinical' : 'operations'
+    },
+    it_scope: ragDetectItScope(raw, sys),
+    ambiguities,
+    missing_information: missing,
+    parsedAt: new Date().toISOString()
+  };
+}
+function ragChunkCite(chunk) {
+  const meta = sourceMetaFor(chunk.reg, chunk.sourceKey);
+  return {
+    source_id: chunk.id,
+    title: chunk.title,
+    section: chunk.sec,
+    regulation: chunk.reg,
+    jurisdiction: normalizeJurisdictionNation(meta.nation),
+    regulator: meta.authority || '',
+    authority_level: ragAuthorityLevel(meta),
+    version: meta.sourceVersion || '',
+    effective_date: meta.effectiveDate || '',
+    url: meta.url || '',
+    license_tag: meta.licenseTag || ''
+  };
+}
+function ragRetrieve(req, _parseOut) {
+  const scope = resolveScopeControls();
+  const ranked = rankChunks(req);
+  const candidates = ranked.slice(0, RAG_GRAPH_CONFIG.maxRetrieve).map(chunk => ({
+    chunk,
+    cite: ragChunkCite(chunk),
+    relevanceScore: chunk._qc?.relevanceScore ?? 0
+  }));
+  return {
+    scope,
+    candidates,
+    totalCandidates: ranked.length,
+    suppressedJurisdiction: ranked._jurisdictionSuppressed || []
+  };
+}
+function ragRerank(req, retrieveOut, parseOut, overrides) {
+  const ov = overrides || { forceInclude: [], exclude: [] };
+  const excludeSet = new Set(ov.exclude || []);
+  const forceSet = new Set(ov.forceInclude || []);
+  const items = retrieveOut.candidates.map(c => {
+    const chunk = c.chunk;
+    const score = chunk._qc?.relevanceScore ?? 0;
+    const meta = sourceMetaFor(chunk.reg, chunk.sourceKey);
+    let label = 'contextual';
+    if (!chunk._qc?.inScopeCategory || chunk._qc?.domainMismatch) label = 'not_applicable';
+    else if (!chunk._qc?.inJurisdiction) label = 'suppressed';
+    else if (score >= RAG_GRAPH_CONFIG.primaryThreshold) label = 'primary';
+    else if (score >= RAG_GRAPH_CONFIG.supportingThreshold) label = 'supporting';
+    if (forceSet.has(chunk.id)) label = 'primary';
+    if (excludeSet.has(chunk.id)) label = 'suppressed';
+    const dateBoost = meta.effectiveDate ? 2 : 0;
+    const confidence = Math.min(100, Math.max(0, score * 4 + ragAuthorityLevel(meta) * 3 + dateBoost));
+    return { ...c, label, confidence, cite: ragChunkCite(chunk) };
+  });
+  items.sort((a, b) => {
+    const order = { primary: 0, supporting: 1, contextual: 2, suppressed: 3, not_applicable: 4 };
+    return (order[a.label] - order[b.label]) || (b.confidence - a.confidence);
+  });
+  const activeChunks = items
+    .filter(i => i.label === 'primary' || i.label === 'supporting')
+    .slice(0, RAG_GRAPH_CONFIG.maxActive)
+    .map(i => i.chunk);
+  return {
+    items,
+    activeChunks,
+    primaryCount: items.filter(i => i.label === 'primary').length,
+    supportingCount: items.filter(i => i.label === 'supporting').length,
+    suppressedCount: items.filter(i => i.label === 'suppressed' || i.label === 'not_applicable').length
+  };
+}
+function ragSynthesize(req, rerankOut, parseOut) {
+  const active = rerankOut.items.filter(i => i.label === 'primary' || i.label === 'supporting');
+  const obligations = [];
+  const controlObjectives = [];
+  const requiredEvidence = [];
+  active.forEach((item, idx) => {
+    const reqs = (item.chunk.reqs && item.chunk.reqs.length) ? item.chunk.reqs : [item.chunk.title];
+    reqs.slice(0, 3).forEach((rq, ri) => {
+      const oid = `${idx + 1}.${ri + 1}`;
+      obligations.push({ id: 'OBL-' + oid, text: rq, cite: item.cite });
+      controlObjectives.push({ id: 'CO-' + oid, text: 'Demonstrate controlled operation: ' + rq, cite: item.cite });
+      requiredEvidence.push({ id: 'EV-' + oid, artifact: 'Procedure + objective test evidence', cite: item.cite });
+    });
+  });
+  const itScope = parseOut.it_scope;
+  const includeItPbi = itScope === 'IT_DEVELOPMENT' || itScope === 'IT_CONFIGURATION';
+  return {
+    obligations,
+    control_objectives: controlObjectives,
+    required_evidence: requiredEvidence,
+    gap_assessment: (parseOut.missing_information || []).map(g => ({ gap: g, severity: 'medium' })),
+    risk_assessment: (parseOut.ambiguities || []).map(a => ({ risk: a, level: 'low' })),
+    remediation_recommendations: (parseOut.ambiguities || []).map(a => ({ action: 'Clarify with SME: ' + a, owner: 'Business Owner' })),
+    it_pbi_included: includeItPbi,
+    it_scope: itScope,
+    cite_packet: active.map(p => p.cite),
+    packageStatus: 'DRAFT_NOT_CONTROLLED'
+  };
+}
+function buildQualityGateSummary(story) {
+  const rub = story.validationRubric || {};
+  const inv = story.invest || {};
+  const ac = story.ac || story.acceptanceCriteria || [];
+  const gwt = ac.filter(a => /given/i.test(a) && /when/i.test(a) && /then/i.test(a)).length;
+  const semCheck = (rub.checks || []).find(c => c.id === 'semantic_quality');
+  const grammarOk = semCheck ? semCheck.pass : true;
+  const invPass = Object.keys(inv).filter(k => String(inv[k]).toLowerCase() !== 'no').length;
+  return {
+    storyFormat: !!(story.story && story.title && story.regRef),
+    clarity: grammarOk,
+    testability: gwt >= 1 && ac.length >= 2,
+    grammar: grammarOk,
+    invest: invPass,
+    investTotal: 6,
+    overallPass: !!rub.pass
+  };
+}
+function ragVerify(req, synthesizeOut, stories, scope) {
+  const issues = [];
+  if (!synthesizeOut?.obligations?.length) {
+    issues.push({ severity: 'warning', type: 'synthesis', message: 'No obligations synthesized from active sources' });
+  }
+  (stories || []).forEach(s => {
+    const rub = scoreValidationRubric(s, scope);
+    if (!rub.pass) issues.push({ severity: 'warning', type: 'rubric', storyId: s.id, message: 'Grade ' + rub.grade + ' — SME review required' });
+    const qg = buildQualityGateSummary(s);
+    if (!qg.storyFormat) issues.push({ severity: 'error', type: 'format', storyId: s.id, message: 'Missing story format fields' });
+    if (!qg.testability) issues.push({ severity: 'warning', type: 'ac', storyId: s.id, message: 'Acceptance criteria need Given/When/Then coverage' });
+  });
+  const errors = issues.filter(i => i.severity === 'error');
+  return {
+    pass: errors.length === 0,
+    issues,
+    qualityGate: {
+      storyFormat: stories.every(s => buildQualityGateSummary(s).storyFormat),
+      clarity: stories.every(s => buildQualityGateSummary(s).clarity),
+      testability: stories.filter(s => buildQualityGateSummary(s).testability).length,
+      grammar: stories.filter(s => buildQualityGateSummary(s).grammar).length,
+      investSummary: stories.map(s => ({ id: s.id, pass: buildQualityGateSummary(s).invest, total: 6 }))
+    },
+    verifiedAt: new Date().toISOString(),
+    packageStatus: 'DRAFT_NOT_CONTROLLED'
+  };
+}
+function ragGetActiveRanked(req) {
+  const active = H.ragReplay?.stages?.rerank?.output?.activeChunks;
+  if (!ragGraphEnabled || !active?.length) return rankChunks(req);
+  const scope = resolveScopeControls();
+  return attachRankMeta(active.slice(), {
+    jurisdictionSuppressed: H.ragReplay.stages.retrieve?.output?.suppressedJurisdiction || [],
+    scope,
+    rankedCount: active.length
+  });
+}
+function runRagGraph(req, ctxSnap) {
+  const overrides = H.ragReplay?.userOverrides || { forceInclude: [], exclude: [] };
+  const stages = {};
+  stages.parse = { at: new Date().toISOString(), output: ragParse(req, ctxSnap) };
+  stages.retrieve = { at: new Date().toISOString(), output: ragRetrieve(req, stages.parse.output) };
+  stages.rerank = { at: new Date().toISOString(), output: ragRerank(req, stages.retrieve.output, stages.parse.output, overrides) };
+  stages.synthesize = { at: new Date().toISOString(), output: ragSynthesize(req, stages.rerank.output, stages.parse.output) };
+  return { ok: true, stages, userOverrides: overrides };
+}
+function ragCompleteVerify(req, stories) {
+  if (!ragGraphEnabled || !H.ragReplay?.stages) return;
+  const scope = resolveScopeControls();
+  const synth = H.ragReplay.stages.synthesize?.output;
+  H.ragReplay.stages.verify = { at: new Date().toISOString(), output: ragVerify(req, synth, stories, scope) };
+}
+function ragReplaySummaryHtml() {
+  const st = H.ragReplay?.stages;
+  if (!st) return '';
+  const p = st.parse?.output;
+  const r = st.rerank?.output;
+  const s = st.synthesize?.output;
+  const v = st.verify?.output;
+  return [
+    '<div class="rag-pipe-step"><b>Parse</b> ' + escapeHtml((p?.requirement_id || '') + ' · ' + (p?.personas || []).join(', ')) + '</div>',
+    '<div class="rag-pipe-step"><b>Retrieve</b> ' + (st.retrieve?.output?.candidates?.length || 0) + ' candidates from library</div>',
+    '<div class="rag-pipe-step"><b>ReRank</b> ' + (r?.primaryCount || 0) + ' primary · ' + (r?.supportingCount || 0) + ' supporting · ' + (r?.suppressedCount || 0) + ' suppressed</div>',
+    '<div class="rag-pipe-step"><b>Synthesize</b> ' + (s?.obligations?.length || 0) + ' obligations · IT scope: ' + escapeHtml(s?.it_scope || 'none') + '</div>',
+    '<div class="rag-pipe-step"><b>Verify</b> ' + (v?.pass ? 'Draft checks passed' : ((v?.issues?.length || 0) + ' issue(s) flagged')) + ' · DRAFT_NOT_CONTROLLED</div>'
+  ].join('');
+}
+function toggleRagPipeline(btn) {
+  const panel = btn.nextElementSibling;
+  if (panel) panel.classList.toggle('show');
+  const span = btn.querySelector('span:last-child');
+  if (span) span.style.transform = panel?.classList.contains('show') ? 'rotate(180deg)' : '';
+}
+async function regenerateStoryImproved(index) {
+  if (demoMode) { alert('Switch to Live AI mode to regenerate an improved draft version. Demo mode uses deterministic output.'); return; }
+  const story = allStories[index];
+  if (!story) return;
+  const m = MODELS.find(x => x.id === selModel);
+  if (!m || !apiKeys[m.id]) { alert('Save a valid API key before regenerating.'); return; }
+  const profile = getLiveHarnessProfile(m.id);
+  const citeLine = (H.ragReplay?.stages?.synthesize?.output?.cite_packet || []).slice(0, 4)
+    .map(c => c.regulation + ' ' + c.section).join('; ');
+  const sys = 'Improve ONE business PBI JSON only. Keep regulation, section, regRef traceability. Output strict JSON in ```json block.';
+  const user = 'Improve clarity, testability, and INVEST for:\n' + JSON.stringify({ id: story.id, title: story.title, story: story.story, ac: story.ac }) +
+    '\nCite only: ' + citeLine + '\nDo not invent sources. packageStatus DRAFT_NOT_CONTROLLED.';
+  try {
+    const txt = await callLLM(m, sys, user, profile.maxTokens.decomp || 1200);
+    const jm = txt.match(/```json\s*([\s\S]*?)```/);
+    if (!jm) { alert('No JSON returned — try again.'); return; }
+    const improved = JSON.parse(jm[1]);
+    Object.assign(allStories[index], improved, { reviewStatus: 'DRAFT_UNREVIEWED', validationRubric: scoreValidationRubric({ ...story, ...improved }, resolveScopeControls()) });
+    renderStories(allStories, { qcReport: H.qcReport });
+  } catch (e) { alert('Regenerate failed: ' + (e.message || e)); }
+}
+/* RAG_GRAPH_END */
 
 const JURISDICTION_BY_FRAMEWORK = {
   'FDA': ['United States', 'International'],
@@ -3280,7 +3604,7 @@ function runDemoEngine(req, ctx) {
   const clientRegion = getJurisdictionValue() || fw || 'selected operating region';
   const clientDelta = document.getElementById('f-client-delta').value || 'standard client process';
   const auditGap = document.getElementById('f-gap-input').value || 'no prior audit gap supplied';
-  const ranked = rankChunks(req);
+  const ranked = ragGetActiveRanked(req);
   const top   = ranked.slice(0, QC_CONFIG.maxScopedChunks);
   top._jurisdictionSuppressed = ranked._jurisdictionSuppressed || [];
   top._scope = ranked._scope;
@@ -3417,6 +3741,36 @@ function runDemoEngine(req, ctx) {
       };
     });
   });
+
+  if (ragGraphEnabled && H.ragReplay?.stages?.synthesize?.output?.it_pbi_included) {
+    const itScope = H.ragReplay.stages.synthesize.output.it_scope;
+    const itId = `${pfx}-${String(itemNo + 1).padStart(3,'0')}`;
+    if (!stories.some(s => /IT configuration|IT development/i.test(s.title))) {
+      stories.push({
+        num: itemNo + 1,
+        id: itId,
+        title: `IT ${itScope === 'IT_DEVELOPMENT' ? 'development' : 'configuration'}: controlled change for ${sys}`,
+        type: 'integration-control',
+        frameworks_applied: ['INVEST', '3C'],
+        regulation: top[0]?.reg || 'GxP CSV',
+        section: top[0]?.sec || '§',
+        regulatoryCriticality: 'P1',
+        regRef: `${H.ragReplay.stages.parse?.output?.requirement_id || 'REQ-IT'} · IT scope`,
+        epic: `IT Assurance · ${sys}`,
+        story: `For ${sys}, IT must implement controlled ${itScope === 'IT_DEVELOPMENT' ? 'development' : 'configuration'} practices so that regulated operations remain traceable and validation evidence stays current.`,
+        invest: { independent:'yes', negotiable:'yes', valuable:'Supports validated system state', estimable:'yes', small:'yes', testable:'yes' },
+        ac: [
+          `Given ${itScope} scope is identified, when changes are proposed, then impact assessment and approval records exist.`,
+          `Given QA reviews ${itId}, when evidence is inspected, then configuration/development records link to validation status.`
+        ],
+        accept: { action: 'IT control implemented', expected: 'Traceable IT change evidence', pass_fail: 'QA review', traceable: H.ragReplay.stages.parse?.output?.requirement_id || 'REQ-IT' },
+        gamp: 'Cat.4 — Configured Software',
+        phase: 'Validation evidence',
+        sourceRequirement: 'IT scope control',
+        labels: ['it-scope', String(itScope || '').toLowerCase()]
+      });
+    }
+  }
 
   // ── Quality Control Layer (scope · relevance · dedupe · jurisdiction · normalize · rubric · HC schema) ──
   const preQcStories = stories;
@@ -3633,8 +3987,15 @@ async function doGenerate() {
   ].filter(Boolean).join(' | ');
 
   // Reset harness state
-  Object.assign(H, {ctx:{},req,regObjs:[],riskReg:[],gateLog:[],stories:[],backlog:{},analytics:{},review:{},evidence:{},qcReport:null,healthcarePackage:null,blocked:false,blockReason:''});
+  Object.assign(H, {ctx:{},req,regObjs:[],riskReg:[],gateLog:[],stories:[],backlog:{},analytics:{},review:{},evidence:{},qcReport:null,healthcarePackage:null,ragReplay:null,blocked:false,blockReason:''});
   H.ctx = {req, ctx, fw:getFrameworkValue(), sys:document.getElementById('f-system').value||'GxP system', outcome:document.getElementById('f-outcome').value, clientRegion:getJurisdictionValue(), jurisdiction:getJurisdictionValue(), clientDelta:document.getElementById('f-client-delta').value, auditGap:document.getElementById('f-gap-input').value, pfx:autoPrefix()};
+
+  if (ragGraphEnabled) {
+    try {
+      H.ragReplay = runRagGraph(req, H.ctx);
+      if (!H.ragReplay.ok) H.ragReplay = null;
+    } catch (_e) { H.ragReplay = null; }
+  }
 
   buildStepBar();
   setStatus('run', 'Orchestrator initialising pipeline…');
@@ -3761,6 +4122,7 @@ async function orchestratorDemo(req, ctx) {
     `\n\nsubmission_ready: ${ev.evidence_package.submission_ready} — ${ev.evidence_package.sign_off_required.join(' + ')} sign-off required`);
 
   setStatus('done', `Draft assembled · ${result.stories.length} business PBIs · SME/QA review required before use`);
+  ragCompleteVerify(req, result.stories);
   renderStories(result.stories, result);
   if(document.getElementById('view-readiness')?.style.display==='block') buildReadinessView();
 }
@@ -3823,7 +4185,7 @@ async function orchestratorLive(req, ctx) {
     if(jm){try{
       const p=JSON.parse(jm[1]);
       if(Array.isArray(p)){
-        const ranked = rankChunks(req);
+        const ranked = ragGetActiveRanked(req);
         const qcResult = applyQualityControls(p.map((s,i)=>({...s,num:i+1})), ranked, req, {regObjs:H.regObjs, riskReg:H.riskReg});
         allStories = qcResult.stories;
         H.stories = allStories;
@@ -3846,6 +4208,7 @@ async function orchestratorLive(req, ctx) {
     H.healthcarePackage = toHealthcareStandardPackage(allStories, {
       regObjs:H.regObjs, riskReg:H.riskReg, review:H.review, evidence:H.evidence
     }, resolveScopeControls(), H.qcReport);
+    ragCompleteVerify(req, allStories);
     setStatus('done','Draft generated · '+allStories.length+' business PBIs · SME/QA review required before use');
     renderStories(allStories, {qcReport:H.qcReport, healthcarePackage:H.healthcarePackage});
   } else if(!H.blocked){
@@ -3920,7 +4283,14 @@ function renderStories(stories, pipelineResult) {
     </div>
   </div>` : '';
 
-  document.getElementById('stories-list').innerHTML = qcBanner + stories.map((s,i) => {
+  const ragBanner = (ragGraphEnabled && H.ragReplay?.stages) ? `<div class="rag-banner" id="rag-banner">
+    <b>RAG Graph (draft)</b> — Parse → Retrieve → ReRank → Synthesize → Verify ·
+    ${H.ragReplay.stages.rerank?.output?.primaryCount||0} primary sources ·
+    ${H.ragReplay.stages.synthesize?.output?.obligations?.length||0} obligations ·
+    ${H.ragReplay.stages.verify?.output?.pass ? 'verify OK (draft)' : 'verify flagged'} · DRAFT_NOT_CONTROLLED
+  </div>` : '';
+
+  document.getElementById('stories-list').innerHTML = ragBanner + qcBanner + stories.map((s,i) => {
     const sourceUrl=safeExternalUrl(s.sourceUrl);
     const fwBadges = (s.frameworks_applied||[]).map(fw=>
       `<span class="tag" style="background:#f3f0ff;color:#5b21b6;font-size:9px">${escapeHtml(fw)}</span>`).join('');
@@ -3946,6 +4316,21 @@ function renderStories(stories, pipelineResult) {
       </div>
       <div class="rubric-checks">${(rub.checks||[]).map(c=>`<span class="rubric-check ${c.pass?'ok':'no'}">${c.pass?'✓':'·'} ${c.label} (${c.score}/${c.weight})</span>`).join('')}</div>
     </div>` : '';
+    const qg = buildQualityGateSummary(s);
+    const qgHtml = ragGraphEnabled ? `<div class="qg-panel">
+      <div class="qg-title">Quality Gate (draft) — SME/QA approval still required</div>
+      <div class="qg-grid">
+        <span class="qg-item ${qg.storyFormat?'ok':'no'}">Story format</span>
+        <span class="qg-item ${qg.clarity?'ok':'no'}">Clarity</span>
+        <span class="qg-item ${qg.testability?'ok':'no'}">Testability</span>
+        <span class="qg-item ${qg.grammar?'ok':'no'}">Grammar</span>
+        <span class="qg-item ${qg.invest>=5?'ok':'no'}">INVEST ${qg.invest}/${qg.investTotal}</span>
+      </div>
+      <button type="button" class="qg-regen" onclick="regenerateStoryImproved(${i})">Regenerate improved version (Live AI only)</button>
+    </div>` : '';
+    const ragPipeHtml = ragGraphEnabled ? `<button type="button" class="sc-expand rag-pipe-btn" onclick="toggleRagPipeline(this)">
+      <span>RAG pipeline replay</span><span style="transition:transform .14s">▼</span>
+    </button><div class="rag-pipe-panel">${ragReplaySummaryHtml()}</div>` : '';
     return `<div class="story-card" data-story-index="${i}">
       <div class="sc-top">
         <div class="sc-num">
@@ -3966,8 +4351,9 @@ function renderStories(stories, pipelineResult) {
         <p class="sc-story">${escapeHtml(s.story||s.userStory)}</p>
         ${sourceUrl?`<div style="font-size:10px;margin:4px 0 8px"><a href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">Open authoritative source ↗</a> · ${s.sourceExcerptVerified?'Exact excerpt captured':'Curated summary'} · ${escapeHtml(s.sourceApprovalStatus||'SME_PENDING')}</div>`:`<div style="font-size:10px;color:#b45309;margin:4px 0 8px">No authoritative source URL mapped — clarification required</div>`}
         ${s.sourceExcerpt?`<div style="font-size:10px;color:#475569;margin:0 0 8px;padding:7px 9px;background:#f8fafc;border-left:2px solid #94a3b8"><b>Source excerpt:</b> ${escapeHtml(s.sourceExcerpt)}<br><b>Version:</b> ${escapeHtml(s.sourceVersion||'')} · <b>Captured:</b> ${escapeHtml(s.sourceCapturedAt||'')} · <b>License:</b> ${escapeHtml(s.sourceLicenseTag||'')}</div>`:''}
-        ${boiHtml}${investHtml}${rubHtml}
+        ${boiHtml}${investHtml}${rubHtml}${qgHtml}
       </div>
+      ${ragPipeHtml}
       <button class="sc-expand" onclick="toggleAC(this)">
         <span>Acceptance criteria &nbsp;(${(s.ac||s.acceptanceCriteria||[]).length})</span>
         <span style="transition:transform .14s">▼</span>
@@ -4033,7 +4419,7 @@ function savePackage(){
   const reviewed=allStories.filter(s=>s.reviewStatus==='SME_REVIEW_ATTESTED_DRAFT').length;
   const rec={key:'pkg_'+Date.now(),name,at:new Date().toISOString(),count:allStories.length,
              packageStatus:'DRAFT_NOT_CONTROLLED',reviewedCount:reviewed,
-             stories:allStories,ctx,gateLog:H.gateLog};
+             stories:allStories,ctx,gateLog:H.gateLog,ragReplay:ragGraphEnabled?H.ragReplay:null};
   try{localStorage.setItem(rec.key,JSON.stringify(rec));}catch{alert('Browser storage full. Export JSON to save.');}
   document.getElementById('save-ok').textContent='Saved ✓';
   setTimeout(()=>document.getElementById('save-ok').textContent='',2500);
@@ -4106,7 +4492,8 @@ function dlJSON(){
     // Additive — does not remove legacy consumers' fields above
     schemaId:FDA_CLINICAL_DATA_SCHEMA.schemaId,
     schemaVersion:FDA_CLINICAL_DATA_SCHEMA.schemaVersion,
-    qualityControl:H.qcReport
+    qualityControl:H.qcReport,
+    ragReplay:ragGraphEnabled?H.ragReplay:null
   },null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='DRAFT-MARAS-Backlog.json';a.click();
 }
