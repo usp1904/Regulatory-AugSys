@@ -356,6 +356,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .qg-item{padding:3px 7px;border-radius:4px;background:#fff;border:1px solid var(--border)}
 .qg-item.ok{border-color:rgba(22,101,52,.3);color:#166534}
 .qg-item.no{color:#92400e}
+.qg-flag{font-size:10px;color:#78350f;margin:3px 0;padding:3px 6px;background:#fff;border-radius:3px;border:1px solid #fde68a}
+.qg-weak{font-size:10px;color:#1e3a5f;margin-top:4px}
 .qg-regen{margin-top:6px;font-size:10px;padding:4px 10px;border:1px solid var(--border);border-radius:var(--r);background:#fff;cursor:pointer;font-family:inherit;color:var(--ink2)}
 .qg-regen:hover{border-color:var(--blue);color:var(--blue)}
 .rag-stage{margin:8px 0 0;padding:6px 0 0;border-top:1px dashed var(--border)}
@@ -883,7 +885,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
         <input type="checkbox" id="rag-graph-toggle" aria-describedby="rag-graph-hint" onchange="setRagGraphMode(this.checked)">
         <span><b>RAG Graph pipeline (beta)</b> — Parse → Retrieve → ReRank → Synthesize → Verify → Replay. Enabled by default; uncheck to use legacy ranking only.</span>
       </label>
-      <div id="rag-graph-hint" class="rag-graph-hint" style="display:none">Draft RAG flow active · SME/QA review still required · exports remain DRAFT_NOT_CONTROLLED</div>
+      <div id="rag-graph-hint" class="rag-graph-hint" style="display:none">CRS RAG Graph (draft) active — uncheck for legacy rankChunks only · SME/QA review still required · exports remain DRAFT_NOT_CONTROLLED</div>
     </div>
     <button class="submit-btn demo" id="submit-btn" onclick="doGenerate()">
       <span class="sb-send-icon">🚀</span>
@@ -2783,6 +2785,7 @@ function ragRetrieve(req, parseOut) {
     return { scope, ...hybrid, candidates: hybrid.candidates.slice(0, RAG_GRAPH_CONFIG.maxRetrieve) };
   } catch (_e) {
     const ranked = rankChunks(req);
+    if (H.ragReplay) H.ragReplay.fallbackUsed = true;
     return {
       scope,
       candidates: ranked.slice(0, RAG_GRAPH_CONFIG.maxRetrieve).map(chunk => ({
@@ -2790,7 +2793,8 @@ function ragRetrieve(req, parseOut) {
       })),
       totalCandidates: ranked.length,
       suppressedJurisdiction: ranked._jurisdictionSuppressed || [],
-      route_log: [{ stage: 'fallback', method: 'rankChunks', count: ranked.length, confidence: 0 }]
+      route_log: [{ stage: 'fallback', method: 'rankChunks', count: ranked.length, confidence: 0 }],
+      fallbackUsed: true
     };
   }
 }
@@ -2861,46 +2865,141 @@ function ragSynthesize(req, rerankOut, parseOut) {
     packageStatus: 'DRAFT_NOT_CONTROLLED'
   };
 }
-function buildQualityGateSummary(story) {
+function qgStatusLabel(pass) { return pass ? 'Pass' : 'Needs improvement'; }
+function buildQualityGateSummary(story, parseOut) {
   const rub = story.validationRubric || {};
   const inv = story.invest || {};
+  const invKeys = ['independent', 'negotiable', 'valuable', 'estimable', 'small', 'testable'];
+  const weakInvest = invKeys.filter(k => !inv[k] || String(inv[k]).toLowerCase() === 'no');
   const ac = story.ac || story.acceptanceCriteria || [];
   const gwt = ac.filter(a => /given/i.test(a) && /when/i.test(a) && /then/i.test(a)).length;
   const semCheck = (rub.checks || []).find(c => c.id === 'semantic_quality');
   const grammarOk = semCheck ? semCheck.pass : true;
-  const invPass = Object.keys(inv).filter(k => String(inv[k]).toLowerCase() !== 'no').length;
+  const invPass = invKeys.length - weakInvest.length;
+  const storyText = String(story.story || story.userStory || '');
+  const classicFormat = /^as an?\s+.+,?\s+i want\s+.+,?\s+so that\s+.+/i.test(storyText);
+  const businessFormat = /^for\s+.+,?\s+the business must\s+.+/i.test(storyText);
+  const storyFormat = !!(story.title && story.regRef && storyText.length >= 40 && (classicFormat || businessFormat));
+  const flags = [];
+  if (!classicFormat && !businessFormat) flags.push({ id: 'story_format', severity: 'warning', message: 'Story missing persona/goal/value or business-must structure' });
+  if (!story.boi?.outcome && !(parseOut?.goal || parseOut?.business_value)) flags.push({ id: 'missing_value', severity: 'warning', message: 'Missing measurable business outcome or value' });
+  if (storyText.length < 40 || /^[A-Z][\w\s]{0,24}\.?$/.test(storyText.trim())) flags.push({ id: 'noun_fragment', severity: 'warning', message: 'Story may be a noun fragment or too brief' });
+  const triSeen = new Set();
+  const words = storyText.toLowerCase().split(/\s+/).filter(Boolean);
+  for (let i = 0; i < words.length - 2; i++) {
+    const tri = words.slice(i, i + 3).join(' ');
+    if (triSeen.has(tri)) flags.push({ id: 'duplicated_phrase', severity: 'warning', message: 'Duplicated phrase detected in story text' });
+    triSeen.add(tri);
+  }
+  const vagueWords = /\b(appropriate|adequate|sufficient|timely|as needed|user-friendly|efficient|robust)\b/i;
+  const measurable = /\b(within|at least|no more than|percent|%|\d+\s*(day|hour|minute|week)s?)\b/i;
+  if (vagueWords.test(storyText) && !measurable.test(storyText + ' ' + ac.join(' '))) {
+    flags.push({ id: 'vague_words', severity: 'warning', message: 'Vague terms without measurable acceptance criteria' });
+  }
+  ac.forEach((a, idx) => {
+    const givenN = (a.match(/\bgiven\b/gi) || []).length;
+    const whenN = (a.match(/\bwhen\b/gi) || []).length;
+    const thenN = (a.match(/\bthen\b/gi) || []).length;
+    if (givenN > 1 || whenN > 1 || thenN > 1 || ((a.match(/\band\b/gi) || []).length > 2 && thenN >= 1)) {
+      flags.push({ id: 'compound_ac', severity: 'warning', message: 'AC #' + (idx + 1) + ' may be compound — use single Given/When/Then behavior', acIndex: idx });
+    }
+  });
+  if (/\b(compliant|compliance certified|fda approved|validated system|inspection.?ready|fully compliant)\b/i.test(storyText) && story.sourceApprovalStatus !== 'SME_APPROVED') {
+    flags.push({ id: 'unsupported_claim', severity: 'error', message: 'Unsupported compliance claim without SME-approved citation' });
+  }
+  const clarityOk = grammarOk && !flags.some(f => ['vague_words', 'noun_fragment', 'duplicated_phrase'].includes(f.id));
+  const testabilityOk = gwt >= 1 && ac.length >= 2 && !flags.some(f => f.id === 'compound_ac');
+  const hasErrors = flags.some(f => f.severity === 'error');
   return {
-    storyFormat: !!(story.story && story.title && story.regRef),
-    clarity: grammarOk,
-    testability: gwt >= 1 && ac.length >= 2,
+    storyFormat,
+    storyFormatStatus: qgStatusLabel(storyFormat),
+    clarity: clarityOk,
+    clarityStatus: qgStatusLabel(clarityOk),
+    testability: testabilityOk,
+    testabilityStatus: qgStatusLabel(testabilityOk),
     grammar: grammarOk,
+    grammarStatus: qgStatusLabel(grammarOk),
     invest: invPass,
     investTotal: 6,
-    overallPass: !!rub.pass
+    weakInvest,
+    flags,
+    overallPass: storyFormat && testabilityOk && !hasErrors && !!rub.pass,
+    overallStatus: qgStatusLabel(storyFormat && testabilityOk && !hasErrors),
+    packageStatus: 'DRAFT_NOT_CONTROLLED'
+  };
+}
+function scoreRagPipelineRubric(graph, story, scope) {
+  const st = graph?.stages || {};
+  const parseOut = st.parse?.output || {};
+  const retrieve = st.retrieve?.output || {};
+  const rerank = st.rerank?.output || {};
+  const synth = st.synthesize?.output || {};
+  const qg = buildQualityGateSummary(story, parseOut);
+  const rub = scoreValidationRubric(story, scope || resolveScopeControls());
+  const primary = (rerank.items || []).filter(i => i.label === 'primary');
+  const irrelevant = (rerank.items || []).filter(i => i.label === 'not_applicable' || i.label === 'suppressed').length;
+  const totalRanked = (rerank.items || []).length || 1;
+  const lifecycle = parseOut.scope_hints?.lifecycle || '';
+  const scopeOk = lifecycle === 'clinical' ? !primary.some(i => /iso\s*13485|batch.?release|device.?qms/i.test((i.chunk?.reg || '') + (i.chunk?.title || ''))) : true;
+  return {
+    scope_correctness: scopeOk ? 1 : 0,
+    source_relevance: primary.length ? 1 : 0,
+    applicability_quality: primary.length >= 1 && irrelevant / totalRanked < 0.6 ? 1 : 0,
+    obligation_quality: (synth.obligations || []).length >= 1 ? 1 : 0,
+    control_actionability: (synth.control_objectives || []).length >= 1 ? 1 : 0,
+    evidence_completeness: (synth.required_evidence || []).length >= 1 ? 1 : 0,
+    gap_accuracy: Array.isArray(synth.gap_assessment) ? 1 : 0,
+    remediation_correctness: Array.isArray(synth.remediation_recommendations) ? 1 : 0,
+    pbi_quality: qg.storyFormat ? 1 : 0,
+    testability: qg.testability ? 1 : 0,
+    traceability_completeness: !!(story.regRef && story.regulation) ? 1 : 0,
+    unsupported_claim_rate: qg.flags.filter(f => f.id === 'unsupported_claim').length,
+    irrelevant_source_rate: irrelevant / totalRanked,
+    rubric_total: rub.totalScore,
+    quality_gate: qg
   };
 }
 function ragVerify(req, synthesizeOut, stories, scope) {
   const issues = [];
+  const parseOut = H.ragReplay?.stages?.parse?.output;
   if (!synthesizeOut?.obligations?.length) {
     issues.push({ severity: 'warning', type: 'synthesis', message: 'No obligations synthesized from active sources' });
+  }
+  const primary = H.ragReplay?.stages?.rerank?.output?.primaryCount || 0;
+  if (ragGraphEnabled && primary === 0) {
+    issues.push({ severity: 'warning', type: 'source', message: 'Missing primary source — SME should confirm applicability' });
   }
   (stories || []).forEach(s => {
     const rub = scoreValidationRubric(s, scope);
     if (!rub.pass) issues.push({ severity: 'warning', type: 'rubric', storyId: s.id, message: 'Grade ' + rub.grade + ' — SME review required' });
-    const qg = buildQualityGateSummary(s);
-    if (!qg.storyFormat) issues.push({ severity: 'error', type: 'format', storyId: s.id, message: 'Missing story format fields' });
-    if (!qg.testability) issues.push({ severity: 'warning', type: 'ac', storyId: s.id, message: 'Acceptance criteria need Given/When/Then coverage' });
+    const qg = buildQualityGateSummary(s, parseOut);
+    if (!qg.storyFormat) issues.push({ severity: 'error', type: 'format', storyId: s.id, message: 'Story format needs persona/goal/value or business-must structure' });
+    if (!qg.testability) issues.push({ severity: 'warning', type: 'ac', storyId: s.id, message: 'Acceptance criteria need single-behavior Given/When/Then coverage' });
+    (qg.flags || []).forEach(f => {
+      issues.push({ severity: f.severity || 'warning', type: f.id, storyId: s.id, message: f.message });
+    });
   });
   const errors = issues.filter(i => i.severity === 'error');
+  const qgSummaries = (stories || []).map(s => buildQualityGateSummary(s, parseOut));
   return {
     pass: errors.length === 0,
     issues,
+    final: errors.length === 0 && issues.every(i => (H.ragReplay?.userOverrides?.verifyDecisions || {})[i.type + '-' + (i.storyId || '')] === 'accepted'),
     qualityGate: {
-      storyFormat: stories.every(s => buildQualityGateSummary(s).storyFormat),
-      clarity: stories.every(s => buildQualityGateSummary(s).clarity),
-      testability: stories.filter(s => buildQualityGateSummary(s).testability).length,
-      grammar: stories.filter(s => buildQualityGateSummary(s).grammar).length,
-      investSummary: stories.map(s => ({ id: s.id, pass: buildQualityGateSummary(s).invest, total: 6 }))
+      storyFormat: qgSummaries.every(q => q.storyFormat),
+      storyFormatStatus: qgSummaries.every(q => q.storyFormat) ? 'Pass' : 'Needs improvement',
+      clarity: qgSummaries.every(q => q.clarity),
+      clarityStatus: qgSummaries.every(q => q.clarity) ? 'Pass' : 'Needs improvement',
+      testability: qgSummaries.filter(q => q.testability).length,
+      testabilityStatus: qgSummaries.every(q => q.testability) ? 'Pass' : 'Needs improvement',
+      grammar: qgSummaries.filter(q => q.grammar).length,
+      grammarStatus: qgSummaries.every(q => q.grammar) ? 'Pass' : 'Needs improvement',
+      investSummary: qgSummaries.map((q, i) => ({
+        id: stories[i]?.id,
+        pass: q.invest,
+        total: 6,
+        weak: q.weakInvest || []
+      }))
     },
     verifiedAt: new Date().toISOString(),
     packageStatus: 'DRAFT_NOT_CONTROLLED'
@@ -4735,6 +4834,7 @@ function renderStories(stories, pipelineResult) {
 
   const ragBanner = (ragGraphEnabled && H.ragReplay?.stages) ? `<div class="rag-banner" id="rag-banner">
     <b>RAG Graph (draft)</b> — Parse → Hybrid Retrieve → ReRank → Synthesize → Verify ·
+    ${H.ragReplay.fallbackUsed ? '<span style="color:#b45309">legacy fallback active</span> · ' : ''}
     ${H.ragReplay.stages.retrieve?.output?.hybrid ? 'OKF+Graph+TF-IDF' : 'legacy'} ·
     ${H.ragReplay.stages.rerank?.output?.primaryCount||0} primary sources ·
     ${H.ragReplay.stages.synthesize?.output?.obligations?.length||0} obligations ·
@@ -4767,16 +4867,21 @@ function renderStories(stories, pipelineResult) {
       </div>
       <div class="rubric-checks">${(rub.checks||[]).map(c=>`<span class="rubric-check ${c.pass?'ok':'no'}">${c.pass?'✓':'·'} ${c.label} (${c.score}/${c.weight})</span>`).join('')}</div>
     </div>` : '';
-    const qg = buildQualityGateSummary(s);
+    const qg = buildQualityGateSummary(s, H.ragReplay?.stages?.parse?.output);
+    const weakInv = (qg.weakInvest || []).map(w => escapeHtml(w)).join(', ');
+    const flagHtml = (qg.flags || []).slice(0, 4).map(f =>
+      `<div class="qg-flag">${escapeHtml(f.message)}</div>`).join('');
     const qgHtml = ragGraphEnabled ? `<div class="qg-panel">
       <div class="qg-title">Quality Gate (draft) — SME/QA approval still required</div>
       <div class="qg-grid">
-        <span class="qg-item ${qg.storyFormat?'ok':'no'}">Story format</span>
-        <span class="qg-item ${qg.clarity?'ok':'no'}">Clarity</span>
-        <span class="qg-item ${qg.testability?'ok':'no'}">Testability</span>
-        <span class="qg-item ${qg.grammar?'ok':'no'}">Grammar</span>
+        <span class="qg-item ${qg.storyFormat?'ok':'no'}">Story format: ${escapeHtml(qg.storyFormatStatus)}</span>
+        <span class="qg-item ${qg.clarity?'ok':'no'}">Clarity: ${escapeHtml(qg.clarityStatus)}</span>
+        <span class="qg-item ${qg.testability?'ok':'no'}">Testability: ${escapeHtml(qg.testabilityStatus)}</span>
+        <span class="qg-item ${qg.grammar?'ok':'no'}">Grammar: ${escapeHtml(qg.grammarStatus)}</span>
         <span class="qg-item ${qg.invest>=5?'ok':'no'}">INVEST ${qg.invest}/${qg.investTotal}</span>
       </div>
+      ${weakInv ? `<div class="qg-weak">Weak INVEST: ${weakInv}</div>` : ''}
+      ${flagHtml}
       <button type="button" class="qg-regen" onclick="regenerateStoryImproved(${i})">Regenerate improved version (Live AI only)</button>
     </div>` : '';
     const ragPipeHtml = ragGraphEnabled ? `<button type="button" class="sc-expand rag-pipe-btn" onclick="toggleRagPipeline(this)">
@@ -4938,7 +5043,7 @@ function dlJSON(){
     context:{org:document.getElementById('f-org').value,project:document.getElementById('f-proj').value,
              system:document.getElementById('f-system').value,framework:getFrameworkValue(),
              businessOutcome:document.getElementById('f-outcome').value},
-    pipeline:{gateLog:H.gateLog},
+    pipeline:{gateLog:H.gateLog,ragGraphEnabled:!!ragGraphEnabled,pipelineMode:ragGraphEnabled?(H.ragReplay?.fallbackUsed?'rag-legacy-fallback':'rag-graph'):'legacy'},
     stories:allStories,
     // Additive — does not remove legacy consumers' fields above
     schemaId:FDA_CLINICAL_DATA_SCHEMA.schemaId,

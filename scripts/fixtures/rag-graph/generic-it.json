@@ -1,0 +1,10 @@
+{
+  "id": "generic-it",
+  "name": "Generic IT requirement",
+  "req": "The system shall allow authorized users to approve requests.",
+  "values": { "fw": "FDA", "system": "ERP / SAP", "region": "United States", "domain": "Pharma Mfg", "outcome": "Controlled approvals" },
+  "items": ["p11", "gamp5", "fda_csa"],
+  "cats": ["B", "F"],
+  "expectIt": true,
+  "minPrimary": 0
+}

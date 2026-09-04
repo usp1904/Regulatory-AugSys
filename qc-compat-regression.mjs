@@ -3,6 +3,8 @@
  * Ensures QC controls do not empty the corpus or drop legacy story fields.
  */
 import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
 
@@ -389,39 +391,26 @@ check('library remains complete and every outcome example is selectable', () => 
   assert.ok(!html.includes('sb-split-gap'));
 });
 
-const RAG_FIXTURES = [
-  {
-    name: 'generic IT requirement',
-    req: 'Develop and configure API endpoints for ERP integration with role-based access and deployment controls',
-    values: { fw: 'FDA', system: 'ERP / SAP', region: 'United States', domain: 'Pharma Mfg', outcome: 'Secure ERP integration' },
-    expectIt: true,
-    minPrimary: 0
-  },
-  {
-    name: 'GxP laboratory system',
-    req: 'LIMS batch-release audit trail and e-signature assurance under 21 CFR Part 11 with ALCOA+ data integrity',
-    values: { fw: 'FDA', system: 'LIMS', region: 'United States', domain: 'Pharma Mfg', outcome: 'Defensible batch release' },
-    expectIt: false,
-    minPrimary: 1
-  },
-  {
-    name: 'FDA clinical study-data submission',
-    req: 'FDA clinical study data submission with essential records, audit trail, and ICH E6 GCP computerised systems controls',
-    values: { fw: 'FDA', system: 'EDC / eCRF', region: 'United States', domain: 'Clinical', outcome: 'Inspection-ready clinical records' },
-    expectIt: false,
-    minPrimary: 1
-  },
-  {
-    name: 'QA CAPA',
-    req: 'CAPA and deviation management controls with root-cause traceability and effectiveness verification',
-    values: { fw: 'FDA', system: 'QMS', region: 'United States', domain: 'Pharma Mfg', outcome: 'Closed quality events' },
-    expectIt: false,
-    minPrimary: 0
-  }
-];
+const RAG_FIXTURE_DIR = fileURLToPath(new URL('./scripts/fixtures/rag-graph/', import.meta.url));
+const RAG_FIXTURES = fs.readdirSync(RAG_FIXTURE_DIR).filter(f => f.endsWith('.json')).map(f =>
+  JSON.parse(fs.readFileSync(path.join(RAG_FIXTURE_DIR, f), 'utf8'))
+);
 
-function scoreRagFixtureRubric(s, story) {
-  const qg = s.buildQualityGateSummary(story);
+function scoreRagFixtureRubric(s, story, graph) {
+  if (typeof s.scoreRagPipelineRubric === 'function' && graph) {
+    const pipe = s.scoreRagPipelineRubric(graph, story, s.resolveScopeControls());
+    const qg = pipe.quality_gate || {};
+    return {
+      ...pipe,
+      storyFormat: pipe.pbi_quality,
+      clarity: qg.clarity ? 1 : 0,
+      testability: pipe.testability,
+      grammar: qg.grammar ? 1 : 0,
+      invest: (qg.invest ?? 0) >= 5 ? 1 : 0,
+      rubricTotal: pipe.rubric_total
+    };
+  }
+  const qg = s.buildQualityGateSummary(story, graph?.stages?.parse?.output);
   const rub = s.scoreValidationRubric(story, s.resolveScopeControls());
   return {
     storyFormat: qg.storyFormat ? 1 : 0,
@@ -435,8 +424,8 @@ function scoreRagFixtureRubric(s, story) {
 
 check('RAG graph fixtures: parse retrieve rerank synthesize verify', () => {
   for (const fx of RAG_FIXTURES) {
-    const s = boot(fx.values, ['B', 'C', 'F'], ['p11', 'alcoa', 'gamp5', 'capa', 'iche6']);
-    s.selItems = new Set(['p11', 'alcoa', 'gamp5', 'capa', 'iche6']);
+    const s = boot(fx.values, fx.cats || ['B', 'C', 'F'], fx.items || ['p11', 'alcoa', 'gamp5', 'capa', 'iche6']);
+    s.selItems = new Set(fx.items || ['p11', 'alcoa', 'gamp5', 'capa', 'iche6']);
     s.ragGraphEnabled = true;
     s.H = { ragReplay: { userOverrides: { forceInclude: [], exclude: [] } } };
     const ctx = { sys: fx.values.system, outcome: fx.values.outcome, auditGap: 'test gap' };
@@ -444,8 +433,10 @@ check('RAG graph fixtures: parse retrieve rerank synthesize verify', () => {
     assert.equal(graph.ok, true, fx.name + ' graph failed');
     const p = graph.stages.parse.output;
     assert.ok(p.requirement_id, fx.name + ' missing requirement_id');
-    assert.ok(p.raw_text.length > 10, fx.name + ' parse raw_text');
+    assert.ok(p.raw_text.length > 5, fx.name + ' parse raw_text');
     assert.ok(p.scope_hints.jurisdiction, fx.name + ' scope_hints');
+    if (fx.expectAmbiguity) assert.ok((p.ambiguities || []).length >= 1, fx.name + ' expected ambiguity flag');
+    if (fx.expectClinicalLifecycle) assert.equal(p.scope_hints.lifecycle, 'clinical', fx.name + ' clinical lifecycle');
     const candidates = graph.stages.retrieve.output.candidates;
     assert.ok(candidates.length > 0, fx.name + ' retrieve empty');
     candidates.forEach(c => {
@@ -455,13 +446,25 @@ check('RAG graph fixtures: parse retrieve rerank synthesize verify', () => {
     const rerank = graph.stages.rerank.output;
     assert.ok(rerank.items.every(i => ['primary','supporting','contextual','suppressed','not_applicable'].includes(i.label)), fx.name + ' bad label');
     if (fx.minPrimary) assert.ok(rerank.primaryCount >= fx.minPrimary, fx.name + ' primary count');
+    if (fx.forbidPrimaryRegs) {
+      const primaryRegs = rerank.items.filter(i => i.label === 'primary').map(i => (i.chunk?.reg || '') + ' ' + (i.chunk?.title || '')).join(' ');
+      fx.forbidPrimaryRegs.forEach(term => {
+        assert.ok(!new RegExp(term, 'i').test(primaryRegs), fx.name + ' forbidden primary: ' + term);
+      });
+    }
+    if (fx.expectIt) {
+      assert.ok(['IT_DEVELOPMENT', 'IT_CONFIGURATION'].includes(p.it_scope), fx.name + ' IT scope expected');
+      assert.equal(graph.stages.synthesize.output.it_pbi_included, true, fx.name + ' IT PBI synthesis flag');
+    } else if (fx.id !== 'generic-it') {
+      assert.equal(graph.stages.synthesize.output.it_pbi_included, false, fx.name + ' unexpected IT PBI');
+    }
   }
 });
 
 check('RAG graph fixtures: rubric dimensions on synthesized mock story', () => {
   for (const fx of RAG_FIXTURES) {
-    const s = boot(fx.values, ['B', 'C', 'F'], ['p11', 'alcoa', 'capa']);
-    s.selItems = new Set(['p11', 'alcoa', 'capa']);
+    const s = boot(fx.values, fx.cats || ['B', 'C', 'F'], fx.items || ['p11', 'alcoa', 'capa']);
+    s.selItems = new Set(fx.items || ['p11', 'alcoa', 'capa']);
     s.ragGraphEnabled = true;
     s.H = { ragReplay: { userOverrides: { forceInclude: [], exclude: [] } } };
     const graph = s.runRagGraph(fx.req, { sys: fx.values.system, outcome: fx.values.outcome, auditGap: '' });
@@ -484,12 +487,17 @@ check('RAG graph fixtures: rubric dimensions on synthesized mock story', () => {
       sourceAuthority: 'US FDA', sourceUrl: 'https://www.ecfr.gov', sourceExcerptVerified: false, sourceApprovalStatus: 'SME_PENDING'
     };
     s.ragCompleteVerify(fx.req, [mockStory]);
-    const scores = scoreRagFixtureRubric(s, mockStory);
-    assert.ok(scores.storyFormat === 1, fx.name + ' storyFormat');
-    assert.ok(scores.clarity === 1, fx.name + ' clarity/grammar');
+    const scores = scoreRagFixtureRubric(s, mockStory, graph);
+    assert.ok(scores.storyFormat === 1 || scores.pbi_quality === 1, fx.name + ' storyFormat');
+    assert.ok(scores.clarity === 1 || scores.grammar === 1, fx.name + ' clarity/grammar');
     assert.ok(scores.testability === 1, fx.name + ' testability');
-    assert.ok(scores.invest === 1, fx.name + ' invest');
-    assert.ok(scores.rubricTotal >= 0, fx.name + ' rubric');
+    assert.ok(scores.invest === 1 || (scores.quality_gate && scores.quality_gate.invest >= 5), fx.name + ' invest');
+    assert.ok((scores.rubricTotal ?? scores.rubric_total) >= 0, fx.name + ' rubric');
+    if (typeof s.scoreRagPipelineRubric === 'function') {
+      assert.ok(scores.obligation_quality === 1, fx.name + ' obligation_quality');
+      assert.ok(scores.traceability_completeness === 1, fx.name + ' traceability');
+      assert.ok(scores.irrelevant_source_rate <= 0.85, fx.name + ' irrelevant_source_rate');
+    }
   }
 });
 

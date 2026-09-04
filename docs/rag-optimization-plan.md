@@ -384,105 +384,47 @@ See also: [hybrid-retrieval-architecture.md](./hybrid-retrieval-architecture.md)
 
 ### Phase 3 — Synthesize expansion + Quality Gate panel
 
-#### 1. Understanding
-- [ ] Map obligations/evidence/gap fields to existing `boi`, `accept`, `riskReg`
-- [ ] IT PBI filter: tag types `IT_DEVELOPMENT` | `IT_CONFIGURATION` in parse output
+**Status (2026-09-04):** Implemented.
 
-#### 2. Files to modify
-- [ ] `index.html` — `ragSynthesize()`, `ragVerify()`, Quality Gate panel, optional regen via `callLLM`
-- [ ] `buildPrompts().decomposition` — compact obligation schema (CRS)
-
-#### 3. Files NOT to modify
-- [ ] `runDemoEngine` core loop until synthesize wrapper proven; then thin wrapper only
-
-#### 4. Data-model impact
-- [ ] Story fields: `obligations[]`, `controlObjectives[]`, `evidencePlan`, `gapRiskRemediation` (additive)
-- [ ] Export CSV new columns (trailing only)
-
-#### 5. UI impact
-- [ ] Quality Gate panel: INVEST summary, fail reasons, “Regenerate item” (live only)
-
-#### 6. Security impact
-- [ ] Regen requires same Live AI consent as `doGenerate`
-
-#### 7. Test plan
-- [ ] Rubric still scores ≥ baseline on product-grade sample
-- [ ] INVEST fail inject → gate shows REVIEW
-
-#### 8. Rollback plan
-- [ ] `ragSynthesize` delegates to `runDemoEngine` story mapping; hide Quality Gate
+- `buildQualityGateSummary()` — Pass/Needs improvement, weak INVEST list, quality flags
+- `scoreRagPipelineRubric()` — 13-dimension scoring for fixtures
+- `ragVerify()` — scope, traceability, AC, and quality-rule validation
+- Quality Gate panel per PBI; optional Live AI regenerate (no auto-rewrite)
 
 ---
 
 ### Phase 4 — Legacy preservation feature flag
 
-#### 1. Understanding
-- [ ] Default `ragGraphEnabled = false` in `init()` or localStorage read
+**Status (2026-09-04):** Implemented (default ON; legacy via toggle/`?rag=0`).
 
-#### 2. Files to modify
-- [ ] `index.html` — settings toggle (Assure tab or nav), `setRagGraphMode()`
-- [ ] `p0-regression.mjs` — assert default off
-
-#### 3. Files NOT to modify
-- [ ] GitHub Pages deploy config
-
-#### 4. Data-model impact
-- [ ] `localStorage.maras_rag_graph_v1` = `'0'` \| `'1'`
-
-#### 5. UI impact
-- [ ] Small toggle: “RAG Graph pipeline (beta)” with Graphify hint text
-
-#### 6. Security impact
-- [ ] None
-
-#### 7. Test plan
-- [ ] Toggle on → generate → replay visible; toggle off → identical to pre-Phase-2 UI
-- [ ] Saved packages load in both modes
-
-#### 8. Rollback plan
-- [ ] Remove toggle; hardcode `false`
+- `ragRetrieve()` fallback to `rankChunks()` with `fallbackUsed` banner
+- Export metadata: `pipeline.ragGraphEnabled`, `pipeline.pipelineMode`
+- Legacy PBI card format unchanged
 
 ---
 
 ### Phase 5 — Fixtures + scoring rubric tests
 
-#### 1. Understanding
-- [ ] Four fixtures: (1) LIMS Part 11 US, (2) GDPR privacy EU, (3) licensed gate ISO/GAMP, (4) multi-jurisdiction suppressed
+**Status (2026-09-04):** Implemented.
 
-#### 2. Files to modify
-- [ ] `qc-compat-regression.mjs` — fixture definitions + expected stage outputs
-- [ ] Optional: `scripts/rag-graph-fixtures.mjs` shared data
+Fixtures: `scripts/fixtures/rag-graph/*.json` (generic IT, GxP lab, FDA clinical, QA CAPA)
 
-#### 3. Files NOT to modify
-- [ ] `GXP_CHUNKS` regulatory text (use scope/filter only)
+Manual validation:
+1. Open `index.html` → generate with RAG ON → Quality Gate + Pipeline replay
+2. `?rag=0` → legacy ranking; export shows `pipelineMode: legacy`
+3. `node p0-regression.mjs && node qc-compat-regression.mjs`
 
-#### 4. Data-model impact
-- [ ] Fixture JSON under `scripts/fixtures/rag-graph/` (new, test-only)
+Known limitations: TF-IDF pseudo-vector only; heuristic graph; all output DRAFT_NOT_CONTROLLED.
 
-#### 5. UI impact
-- [ ] None
-
-#### 6. Security impact
-- [ ] Fixtures use public demo corpus only
-
-#### 7. Test plan
-- [ ] Each fixture: assert parse fields, retrieve count, primary label, verify pass/fail, rubric threshold
-- [ ] `node scripts/verify-all.mjs` green
-
-#### 8. Rollback plan
-- [ ] Delete fixture files; remove regression cases
+Rollback: `?rag=0` or `git revert` RAG commits on `main`.
 
 ---
 
 ## 9. Recommended next phase
 
-**Start Phase 1** after user approval of this document:
+**Phases 0–5 complete for `index.html` MVP.**
 
-1. Add `/* RAG_GRAPH_START */` … `/* RAG_GRAPH_END */` sentinel block in `index.html`
-2. Implement `ragParse()` + `ragRetrieve()` as pure functions
-3. Wire behind `ragGraphEnabled` default `false`
-4. Extend `qc-compat-regression.mjs` with one LIMS fixture
-5. Do **not** change PBI output yet — replay stores retrieve snapshot only
+Optional: precomputed embeddings, curated regulatory KG, bridge to `apps/web` story-map exports.
 
 ---
 
@@ -501,4 +443,4 @@ See also: [hybrid-retrieval-architecture.md](./hybrid-retrieval-architecture.md)
 
 ---
 
-*Phase 0 complete. Awaiting user review before any code changes.*
+*Phases 0–5 complete (2026-09-04). CRS RAG Graph pipeline active by default on `index.html`.*

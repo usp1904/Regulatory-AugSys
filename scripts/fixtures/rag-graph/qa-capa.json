@@ -1,0 +1,10 @@
+{
+  "id": "qa-capa",
+  "name": "QA CAPA",
+  "req": "Critical deviations must be investigated and linked to corrective and preventive actions within defined timelines.",
+  "values": { "fw": "FDA", "system": "QMS", "region": "United States", "domain": "Pharma Mfg", "outcome": "Closed quality events" },
+  "items": ["capa", "ichq10", "p11"],
+  "cats": ["A", "B", "F"],
+  "expectIt": false,
+  "minPrimary": 0
+}

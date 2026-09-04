@@ -83,5 +83,8 @@ check('TF-IDF pseudo-vector labeled in hybrid config', html.includes('tfidf-cosi
 check('Phase 2 pipeline replay toggle and detail view', html.includes('Pipeline replay (optional)') && html.includes('function ragReplayDetailHtml') && html.includes('function toggleRagPipeline') && html.includes('.rag-pipe-panel{display:none'));
 check('Phase 2 replay override controls exposed', html.includes('function ragToggleSourceOverride') && html.includes('function ragRerunSynthesis') && html.includes('function ragSetVerifyDecision') && html.includes('function ragToggleReplayScopeCat') && html.includes('Regenerate synthesis (draft)'));
 check('Phase 2 userOverrides schema includes scope and verify', html.includes('scopeCats: null') && html.includes('verifyDecisions: {}'));
+check('Phase 3 quality gate rules and pipeline rubric', html.includes('function qgStatusLabel') && html.includes('function scoreRagPipelineRubric') && html.includes('weakInvest') && html.includes('unsupported_claim') && html.includes('compound_ac') && html.includes('Story format:') && html.includes('Needs improvement'));
+check('Phase 4 legacy fallback and export pipeline metadata', html.includes('fallbackUsed') && html.includes('pipelineMode:ragGraphEnabled') && html.includes('legacy fallback active'));
+check('Phase 5 RAG graph fixtures on disk', fs.existsSync('scripts/fixtures/rag-graph/generic-it.json') && fs.existsSync('scripts/fixtures/rag-graph/fda-clinical.json'));
 
 export const result = { status: 'PASS', checks: checks.length, systemsValidated: 15, names: checks };

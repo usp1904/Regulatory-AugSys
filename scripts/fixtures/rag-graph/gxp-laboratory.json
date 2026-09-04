@@ -1,0 +1,10 @@
+{
+  "id": "gxp-laboratory",
+  "name": "GxP laboratory system",
+  "req": "The laboratory system must prevent unauthorized users from modifying approved test results and preserve an auditable history of changes.",
+  "values": { "fw": "FDA", "system": "LIMS", "region": "United States", "domain": "Pharma Mfg", "outcome": "Defensible laboratory records" },
+  "items": ["p11", "alcoa", "gamp5", "fda_di"],
+  "cats": ["B", "C", "F"],
+  "expectIt": false,
+  "minPrimary": 1
+}

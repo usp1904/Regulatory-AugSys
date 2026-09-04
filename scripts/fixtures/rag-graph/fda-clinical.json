@@ -1,0 +1,13 @@
+{
+  "id": "fda-clinical",
+  "name": "FDA clinical study-data submission",
+  "req": "FDA clinical data standardization.",
+  "values": { "fw": "FDA", "system": "EDC / eCRF", "region": "United States", "domain": "Clinical", "outcome": "Inspection-ready clinical records" },
+  "items": ["iche6", "p11", "alcoa", "gamp5"],
+  "cats": ["B", "C", "F"],
+  "expectIt": false,
+  "expectAmbiguity": true,
+  "expectClinicalLifecycle": true,
+  "forbidPrimaryRegs": ["ISO 13485", "batch release", "device QMS"],
+  "minPrimary": 0
+}
