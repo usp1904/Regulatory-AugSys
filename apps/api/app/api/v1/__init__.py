@@ -7,6 +7,7 @@ from app.api.v1.ctd_sections import router as ctd_sections_router
 from app.api.v1.documents import router as documents_router
 from app.api.v1.dossier_exports import router as dossier_exports_router
 from app.api.v1.evidence import router as evidence_router
+from app.api.v1.story_maps import router as story_maps_router
 
 api_v1_router = APIRouter(prefix="/api/v1")
 api_v1_router.include_router(ctd_sections_router)
@@ -14,3 +15,4 @@ api_v1_router.include_router(documents_router)
 api_v1_router.include_router(ctd_engine_router)
 api_v1_router.include_router(evidence_router)
 api_v1_router.include_router(dossier_exports_router)
+api_v1_router.include_router(story_maps_router)

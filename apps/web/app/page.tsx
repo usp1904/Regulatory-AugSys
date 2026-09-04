@@ -90,7 +90,17 @@ export default async function HealthPage() {
           <CardTitle>Platform workflows</CardTitle>
           <CardDescription>End-to-end paths for controlled documents and evidence</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-3">
+        <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Link
+            href="/story-map"
+            className="panel block transition-colors hover:border-primary/40 hover:bg-muted/20"
+          >
+            <h3 className="font-medium">Story Map workspace</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Workshop story maps with release slices, traceability to Assure, CTD, and readiness
+              outputs. Draft until SME/QA approval.
+            </p>
+          </Link>
           <Link
             href="/ctd"
             className="panel block transition-colors hover:border-primary/40 hover:bg-muted/20"

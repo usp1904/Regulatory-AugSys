@@ -76,6 +76,29 @@
       "mvpIds": ["MVP-17", "MVP-18"],
       "graph": "Regulation ↔ SOP map → Gap flags → Inspection pack → Download",
       "verification": ["p0-regression.mjs"]
+    },
+    {
+      "id": "WF-PLATFORM-STORY-MAP",
+      "name": "Story Map workspace",
+      "mvpIds": ["MVP-26"],
+      "graph": "Intent → Backbone → Capability/Goal → User Story → Acceptance Evidence (DRAFT_NOT_CONTROLLED)",
+      "api": [
+        "GET /api/v1/story-maps",
+        "POST /api/v1/story-maps",
+        "GET /api/v1/story-maps/{id}/export",
+        "GET /api/v1/story-maps/linkable-sources"
+      ],
+      "web": ["/story-map"],
+      "traceability": [
+        "assure",
+        "sop_mapper",
+        "inspection_readiness",
+        "validation_gaps",
+        "global_compare",
+        "ctd_ectd",
+        "evidence"
+      ],
+      "verification": ["apps/api/tests/test_story_maps.py"]
     }
   ]
 }
