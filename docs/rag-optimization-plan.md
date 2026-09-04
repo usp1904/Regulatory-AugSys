@@ -15,6 +15,8 @@ The proposed **RAG Graph** (`Parse → Retrieve → ReRank → Synthesize → Ve
 
 **Recommended next phase:** **Phase 1** — extract RAG stage interfaces as pure functions behind a feature flag, wire `Parse` + `Retrieve` only, with regression fixtures unchanged.
 
+**Phase 1 update (2026-09-04):** Hybrid retrieval (OKF v0.2 adapter + Graph RAG + TF-IDF pseudo-vector) is implemented with **Deterministic First** routing. See [hybrid-retrieval-architecture.md](./hybrid-retrieval-architecture.md).
+
 ---
 
 ## 1. Current state discovery

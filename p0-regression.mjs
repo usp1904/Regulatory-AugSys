@@ -74,5 +74,11 @@ check('RAG graph pipeline stages implemented', html.includes('RAG_GRAPH_START') 
 check('RAG legacy path via ragGetActiveRanked', html.includes('function ragGetActiveRanked') && html.includes('ragCompleteVerify'));
 check('RAG quality gate and replay UI', html.includes('buildQualityGateSummary') && html.includes('toggleRagPipeline') && html.includes('regenerateStoryImproved'));
 check('RAG optimization plan documented', fs.existsSync('docs/rag-optimization-plan.md'));
+check('hybrid retrieval architecture documented', fs.existsSync('docs/hybrid-retrieval-architecture.md'));
+check('hybrid retrieval functions implemented', html.includes('function hybridRetrieve') && html.includes('function ensureHybridIndices') && html.includes('function hybridDeterministicRetrieve') && html.includes('function hybridGraphRetrieve') && html.includes('function hybridVectorRetrieve'));
+check('OKF v0.2 adapter in hybrid indices', html.includes("okfVersion: '0.2'") && html.includes('function hybridOkfMatch'));
+check('hybrid provenance badges in replay UI', html.includes('prov-badge') && html.includes('hybrid-route') && html.includes('Hybrid Retrieve'));
+check('explicit refs extraction for deterministic routing', html.includes('function ragExtractExplicitRefs') && html.includes('explicit_refs: ragExtractExplicitRefs'));
+check('TF-IDF pseudo-vector labeled in hybrid config', html.includes('tfidf-cosine-pseudo') && html.includes('hybridMaxCandidates'));
 
 export const result = { status: 'PASS', checks: checks.length, systemsValidated: 15, names: checks };

@@ -83,6 +83,7 @@ function boot(values = {}, cats = [], items = []) {
   const rdEnd = html.indexOf('/* ASSURANCE */', rdStart);
   if (rdStart >= 0 && rdEnd > rdStart) vm.runInContext(html.slice(rdStart, rdEnd), sandbox);
   sandbox.QC_CONFIG = vm.runInContext('QC_CONFIG', sandbox);
+  sandbox.RAG_GRAPH_CONFIG = vm.runInContext('RAG_GRAPH_CONFIG', sandbox);
   sandbox.FDA_CLINICAL_DATA_SCHEMA = vm.runInContext('FDA_CLINICAL_DATA_SCHEMA', sandbox);
   return sandbox;
 }
@@ -501,6 +502,70 @@ check('RAG graph disabled preserves legacy rankChunks path', () => {
   assert.deepEqual(viaHelper.map(c => c.id), legacy.map(c => c.id));
 });
 
+function bootRag(values, cats = ['B', 'C', 'F'], items = ['p11', 'alcoa', 'gamp5', 'capa']) {
+  const s = boot(values, cats, items);
+  s.selItems = new Set(items);
+  s.ragGraphEnabled = true;
+  s.H = { ragReplay: { userOverrides: { forceInclude: [], exclude: [] } } };
+  return s;
+}
+
+check('hybrid routing: explicit section refs yield deterministic hits', () => {
+  const s = bootRag({ fw: 'FDA', system: 'LIMS', region: 'United States', domain: 'Pharma Mfg' });
+  const req = 'The LIMS must satisfy 21 CFR Part 11 §11.10 audit trail and access controls for batch release in GMP manufacturing.';
+  const parsed = s.ragParse(req, { sys: 'LIMS' });
+  assert.ok((parsed.explicit_refs || []).length >= 1, 'expected explicit_refs from §11.10 / Part 11');
+  const out = s.ragRetrieve(req, parsed);
+  assert.equal(out.hybrid, true);
+  const det = (out.route_log || []).find(r => r.stage === 'deterministic');
+  assert.ok(det && det.count >= 1, 'deterministic stage should return hits');
+  const detHits = out.candidates.filter(c => (c.provenance || []).includes('deterministic'));
+  assert.ok(detHits.length >= 1, 'at least one candidate from deterministic route');
+  assert.ok(detHits.some(c => /21 CFR Part 11/i.test(c.chunk?.reg || '')), 'Part 11 chunk in deterministic hits');
+});
+
+check('hybrid routing: graph expansion adds related sources without bloat', () => {
+  const s = bootRag({ fw: 'FDA', system: 'LIMS', region: 'United States', domain: 'Pharma Mfg' });
+  const req = '21 CFR Part 11 §11.10 audit trail LIMS batch release e-signature ALCOA data integrity';
+  const parsed = s.ragParse(req, { sys: 'LIMS' });
+  const out = s.ragRetrieve(req, parsed);
+  const graph = (out.route_log || []).find(r => r.stage === 'graph');
+  assert.ok(graph, 'graph stage should run for explicit refs with seeds');
+  if (graph.count > 0) {
+    const graphHits = out.candidates.filter(c => (c.provenance || []).includes('graph'));
+    assert.ok(graphHits.length >= 1, 'graph provenance on expanded candidates');
+    assert.ok(out.candidates.length <= s.RAG_GRAPH_CONFIG.hybridMaxCandidates + 2, 'merge should respect candidate cap');
+  }
+});
+
+check('hybrid routing: vector stage runs for vague requirements', () => {
+  const s = bootRag({ fw: 'FDA', system: 'QMS', region: 'United States', domain: 'Pharma Mfg' });
+  const req = 'Improve overall quality and operational compliance across manufacturing without naming a specific regulation, section, or control identifier in this statement.';
+  const parsed = s.ragParse(req, { sys: 'QMS' });
+  const out = s.ragRetrieve(req, parsed);
+  const vector = (out.route_log || []).find(r => r.stage === 'vector');
+  assert.ok(vector, 'vector stage should be present');
+  assert.ok(['tfidf-cosine-pseudo', 'skipped-explicit-refs'].includes(vector.method), 'vector method labeled');
+  assert.ok(out.candidates.length > 0, 'vague query still returns merged candidates');
+});
+
+check('hybrid routing: provenance attached to every candidate', () => {
+  const s = bootRag({ fw: 'FDA', system: 'LIMS', region: 'United States', domain: 'Pharma Mfg' });
+  const req = 'LIMS batch-release audit trail and e-signature assurance under 21 CFR Part 11 with ALCOA+ data integrity';
+  const graph = s.runRagGraph(req, { sys: 'LIMS', outcome: 'Defensible batch release', auditGap: '' });
+  assert.equal(graph.ok, true);
+  const candidates = graph.stages.retrieve.output.candidates;
+  assert.ok(candidates.length > 0);
+  candidates.forEach((c, i) => {
+    assert.ok(Array.isArray(c.provenance) && c.provenance.length > 0, 'missing provenance at index ' + i);
+    assert.ok(c.provenance.every(m => ['deterministic', 'graph', 'vector', 'legacy', 'legacy-fallback'].includes(m)), 'invalid provenance tag');
+  });
+  const rerank = graph.stages.rerank.output;
+  rerank.items.forEach((item, i) => {
+    assert.ok(Array.isArray(item.provenance) && item.provenance.length > 0, 'rerank missing provenance at ' + i);
+  });
+});
+
 if (failures.length) throw new Error(failures.join('\n'));
 
-export const result = { status: 'PASS', checks: 15, systemsValidated: 15, ragFixtures: RAG_FIXTURES.length };
+export const result = { status: 'PASS', checks: 19, systemsValidated: 15, ragFixtures: RAG_FIXTURES.length };
