@@ -58,7 +58,8 @@ function boot(values = {}, cats = [], items = []) {
     sbDocs: [],
     reqFiles: [],
     allStories: [],
-    H: { stories: [], review: {}, evidence: {}, qcReport: null },
+    H: { stories: [], review: {}, evidence: {}, qcReport: null, ragReplay: null },
+    ragGraphEnabled: false,
     selItems: new Set(items),
     INGESTED_SOURCE_META: {},
   };
@@ -387,6 +388,119 @@ check('library remains complete and every outcome example is selectable', () => 
   assert.ok(!html.includes('sb-split-gap'));
 });
 
+const RAG_FIXTURES = [
+  {
+    name: 'generic IT requirement',
+    req: 'Develop and configure API endpoints for ERP integration with role-based access and deployment controls',
+    values: { fw: 'FDA', system: 'ERP / SAP', region: 'United States', domain: 'Pharma Mfg', outcome: 'Secure ERP integration' },
+    expectIt: true,
+    minPrimary: 0
+  },
+  {
+    name: 'GxP laboratory system',
+    req: 'LIMS batch-release audit trail and e-signature assurance under 21 CFR Part 11 with ALCOA+ data integrity',
+    values: { fw: 'FDA', system: 'LIMS', region: 'United States', domain: 'Pharma Mfg', outcome: 'Defensible batch release' },
+    expectIt: false,
+    minPrimary: 1
+  },
+  {
+    name: 'FDA clinical study-data submission',
+    req: 'FDA clinical study data submission with essential records, audit trail, and ICH E6 GCP computerised systems controls',
+    values: { fw: 'FDA', system: 'EDC / eCRF', region: 'United States', domain: 'Clinical', outcome: 'Inspection-ready clinical records' },
+    expectIt: false,
+    minPrimary: 1
+  },
+  {
+    name: 'QA CAPA',
+    req: 'CAPA and deviation management controls with root-cause traceability and effectiveness verification',
+    values: { fw: 'FDA', system: 'QMS', region: 'United States', domain: 'Pharma Mfg', outcome: 'Closed quality events' },
+    expectIt: false,
+    minPrimary: 0
+  }
+];
+
+function scoreRagFixtureRubric(s, story) {
+  const qg = s.buildQualityGateSummary(story);
+  const rub = s.scoreValidationRubric(story, s.resolveScopeControls());
+  return {
+    storyFormat: qg.storyFormat ? 1 : 0,
+    clarity: qg.clarity ? 1 : 0,
+    testability: qg.testability ? 1 : 0,
+    grammar: qg.grammar ? 1 : 0,
+    invest: qg.invest >= 5 ? 1 : 0,
+    rubricTotal: rub.totalScore
+  };
+}
+
+check('RAG graph fixtures: parse retrieve rerank synthesize verify', () => {
+  for (const fx of RAG_FIXTURES) {
+    const s = boot(fx.values, ['B', 'C', 'F'], ['p11', 'alcoa', 'gamp5', 'capa', 'iche6']);
+    s.selItems = new Set(['p11', 'alcoa', 'gamp5', 'capa', 'iche6']);
+    s.ragGraphEnabled = true;
+    s.H = { ragReplay: { userOverrides: { forceInclude: [], exclude: [] } } };
+    const ctx = { sys: fx.values.system, outcome: fx.values.outcome, auditGap: 'test gap' };
+    const graph = s.runRagGraph(fx.req, ctx);
+    assert.equal(graph.ok, true, fx.name + ' graph failed');
+    const p = graph.stages.parse.output;
+    assert.ok(p.requirement_id, fx.name + ' missing requirement_id');
+    assert.ok(p.raw_text.length > 10, fx.name + ' parse raw_text');
+    assert.ok(p.scope_hints.jurisdiction, fx.name + ' scope_hints');
+    const candidates = graph.stages.retrieve.output.candidates;
+    assert.ok(candidates.length > 0, fx.name + ' retrieve empty');
+    candidates.forEach(c => {
+      assert.ok(c.cite.source_id, fx.name + ' missing cite source_id');
+      assert.ok(c.cite.regulation, fx.name + ' missing regulation');
+    });
+    const rerank = graph.stages.rerank.output;
+    assert.ok(rerank.items.every(i => ['primary','supporting','contextual','suppressed','not_applicable'].includes(i.label)), fx.name + ' bad label');
+    if (fx.minPrimary) assert.ok(rerank.primaryCount >= fx.minPrimary, fx.name + ' primary count');
+  }
+});
+
+check('RAG graph fixtures: rubric dimensions on synthesized mock story', () => {
+  for (const fx of RAG_FIXTURES) {
+    const s = boot(fx.values, ['B', 'C', 'F'], ['p11', 'alcoa', 'capa']);
+    s.selItems = new Set(['p11', 'alcoa', 'capa']);
+    s.ragGraphEnabled = true;
+    s.H = { ragReplay: { userOverrides: { forceInclude: [], exclude: [] } } };
+    const graph = s.runRagGraph(fx.req, { sys: fx.values.system, outcome: fx.values.outcome, auditGap: '' });
+    s.H.ragReplay = graph;
+    const synth = graph.stages.synthesize.output;
+    if (fx.expectIt) assert.equal(synth.it_pbi_included, true, fx.name + ' IT PBI flag');
+    else assert.equal(synth.it_pbi_included, false, fx.name + ' unexpected IT PBI');
+    const obl = synth.obligations[0];
+    const mockStory = {
+      id: 'TST-001', title: 'Test: ' + (obl?.text || 'control').slice(0, 40),
+      story: 'For regulated operations, the business must implement controls so that outcomes remain traceable and measurable.',
+      regulation: obl?.cite?.regulation || '21 CFR Part 11', section: obl?.cite?.section || '§11.10',
+      regRef: 'REQ-TST · ' + (obl?.cite?.regulation || '21 CFR Part 11'),
+      ac: [
+        'Given a regulated source, when the system operates, then controls are demonstrable.',
+        'Given QA reviews, when evidence is inspected, then pass/fail links to REQ-TST.'
+      ],
+      accept: { action: 'control', expected: 'evidence', pass_fail: 'QA', traceable: 'REQ-TST' },
+      invest: { independent:'yes', negotiable:'yes', valuable:'yes', estimable:'yes', small:'yes', testable:'yes' },
+      sourceAuthority: 'US FDA', sourceUrl: 'https://www.ecfr.gov', sourceExcerptVerified: false, sourceApprovalStatus: 'SME_PENDING'
+    };
+    s.ragCompleteVerify(fx.req, [mockStory]);
+    const scores = scoreRagFixtureRubric(s, mockStory);
+    assert.ok(scores.storyFormat === 1, fx.name + ' storyFormat');
+    assert.ok(scores.clarity === 1, fx.name + ' clarity/grammar');
+    assert.ok(scores.testability === 1, fx.name + ' testability');
+    assert.ok(scores.invest === 1, fx.name + ' invest');
+    assert.ok(scores.rubricTotal >= 0, fx.name + ' rubric');
+  }
+});
+
+check('RAG graph disabled preserves legacy rankChunks path', () => {
+  const s = boot({ fw: 'FDA', system: 'LIMS', domain: 'Pharma Mfg' });
+  s.ragGraphEnabled = false;
+  s.H = { ragReplay: null };
+  const legacy = s.rankChunks('audit trail LIMS Part 11');
+  const viaHelper = s.ragGetActiveRanked('audit trail LIMS Part 11');
+  assert.deepEqual(viaHelper.map(c => c.id), legacy.map(c => c.id));
+});
+
 if (failures.length) throw new Error(failures.join('\n'));
 
-export const result = { status: 'PASS', checks: 12, systemsValidated: 15 };
+export const result = { status: 'PASS', checks: 15, systemsValidated: 15, ragFixtures: RAG_FIXTURES.length };

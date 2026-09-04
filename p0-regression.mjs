@@ -68,5 +68,10 @@ check('notion workflow generator', fs.existsSync('scripts/generate-notion-workfl
 check('capabilities inventory', fs.existsSync('docs/CAPABILITIES.md') && fs.readFileSync('docs/CAPABILITIES.md','utf8').includes('verify-all.mjs'));
 check('unified verify script', fs.existsSync('scripts/verify-all.mjs'));
 check('self-heal script', fs.existsSync('scripts/self-heal.mjs'));
+check('RAG graph defaults off and toggle present', html.includes('let ragGraphEnabled = false') && html.includes('maras_rag_graph_v1') && html.includes('id="rag-graph-toggle"') && html.includes('function setRagGraphMode'));
+check('RAG graph pipeline stages implemented', html.includes('RAG_GRAPH_START') && html.includes('function runRagGraph') && html.includes('function ragParse') && html.includes('function ragRerank') && html.includes('function ragVerify'));
+check('RAG legacy path via ragGetActiveRanked', html.includes('function ragGetActiveRanked') && html.includes('ragCompleteVerify'));
+check('RAG quality gate and replay UI', html.includes('buildQualityGateSummary') && html.includes('toggleRagPipeline') && html.includes('regenerateStoryImproved'));
+check('RAG optimization plan documented', fs.existsSync('docs/rag-optimization-plan.md'));
 
 export const result = { status: 'PASS', checks: checks.length, systemsValidated: 15, names: checks };
