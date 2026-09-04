@@ -30,7 +30,9 @@ def authorize_agent_request(request: AgentTaskRequest) -> None:
     if actor in BLOCKED_ACTORS:
         raise UnauthorizedAgentAccess("Unauthorized agent access blocked: actor identity required")
     if role not in ALLOWED_ROLES:
-        raise UnauthorizedAgentAccess(f"Unauthorized agent access blocked: role {role!r} is not permitted")
+        raise UnauthorizedAgentAccess(
+            f"Unauthorized agent access blocked: role {role!r} is not permitted"
+        )
     settings = get_settings()
     if request.send_external and not settings.data_governance_allow_external:
         raise DataGovernanceError(

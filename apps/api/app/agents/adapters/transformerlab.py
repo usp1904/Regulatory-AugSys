@@ -49,6 +49,7 @@ class TransformerLabAdapter:
             },
             "graph": selection.spec.graph,
             "notes": [
-                "Idea-to-app sketch only. Gap requires review before implementation in a controlled system.",
+                "Idea-to-app sketch only. Gap requires review before implementation "
+                "in a controlled system.",
             ],
         }

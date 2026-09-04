@@ -61,7 +61,10 @@ def build_okf_envelope(
                 "text": body,
                 "parentId": "document-root",
                 "order": order,
-                "metadata": {"keywords": [], "normative": "shall" in body.lower() or "must" in body.lower()},
+                "metadata": {
+                    "keywords": [],
+                    "normative": "shall" in body.lower() or "must" in body.lower(),
+                },
             }
             nodes.append(current)
         elif current is not None:
@@ -131,18 +134,26 @@ def build_document_tree(okf: dict[str, Any]) -> dict[str, Any]:
         parent = item["parentId"]
         if parent and parent in nodes:
             nodes[parent]["children"].append(item["id"])
-    return {"treeId": hashlib.sha256(okf["documentId"].encode()).hexdigest()[:16], "rootId": "document-root", "nodes": nodes}
+    return {
+        "treeId": hashlib.sha256(okf["documentId"].encode()).hexdigest()[:16],
+        "rootId": "document-root",
+        "nodes": nodes,
+    }
 
 
 def okf_chunks(okf: dict[str, Any], tree: dict[str, Any]) -> list[dict[str, Any]]:
-    bodies = [node["text"] for node in okf["nodes"] if node["type"] != "document" and node.get("text")]
+    bodies = [
+        node["text"] for node in okf["nodes"] if node["type"] != "document" and node.get("text")
+    ]
     joined = "\n\n".join(bodies) if bodies else ""
     chunks, _removed = chunk_text(joined)
     for chunk in chunks:
         chunk["documentId"] = okf["documentId"]
         chunk["citation"] = okf.get("authority") or "needs-review"
         chunk["treePath"] = "/document-root"
-        chunk["okfNodeIds"] = [node["id"] for node in okf["nodes"] if node["type"] != "document"][:8]
+        chunk["okfNodeIds"] = [node["id"] for node in okf["nodes"] if node["type"] != "document"][
+            :8
+        ]
         chunk["metadata"] = {
             "authority": okf.get("authority"),
             "documentClass": okf.get("documentClass"),

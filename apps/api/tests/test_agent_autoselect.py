@@ -41,20 +41,32 @@ def test_registry_lists_required_harnesses(client) -> None:
 
 def test_auto_select_maps_intents_to_harnesses() -> None:
     cases = [
-        ("Iterate the CRS DeepSeek loop until QC passes", TaskKind.LOOP_ENGINEERING, HarnessId.DEEPSEEK_LOOP),
+        (
+            "Iterate the CRS DeepSeek loop until QC passes",
+            TaskKind.LOOP_ENGINEERING,
+            HarnessId.DEEPSEEK_LOOP,
+        ),
         (
             "LangGraph orchestration with Guardrails and LangSmith traces",
             TaskKind.ORCHESTRATION_COMPLIANCE,
             HarnessId.LANGGRAPH_LANGSMITH_GUARDRAILS,
         ),
-        ("Build LlamaIndex RAG with OKF chunking and retrieval", TaskKind.RAG, HarnessId.LLAMAINDEX_RAG),
+        (
+            "Build LlamaIndex RAG with OKF chunking and retrieval",
+            TaskKind.RAG,
+            HarnessId.LLAMAINDEX_RAG,
+        ),
         ("Stand up Redis Membrane HTMX infra cache", TaskKind.INFRA, HarnessId.REDIS_MEMBRANE_HTMX),
         (
             "Semantic Kernel skill orchestration for citation plugins",
             TaskKind.SKILL_ORCHESTRATION,
             HarnessId.SEMANTIC_KERNEL,
         ),
-        ("TransformerLab idea-to-app conversion for a review queue", TaskKind.IDEA_TO_APP, HarnessId.TRANSFORMERLAB),
+        (
+            "TransformerLab idea-to-app conversion for a review queue",
+            TaskKind.IDEA_TO_APP,
+            HarnessId.TRANSFORMERLAB,
+        ),
     ]
     for intent, kind, harness in cases:
         inferred, signals = infer_task_kind(intent)
@@ -65,7 +77,9 @@ def test_auto_select_maps_intents_to_harnesses() -> None:
 
 
 def test_explicit_task_kind_overrides_inference() -> None:
-    selected = select_harness("retrieve OKF chunks for RAG", explicit_kind=TaskKind.LOOP_ENGINEERING)
+    selected = select_harness(
+        "retrieve OKF chunks for RAG", explicit_kind=TaskKind.LOOP_ENGINEERING
+    )
     assert selected.task_kind is TaskKind.LOOP_ENGINEERING
     assert selected.inferred_kind is TaskKind.RAG
     assert selected.harness_id is HarnessId.DEEPSEEK_LOOP
@@ -95,7 +109,9 @@ def test_denied_run_writes_audit_event(client, db_session) -> None:
         json={"intent": "Redis cache infra", "actor": "guest", "role": "qa"},
     )
     assert response.status_code == 403
-    events = db_session.scalars(select(AuditEvent).where(AuditEvent.event_type == "agent_run_denied")).all()
+    events = db_session.scalars(
+        select(AuditEvent).where(AuditEvent.event_type == "agent_run_denied")
+    ).all()
     assert events
     assert "Unauthorized" in (events[0].detail or "")
 
@@ -145,10 +161,19 @@ def test_successful_runs_each_harness_and_audit(client, db_session) -> None:
     payloads = [
         ("Iterate the CRS DeepSeek loop until QC passes", {}),
         ("LangGraph orchestration with Guardrails schema checks", {}),
-        ("LlamaIndex RAG with OKF semantic chunking", {"payload": {"text": corpus, "authority": "FDA"}}),
-        ("Redis Membrane HTMX infra for /api/v1/agents/run", {"payload": {"route": "/api/v1/agents/run"}}),
+        (
+            "LlamaIndex RAG with OKF semantic chunking",
+            {"payload": {"text": corpus, "authority": "FDA"}},
+        ),
+        (
+            "Redis Membrane HTMX infra for /api/v1/agents/run",
+            {"payload": {"route": "/api/v1/agents/run"}},
+        ),
         ("Semantic Kernel skill orchestration for citation plugins", {}),
-        ("TransformerLab idea-to-app conversion for a review queue", {"payload": {"idea": "Draft review queue"}}),
+        (
+            "TransformerLab idea-to-app conversion for a review queue",
+            {"payload": {"idea": "Draft review queue"}},
+        ),
     ]
     for intent, extra in payloads:
         response = _run(client, intent, **extra)
@@ -161,7 +186,9 @@ def test_successful_runs_each_harness_and_audit(client, db_session) -> None:
         assert body["output"]["harness_id"] == body["selection"]["harness_id"]
         tokens = body["enforcement"]["token_optimization"]
         assert tokens["chunks"] >= 1
-    events = db_session.scalars(select(AuditEvent).where(AuditEvent.event_type == "agent_run")).all()
+    events = db_session.scalars(
+        select(AuditEvent).where(AuditEvent.event_type == "agent_run")
+    ).all()
     assert len(events) == len(payloads)
 
 

@@ -31,7 +31,7 @@ HARNESS_REGISTRY: dict[TaskKind, HarnessSpec] = {
         vendor_stack=["LlamaIndex"],
         adapter="app.agents.adapters.llamaindex_rag.LlamaIndexRagAdapter",
         graph="Extract (derived) → Clean → OKF v0.2 → Chunk → Dedup → Index (local)",
-        description="RAG over derived extracts via LlamaIndex-shaped local index; originals immutable.",
+        description="LlamaIndex-shaped local index over derived extracts only.",
     ),
     TaskKind.INFRA: HarnessSpec(
         harness_id=HarnessId.REDIS_MEMBRANE_HTMX,
@@ -39,7 +39,7 @@ HARNESS_REGISTRY: dict[TaskKind, HarnessSpec] = {
         vendor_stack=["Redis", "Membrane", "HTMX"],
         adapter="app.agents.adapters.infra_stack.RedisMembraneHtmxAdapter",
         graph="Request → Membrane policy → Cache → HTMX fragment",
-        description="Infra adapter: in-process Redis-shaped cache, Membrane allowlist, HTMX contract.",
+        description="In-process Redis-shaped cache, Membrane allowlist, and HTMX contract.",
     ),
     TaskKind.SKILL_ORCHESTRATION: HarnessSpec(
         harness_id=HarnessId.SEMANTIC_KERNEL,

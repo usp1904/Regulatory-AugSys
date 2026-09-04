@@ -120,5 +120,4 @@ class HarnessAdapter(Protocol):
         selection: SelectionResult,
         optimized_text: str,
         chunks: list[dict[str, Any]],
-    ) -> dict[str, Any]:
-        ...
+    ) -> dict[str, Any]: ...

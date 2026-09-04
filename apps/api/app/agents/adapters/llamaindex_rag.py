@@ -23,7 +23,9 @@ class LlamaIndexRagAdapter:
         optimized_text: str,
         chunks: list[dict[str, Any]],
     ) -> dict[str, Any]:
-        document_id = str(request.document_id or request.payload.get("document_key") or "derived-extract")
+        document_id = str(
+            request.document_id or request.payload.get("document_key") or "derived-extract"
+        )
         title = str(request.payload.get("title") or "Derived extract")
         authority = request.payload.get("authority")
         if authority is not None:
@@ -64,6 +66,7 @@ class LlamaIndexRagAdapter:
             "notes": [
                 "Indexed derived text only; original source files were not modified.",
                 "No embeddings were sent to an external API.",
-                "Citations and excerpts are machine-generated summaries; SME/QA/RA review required.",
+                "Citations and excerpts are machine-generated summaries; "
+                "SME/QA/RA review required.",
             ],
         }

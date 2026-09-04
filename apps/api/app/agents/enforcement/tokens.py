@@ -45,7 +45,9 @@ def jaccard(a: str, b: str) -> float:
     return len(ta & tb) / len(ta | tb)
 
 
-def dedupe_paragraphs(paragraphs: list[str], threshold: float = JACCARD_DEDUP) -> tuple[list[str], int]:
+def dedupe_paragraphs(
+    paragraphs: list[str], threshold: float = JACCARD_DEDUP
+) -> tuple[list[str], int]:
     kept: list[str] = []
     removed = 0
     for paragraph in paragraphs:
