@@ -48,6 +48,7 @@ Repository-managed Cloud Agent setup: `.cursor/environment.json`
 ## Subagents
 
 - Document ingestion post-processing: `.cursor/agents/okf-document-pipeline.md` (OKF v0.2, when ingestion expands beyond browser parse)
+- Platform agent auto-select: `POST /api/v1/agents/run` (registry in `apps/api/app/agents/registry.py`)
 
 ## Platform workflows (Notion + Graphify)
 

@@ -29,6 +29,7 @@ docker compose up --build
 | API document store | `POST /api/v1/documents`, `GET /api/v1/documents`, `GET /api/v1/documents/{id}`, `GET /api/v1/documents/{id}/download` |
 | API evidence | `POST /api/v1/evidence`, `GET /api/v1/evidence`, `PATCH /api/v1/evidence/{id}`, `POST /api/v1/evidence/{id}/review`, `GET /api/v1/evidence/{id}/review-context`, `GET /api/v1/evidence/export` |
 | API dossier export | `POST /api/v1/dossiers/{dossier_id}/export`, `GET /api/v1/dossier-exports/{export_id}`, `GET /api/v1/dossier-exports/{export_id}/download` |
+| API agent harness | `GET /api/v1/agents/registry`, `POST /api/v1/agents/select`, `POST /api/v1/agents/run` |
 | API CTD validation | `POST /api/v1/ctd-engine/validate` |
 | PostgreSQL | `localhost:5432` (user/db: `regulatory` / `regulatory_augsys`) |
 
@@ -165,6 +166,7 @@ scripts/      verify-all.mjs, generate-notion-workflows.mjs
 | MVP-23 | Platform evidence capture and review | API evidence CRUD + review with versioning, audit events, side-by-side reviewer UI. Graph: `Capture → Pending → Review → Approved`. Verified in `apps/api/tests/test_evidence.py`, web `/evidence/review/{id}` |
 | MVP-24 | Platform dossier export | Approved-only PDF/DOCX/TXT export with CTD numeric order, manifest, watermark, immutable storage. Graph: `Approved → CTD order → Render → Manifest → Audit`. Verified in `apps/api/tests/test_dossier_export.py`, web `/dossiers` |
 | MVP-25 | Workflow registry and CRS harness | `docs/workflows/platform-workflows.json`, `docs/harness/platform-harness-config.json`, Notion export via `scripts/generate-notion-workflows.mjs`. Graphify + Caveman + RTK + Supermemory documented in `Agents.md` and `docs/prompts/platform-harness.md`. Verified in `p0-regression.mjs` |
+| MVP-26 | Agent auto-select and enforcement | Intent maps to DeepSeek / LangGraph+LangSmith+Guardrails / LlamaIndex / Redis+Membrane+HTMX / Semantic Kernel / TransformerLab. Runs enforce schema guardrails, authz, audit events, and semantic chunking+dedup. Outputs stay `needs-review`. Verified in `apps/api/tests/test_agent_autoselect.py` |
 
 ## Stakeholder demo script
 

@@ -19,6 +19,7 @@ Ingestion:  Upload → Hash → Parse → Store → Audit
 Evidence:   Capture → Pending → Review → Approved
 Dossier:    Approved → CTD order → Render → Manifest → Immutable file
 CTD:        Documents → Scope → Validate → Gap report
+Agents:     Intent → Select → Authz → Guardrails → Chunk/dedup → Adapter → Audit
 ```
 
 ## Notion sync (no local install required)

@@ -20,7 +20,9 @@
       "app.services.evidence_queries",
       "app.services.evidence",
       "app.services.dossier_export",
-      "app.services.document_storage"
+      "app.services.document_storage",
+      "app.agents.selector",
+      "app.agents.runner"
     ],
     "auditOnMutations": true,
     "exportWatermark": "TRAINING / INTERNAL REVIEW ONLY — NOT A REGULATORY SUBMISSION"
@@ -30,5 +32,20 @@
     "omitContextInSystemPrompt": true,
     "scopedSourceChunks": 6,
     "prevOutputLimit": 400
+  },
+  "autoSelect": {
+    "loop_engineering": "deepseek_loop",
+    "orchestration_compliance": "langgraph_langsmith_guardrails",
+    "rag": "llamaindex_rag",
+    "infra": "redis_membrane_htmx",
+    "skill_orchestration": "semantic_kernel",
+    "idea_to_app": "transformerlab"
+  },
+  "enforcement": {
+    "guardrails": "local-schema-adapter",
+    "authz": "role-allowlist",
+    "auditEventTypes": ["agent_run", "agent_run_denied"],
+    "tokenOptimization": "semantic-chunking-and-dedup",
+    "dataGovernance": "local-derived-only-default"
   }
 }
