@@ -12,3 +12,4 @@ Harness: CRS (Caveman + RTK + Supermemory + Graphify)
 | WF-PLATFORM-CTD | CTD Module 3.2.S validation | Documents → Framework/Jurisdiction scope → Validate → Gap report | MVP-22 |
 | WF-GLOBAL-COMPARE | Global regulation comparison | Topic → Market matrix → Diff → Co-op deliverable | MVP-16 |
 | WF-READINESS | Inspection readiness | Regulation ↔ SOP map → Gap flags → Inspection pack → Download | MVP-17, MVP-18 |
+| WF-PLATFORM-AGENTS | Agent harness auto-select and enforcement | Intent → Select harness → Authz → Guardrails → Chunk/dedup → Adapter → Audit | MVP-21, MVP-26 |

@@ -58,6 +58,7 @@ Validators: `.cursor/skills/<name>/scripts/validate_*.py`
 | `.cursor/agents/okf-document-pipeline.md` | OKF v0.2 ingestion, chunking, embeddings (platform expansion) |
 | `.cursor/rules/regulatory-safety.mdc` | Always-on: no false compliance claims, immutable sources |
 | `.cursor/environment.json` | Cloud Agent install: regressions + workflow generation |
+| `apps/api/app/agents/` | Auto-select + enforcement (local vendor adapters) |
 
 ---
 
@@ -79,9 +80,9 @@ Validators: `.cursor/skills/<name>/scripts/validate_*.py`
 
 | Layer | Tech | Key routes |
 |-------|------|------------|
-| API | FastAPI, SQLAlchemy, Alembic | `/api/v1/documents`, `/evidence`, `/dossiers/{id}/export`, `/ctd-engine/validate` |
+| API | FastAPI, SQLAlchemy, Alembic | `/api/v1/documents`, `/evidence`, `/dossiers/{id}/export`, `/ctd-engine/validate`, `/agents/run` |
 | Web | Next.js, Tailwind | `/`, `/ctd`, `/documents/{id}`, `/evidence/review/{id}`, `/dossiers` |
-| Shared services | `ctd_ordering`, `evidence_queries`, `document_storage` | CTD sort, approved evidence lists, immutable files |
+| Shared services | `ctd_ordering`, `evidence_queries`, `document_storage`, `app.agents` | CTD sort, approved evidence lists, immutable files, harness auto-select |
 
 ---
 
@@ -107,7 +108,7 @@ Verified by: `p0-regression.mjs`, `qc-compat-regression.mjs`
 | `apps/api` pytest | API business rules (36+ tests) |
 | `apps/web` build | TypeScript, lint, Next.js compile |
 
-MVP requirement IDs: `README.md` RTK table (MVP-01 … MVP-25).
+MVP requirement IDs: `README.md` RTK table (MVP-01 … MVP-26).
 
 ---
 
@@ -116,4 +117,4 @@ MVP requirement IDs: `README.md` RTK table (MVP-01 … MVP-25).
 - Legacy `index.html` GitHub Pages MVP must keep passing `p0-regression.mjs`
 - All exports remain `DRAFT_NOT_CONTROLLED` / training watermark
 - Approved-only evidence in dossier exports; pending/rejected never included
-- Audit events on document, evidence, and export mutations
+- Audit events on document, evidence, export, and agent-run mutations

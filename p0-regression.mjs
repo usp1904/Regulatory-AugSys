@@ -63,6 +63,7 @@ check('CTD engine validates against framework jurisdiction scope', html.includes
 check('CTD mapping export is draft watermarked', html.includes('DRAFT-MARAS-CTD-Mapping-3.2.S.json') && html.includes("packageStatus:'DRAFT_NOT_CONTROLLED'") && html.includes('maras.ctd-mapping.v1'));
 check('Agents.md default instructions', fs.existsSync('Agents.md') && fs.readFileSync('Agents.md','utf8').includes('CRS Mode') && fs.readFileSync('Agents.md','utf8').includes('Graphiffy'));
 check('platform workflow registry', fs.existsSync('docs/workflows/platform-workflows.json') && fs.readFileSync('docs/workflows/platform-workflows.json','utf8').includes('WF-PLATFORM-EVIDENCE'));
+check('agent auto-select workflow', fs.existsSync('docs/workflows/platform-workflows.json') && fs.readFileSync('docs/workflows/platform-workflows.json','utf8').includes('WF-PLATFORM-AGENTS') && fs.existsSync('apps/api/app/agents/registry.py') && fs.existsSync('apps/api/app/api/v1/agents.py'));
 check('platform harness config', fs.existsSync('docs/harness/platform-harness-config.json') && fs.readFileSync('docs/harness/platform-harness-config.json','utf8').includes('deepseekProfile'));
 check('notion workflow generator', fs.existsSync('scripts/generate-notion-workflows.mjs') && fs.existsSync('docs/workflows/notion-export/00-index.md'));
 check('capabilities inventory', fs.existsSync('docs/CAPABILITIES.md') && fs.readFileSync('docs/CAPABILITIES.md','utf8').includes('verify-all.mjs'));

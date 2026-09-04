@@ -76,6 +76,29 @@
       "mvpIds": ["MVP-17", "MVP-18"],
       "graph": "Regulation ↔ SOP map → Gap flags → Inspection pack → Download",
       "verification": ["p0-regression.mjs"]
+    },
+    {
+      "id": "WF-PLATFORM-AGENTS",
+      "name": "Agent harness auto-select and enforcement",
+      "mvpIds": ["MVP-21", "MVP-26"],
+      "graph": "Intent → Select harness → Authz → Guardrails → Chunk/dedup → Adapter → Audit",
+      "api": [
+        "GET /api/v1/agents/registry",
+        "POST /api/v1/agents/select",
+        "POST /api/v1/agents/run"
+      ],
+      "harness": "auto-select registry in apps/api/app/agents/registry.py",
+      "tokenRules": [
+        "semantic chunking 500–1000 tokens",
+        "Jaccard near-duplicate removal",
+        "compact context 280 chars"
+      ],
+      "rules": [
+        "Original source files remain immutable; RAG uses derived extracts only",
+        "Denied and successful runs write audit events",
+        "Outputs remain needs-review; no autonomous approval"
+      ],
+      "verification": ["apps/api/tests/test_agent_autoselect.py", "pytest"]
     }
   ]
 }

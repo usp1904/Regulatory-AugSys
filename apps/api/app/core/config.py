@@ -20,6 +20,7 @@ class Settings(BaseSettings):
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document,"
         "text/plain"
     )
+    data_governance_allow_external: bool = False
 
     @property
     def is_sqlite(self) -> bool:

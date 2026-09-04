@@ -7,8 +7,8 @@ Use on every Cloud Agent task touching `apps/api` or `apps/web`.
 | Pillar | Rule |
 |--------|------|
 | **Caveman** | Smallest safe diff; no new abstractions for one-off logic. |
-| **RTK** | Map to `MVP-23` / `MVP-24` in README; run listed pytest or regression. |
-| **Supermemory** | Reuse `ctd_ordering`, `evidence`, `dossier_export`, `document_storage` — do not fork sort/export rules. |
+| **RTK** | Map to `MVP-23` / `MVP-24` / `MVP-26` in README; run listed pytest or regression. |
+| **Supermemory** | Reuse `ctd_ordering`, `evidence`, `dossier_export`, `document_storage`, `app.agents` — do not fork sort/export/select rules. |
 | **Graphify** | State the flow in one line: `Input → Gate → Transform → Evidence → Export`. |
 
 ## Token optimization (mirror browser harness)
@@ -35,5 +35,6 @@ node scripts/generate-notion-workflows.mjs
 ## Non-negotiables
 
 - All exports watermarked: `TRAINING / INTERNAL REVIEW ONLY — NOT A REGULATORY SUBMISSION`
-- Audit events on create, update, review, export
+- Audit events on create, update, review, export, and agent run (including denied)
 - Never claim submission-ready or Part 11 compliance from browser review
+- Agent outputs stay `needs-review`; RAG uses derived extracts only
