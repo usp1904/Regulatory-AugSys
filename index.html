@@ -855,7 +855,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
     <div class="rag-toggle-row" id="rag-toggle-row">
       <label class="rag-toggle-lbl">
         <input type="checkbox" id="rag-graph-toggle" aria-describedby="rag-graph-hint" onchange="setRagGraphMode(this.checked)">
-        <span><b>RAG Graph pipeline (beta)</b> — Parse → Retrieve → ReRank → Synthesize → Verify → Replay. Default off preserves legacy PBI generator.</span>
+        <span><b>RAG Graph pipeline (beta)</b> — Parse → Retrieve → ReRank → Synthesize → Verify → Replay. Enabled by default; uncheck to use legacy ranking only.</span>
       </label>
       <div id="rag-graph-hint" class="rag-graph-hint" style="display:none">Draft RAG flow active · SME/QA review still required · exports remain DRAFT_NOT_CONTROLLED</div>
     </div>
@@ -2372,15 +2372,20 @@ const RAG_GRAPH_CONFIG = {
   supportingThreshold: 3,
   storageKey: 'maras_rag_graph_v1'
 };
-let ragGraphEnabled = false;
+let ragGraphEnabled = true;
 
 function initRagGraphFlag() {
   try {
     const qs = new URLSearchParams(location.search);
     if (qs.get('rag') === '1') ragGraphEnabled = true;
     else if (qs.get('rag') === '0') ragGraphEnabled = false;
-    else ragGraphEnabled = localStorage.getItem(RAG_GRAPH_CONFIG.storageKey) === '1';
-  } catch (_e) { ragGraphEnabled = false; }
+    else {
+      const stored = localStorage.getItem(RAG_GRAPH_CONFIG.storageKey);
+      if (stored === '0') ragGraphEnabled = false;
+      else if (stored === '1') ragGraphEnabled = true;
+      else ragGraphEnabled = true;
+    }
+  } catch (_e) { ragGraphEnabled = true; }
 }
 function setRagGraphMode(on) {
   ragGraphEnabled = !!on;
