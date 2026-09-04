@@ -358,6 +358,27 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .qg-item.no{color:#92400e}
 .qg-regen{margin-top:6px;font-size:10px;padding:4px 10px;border:1px solid var(--border);border-radius:var(--r);background:#fff;cursor:pointer;font-family:inherit;color:var(--ink2)}
 .qg-regen:hover{border-color:var(--blue);color:var(--blue)}
+.rag-stage{margin:8px 0 0;padding:6px 0 0;border-top:1px dashed var(--border)}
+.rag-stage:first-child{border-top:none;margin-top:0;padding-top:0}
+.rag-stage-hdr{font-size:9px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.35px;margin-bottom:5px}
+.rag-src-row{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;padding:4px 0;font-size:10px;line-height:1.4}
+.rag-src-meta{color:var(--ink3);flex:1 1 160px;min-width:0}
+.rag-src-acts{display:flex;gap:3px;flex-shrink:0}
+.rag-src-btn{font-size:9px;padding:2px 6px;border:1px solid var(--border);border-radius:4px;background:#fff;cursor:pointer;font-family:inherit;color:var(--ink3)}
+.rag-src-btn:hover{border-color:var(--blue);color:var(--blue)}
+.rag-src-btn.on{background:#eff6ff;border-color:rgba(29,111,206,.35);color:var(--blue)}
+.rag-src-btn.ex{background:#fef2f2;border-color:rgba(153,27,27,.25);color:var(--red)}
+.rag-scope-chips{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0 6px}
+.rag-scope-chip{font-size:9px;padding:2px 7px;border-radius:10px;border:1px solid var(--border);background:#fff;cursor:pointer;font-family:inherit;color:var(--ink3)}
+.rag-scope-chip.on{background:#ecfdf5;border-color:rgba(22,101,52,.3);color:#166534;font-weight:600}
+.rag-verify-row{display:flex;flex-wrap:wrap;align-items:flex-start;gap:4px 6px;padding:4px 0;font-size:10px}
+.rag-verify-msg{flex:1 1 180px;color:var(--ink2)}
+.rag-verify-accepted{text-decoration:line-through;opacity:.55}
+.rag-verify-rejected{color:var(--red)}
+.rag-replay-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
+.rag-replay-btn{font-size:10px;padding:4px 10px;border:1px solid var(--border);border-radius:var(--r);background:#fff;cursor:pointer;font-family:inherit;color:var(--ink2)}
+.rag-replay-btn:hover{border-color:var(--teal);color:var(--teal)}
+.rag-replay-note{font-size:9px;color:var(--ink4);margin-top:4px;line-height:1.4}
 .ftr-btn{padding:3px 10px;border-radius:20px;border:1px solid var(--border);background:#fff;color:var(--ink3);font-size:10px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .12s}
 .ftr-btn:hover{color:var(--ink);border-color:var(--border2)}
 .ftr-btn.v{background:var(--green-t);color:var(--green);border-color:rgba(22,101,52,.2)}
@@ -2774,15 +2795,17 @@ function ragRetrieve(req, parseOut) {
   }
 }
 function ragRerank(req, retrieveOut, parseOut, overrides) {
-  const ov = overrides || { forceInclude: [], exclude: [] };
+  const ov = overrides || { forceInclude: [], exclude: [], scopeCats: null, verifyDecisions: {} };
   const excludeSet = new Set(ov.exclude || []);
   const forceSet = new Set(ov.forceInclude || []);
+  const scopeCats = ov.scopeCats && ov.scopeCats.length ? new Set(ov.scopeCats) : null;
   const items = retrieveOut.candidates.map(c => {
     const chunk = c.chunk;
     const score = c.relevanceScore ?? chunk._qc?.relevanceScore ?? 0;
     const meta = sourceMetaFor(chunk.reg, chunk.sourceKey);
     let label = 'contextual';
-    if (!chunk._qc?.inScopeCategory || chunk._qc?.domainMismatch) label = 'not_applicable';
+    if (scopeCats && !scopeCats.has(chunk.cat)) label = 'not_applicable';
+    else if (!chunk._qc?.inScopeCategory || chunk._qc?.domainMismatch) label = 'not_applicable';
     else if (!chunk._qc?.inJurisdiction) label = 'suppressed';
     else if (score >= RAG_GRAPH_CONFIG.primaryThreshold) label = 'primary';
     else if (score >= RAG_GRAPH_CONFIG.supportingThreshold) label = 'supporting';
@@ -2894,7 +2917,9 @@ function ragGetActiveRanked(req) {
   });
 }
 function runRagGraph(req, ctxSnap) {
-  const overrides = H.ragReplay?.userOverrides || { forceInclude: [], exclude: [] };
+  if (!H.ragReplay) H.ragReplay = {};
+  ragEnsureOverrides();
+  const overrides = H.ragReplay.userOverrides;
   const stages = {};
   stages.parse = { at: new Date().toISOString(), output: ragParse(req, ctxSnap) };
   stages.retrieve = { at: new Date().toISOString(), output: ragRetrieve(req, stages.parse.output) };
@@ -2908,9 +2933,85 @@ function ragCompleteVerify(req, stories) {
   const synth = H.ragReplay.stages.synthesize?.output;
   H.ragReplay.stages.verify = { at: new Date().toISOString(), output: ragVerify(req, synth, stories, scope) };
 }
-function ragReplaySummaryHtml() {
+function ragEnsureOverrides() {
+  if (!H.ragReplay) return null;
+  if (!H.ragReplay.userOverrides) H.ragReplay.userOverrides = {};
+  const uo = H.ragReplay.userOverrides;
+  if (!Array.isArray(uo.forceInclude)) uo.forceInclude = [];
+  if (!Array.isArray(uo.exclude)) uo.exclude = [];
+  if (!uo.verifyDecisions) uo.verifyDecisions = {};
+  if (!('scopeCats' in uo)) uo.scopeCats = null;
+  return uo;
+}
+function ragToggleSourceOverride(chunkId, action) {
+  const ov = ragEnsureOverrides();
+  if (!ov || !chunkId) return;
+  ov.forceInclude = (ov.forceInclude || []).filter(id => id !== chunkId);
+  ov.exclude = (ov.exclude || []).filter(id => id !== chunkId);
+  if (action === 'include') ov.forceInclude.push(chunkId);
+  else if (action === 'exclude') ov.exclude.push(chunkId);
+  refreshRagPipelinePanels();
+}
+function ragToggleReplayScopeCat(catId) {
+  const ov = ragEnsureOverrides();
+  if (!ov) return;
+  if (!ov.scopeCats) ov.scopeCats = selCatsSet.size ? [...selCatsSet] : CATS.map(c => c.id);
+  const idx = ov.scopeCats.indexOf(catId);
+  if (idx >= 0) ov.scopeCats.splice(idx, 1);
+  else ov.scopeCats.push(catId);
+  refreshRagPipelinePanels();
+}
+function ragSetVerifyDecision(issueKey, decision) {
+  const ov = ragEnsureOverrides();
+  if (!ov) return;
+  if (!ov.verifyDecisions) ov.verifyDecisions = {};
+  ov.verifyDecisions[issueKey] = decision;
+  refreshRagPipelinePanels();
+}
+function ragRerunSynthesis() {
+  const req = H.ctx?.req;
+  if (!req || !H.ragReplay?.stages) return;
+  const ov = ragEnsureOverrides();
+  try {
+    const parseOut = H.ragReplay.stages.parse.output;
+    const retrieveOut = ragRetrieve(req, parseOut);
+    const rerankOut = ragRerank(req, retrieveOut, parseOut, ov);
+    const synthOut = ragSynthesize(req, rerankOut, parseOut);
+    H.ragReplay.stages.retrieve = { at: new Date().toISOString(), output: retrieveOut };
+    H.ragReplay.stages.rerank = { at: new Date().toISOString(), output: rerankOut };
+    H.ragReplay.stages.synthesize = { at: new Date().toISOString(), output: synthOut };
+    if (allStories?.length) ragCompleteVerify(req, allStories);
+    refreshRagPipelinePanels();
+  } catch (e) {
+    alert('RAG synthesis rerun failed (legacy path unchanged): ' + (e.message || e));
+  }
+}
+function refreshRagPipelinePanels() {
+  if (typeof document.querySelectorAll !== 'function') return;
+  document.querySelectorAll('.rag-pipe-panel').forEach(el => { el.innerHTML = ragReplayDetailHtml(); });
+}
+function ragReplayLabelHtml(label) {
+  const cls = ['primary', 'supporting', 'contextual', 'suppressed', 'not_applicable'].includes(label) ? label : 'contextual';
+  return '<span class="rag-label ' + cls + '">' + escapeHtml(cls.replace('_', ' ')) + '</span>';
+}
+function ragReplayProvHtml(prov) {
+  return (prov || []).map(m =>
+    '<span class="prov-badge prov-' + (m === 'graph' ? 'graph' : m === 'vector' ? 'vector' : 'det') + '">' + escapeHtml(m) + '</span>'
+  ).join('');
+}
+function ragReplaySourceActsHtml(chunkId, ov) {
+  const forced = (ov?.forceInclude || []).includes(chunkId);
+  const excluded = (ov?.exclude || []).includes(chunkId);
+  return '<span class="rag-src-acts">' +
+    '<button type="button" class="rag-src-btn' + (forced ? ' on' : '') + '" onclick="ragToggleSourceOverride(\'' + escapeHtml(chunkId) + '\',\'include\')">Force</button>' +
+    '<button type="button" class="rag-src-btn' + (excluded ? ' ex' : '') + '" onclick="ragToggleSourceOverride(\'' + escapeHtml(chunkId) + '\',\'exclude\')">Exclude</button>' +
+    '<button type="button" class="rag-src-btn" onclick="ragToggleSourceOverride(\'' + escapeHtml(chunkId) + '\',\'clear\')">Clear</button>' +
+    '</span>';
+}
+function ragReplayDetailHtml() {
   const st = H.ragReplay?.stages;
   if (!st) return '';
+  const ov = ragEnsureOverrides() || { forceInclude: [], exclude: [], scopeCats: null, verifyDecisions: {} };
   const p = st.parse?.output;
   const r = st.rerank?.output;
   const s = st.synthesize?.output;
@@ -2919,22 +3020,61 @@ function ragReplaySummaryHtml() {
   const routeLines = (ret?.route_log || []).map(rl =>
     '<div class="rag-pipe-step"><b>' + escapeHtml(rl.stage) + '</b> ' + escapeHtml(rl.method) + ': ' + rl.count + ' (conf ' + Math.round(rl.confidence || 0) + ')</div>'
   ).join('');
-  const provSample = (ret?.candidates || []).slice(0, 4).map(c => {
-    const badges = (c.provenance || []).map(m =>
-      '<span class="prov-badge prov-' + (m === 'graph' ? 'graph' : m === 'vector' ? 'vector' : 'det') + '">' + escapeHtml(m) + '</span>'
-    ).join('');
-    return '<div class="hybrid-route">' + badges + escapeHtml(c.chunk?.reg + ' ' + c.chunk?.sec) + '</div>';
+  const retrieved = (ret?.candidates || []).slice(0, 12).map(c => {
+    const score = Math.round(c.relevanceScore ?? c.chunk?._qc?.relevanceScore ?? 0);
+    return '<div class="rag-src-row">' + ragReplayProvHtml(c.provenance) +
+      '<span class="rag-src-meta">' + escapeHtml((c.chunk?.reg || '') + ' ' + (c.chunk?.sec || '')) + ' · score ' + score + '</span>' +
+      ragReplaySourceActsHtml(c.chunk?.id, ov) + '</div>';
+  }).join('');
+  const reranked = (r?.items || []).slice(0, 12).map(item =>
+    '<div class="rag-src-row">' + ragReplayLabelHtml(item.label) + ragReplayProvHtml(item.provenance) +
+    '<span class="rag-src-meta">' + escapeHtml((item.chunk?.reg || '') + ' ' + (item.chunk?.sec || '')) + ' · conf ' + Math.round(item.confidence || 0) + '</span>' +
+    ragReplaySourceActsHtml(item.chunk?.id, ov) + '</div>'
+  ).join('');
+  const synthInputs = [
+    ...(s?.obligations || []).slice(0, 4).map(o => '<div class="rag-pipe-step">OBL ' + escapeHtml(o.id) + ': ' + escapeHtml((o.text || '').slice(0, 120)) + '</div>'),
+    ...(s?.controlObjectives || []).slice(0, 2).map(o => '<div class="rag-pipe-step">CO ' + escapeHtml(o.id) + ': ' + escapeHtml((o.text || '').slice(0, 100)) + '</div>')
+  ].join('');
+  const activeScope = ov.scopeCats || (selCatsSet.size ? [...selCatsSet] : CATS.map(c => c.id));
+  const scopeChips = CATS.map(c =>
+    '<button type="button" class="rag-scope-chip' + (activeScope.includes(c.id) ? ' on' : '') + '" onclick="ragToggleReplayScopeCat(\'' + c.id + '\')">' + escapeHtml(c.id) + '</button>'
+  ).join('');
+  const verifyRows = (v?.issues || []).map((issue, idx) => {
+    const key = (issue.type || 'issue') + '-' + (issue.storyId || idx);
+    const decision = ov.verifyDecisions?.[key];
+    const cls = decision === 'accepted' ? 'rag-verify-accepted' : decision === 'rejected' ? 'rag-verify-rejected' : '';
+    return '<div class="rag-verify-row ' + cls + '">' +
+      '<span class="rag-label ' + (issue.severity === 'error' ? 'not_applicable' : 'suppressed') + '">' + escapeHtml(issue.severity || 'warn') + '</span>' +
+      '<span class="rag-verify-msg">' + escapeHtml(issue.message || '') + (issue.storyId ? ' (' + escapeHtml(issue.storyId) + ')' : '') + '</span>' +
+      '<span class="rag-src-acts">' +
+      '<button type="button" class="rag-src-btn' + (decision === 'accepted' ? ' on' : '') + '" onclick="ragSetVerifyDecision(\'' + escapeHtml(key) + '\',\'accepted\')">Accept</button>' +
+      '<button type="button" class="rag-src-btn' + (decision === 'rejected' ? ' ex' : '') + '" onclick="ragSetVerifyDecision(\'' + escapeHtml(key) + '\',\'rejected\')">Reject</button>' +
+      '</span></div>';
   }).join('');
   return [
-    '<div class="rag-pipe-step"><b>Parse</b> ' + escapeHtml((p?.requirement_id || '') + ' · refs: ' + (p?.explicit_refs || []).join(', ')) + '</div>',
-    '<div class="rag-pipe-step"><b>Hybrid Retrieve</b> ' + (ret?.hybrid ? 'OKF+Graph+Vector' : 'legacy') + ' · ' + (ret?.candidates?.length || 0) + ' merged</div>',
-    routeLines,
-    provSample ? '<div style="margin-top:6px"><b style="font-size:9px">Provenance sample</b>' + provSample + '</div>' : '',
-    '<div class="rag-pipe-step"><b>ReRank</b> ' + (r?.primaryCount || 0) + ' primary · ' + (r?.supportingCount || 0) + ' supporting · ' + (r?.suppressedCount || 0) + ' suppressed</div>',
-    '<div class="rag-pipe-step"><b>Synthesize</b> ' + (s?.obligations?.length || 0) + ' obligations · IT scope: ' + escapeHtml(s?.it_scope || 'none') + '</div>',
-    '<div class="rag-pipe-step"><b>Verify</b> ' + (v?.pass ? 'Draft checks passed' : ((v?.issues?.length || 0) + ' issue(s) flagged')) + ' · DRAFT_NOT_CONTROLLED</div>'
+    '<div class="rag-stage"><div class="rag-stage-hdr">Parse</div>',
+    '<div class="rag-pipe-step">' + escapeHtml((p?.requirement_id || '') + ' · IT: ' + (p?.it_scope || 'none')) + '</div>',
+    '<div class="rag-pipe-step">Refs: ' + escapeHtml((p?.explicit_refs || []).join(', ') || 'none') + '</div>',
+    (p?.ambiguities?.length ? '<div class="rag-pipe-step">Ambiguities: ' + escapeHtml(p.ambiguities.join('; ')) + '</div>' : ''),
+    '</div>',
+    '<div class="rag-stage"><div class="rag-stage-hdr">Retrieve · ' + (ret?.hybrid ? 'Hybrid OKF+Graph+Vector' : 'legacy') + ' (' + (ret?.candidates?.length || 0) + ')</div>',
+    routeLines, retrieved || '<div class="rag-pipe-step">No candidates</div>', '</div>',
+    '<div class="rag-stage"><div class="rag-stage-hdr">ReRank · ' + (r?.primaryCount || 0) + ' primary · ' + (r?.supportingCount || 0) + ' supporting</div>',
+    reranked || '<div class="rag-pipe-step">No reranked items</div>', '</div>',
+    '<div class="rag-stage"><div class="rag-stage-hdr">Synthesis inputs · ' + (s?.obligations?.length || 0) + ' obligations</div>',
+    synthInputs || '<div class="rag-pipe-step">No synthesis inputs</div>', '</div>',
+    '<div class="rag-stage"><div class="rag-stage-hdr">Verify · ' + (v?.pass ? 'draft checks passed' : ((v?.issues?.length || 0) + ' flagged')) + '</div>',
+    verifyRows || '<div class="rag-pipe-step">No warnings · DRAFT_NOT_CONTROLLED</div>', '</div>',
+    '<div class="rag-stage"><div class="rag-stage-hdr">Replay scope (categories)</div>',
+    '<div class="rag-scope-chips">' + scopeChips + '</div>',
+    '<div class="rag-replay-actions">',
+    '<button type="button" class="rag-replay-btn" onclick="ragRerunSynthesis()">Regenerate synthesis (draft)</button>',
+    '</div>',
+    '<div class="rag-replay-note">Overrides apply on regenerate: force-include/exclude sources and category scope. SME/QA review still required — not an approval.</div>',
+    '</div>'
   ].join('');
 }
+function ragReplaySummaryHtml() { return ragReplayDetailHtml(); }
 function toggleRagPipeline(btn) {
   const panel = btn.nextElementSibling;
   if (panel) panel.classList.toggle('show');
@@ -4640,8 +4780,8 @@ function renderStories(stories, pipelineResult) {
       <button type="button" class="qg-regen" onclick="regenerateStoryImproved(${i})">Regenerate improved version (Live AI only)</button>
     </div>` : '';
     const ragPipeHtml = ragGraphEnabled ? `<button type="button" class="sc-expand rag-pipe-btn" onclick="toggleRagPipeline(this)">
-      <span>RAG pipeline replay</span><span style="transition:transform .14s">▼</span>
-    </button><div class="rag-pipe-panel">${ragReplaySummaryHtml()}</div>` : '';
+      <span>Pipeline replay (optional)</span><span style="transition:transform .14s">▼</span>
+    </button><div class="rag-pipe-panel">${ragReplayDetailHtml()}</div>` : '';
     return `<div class="story-card" data-story-index="${i}">
       <div class="sc-top">
         <div class="sc-num">

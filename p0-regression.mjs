@@ -80,5 +80,8 @@ check('OKF v0.2 adapter in hybrid indices', html.includes("okfVersion: '0.2'") &
 check('hybrid provenance badges in replay UI', html.includes('prov-badge') && html.includes('hybrid-route') && html.includes('Hybrid Retrieve'));
 check('explicit refs extraction for deterministic routing', html.includes('function ragExtractExplicitRefs') && html.includes('explicit_refs: ragExtractExplicitRefs'));
 check('TF-IDF pseudo-vector labeled in hybrid config', html.includes('tfidf-cosine-pseudo') && html.includes('hybridMaxCandidates'));
+check('Phase 2 pipeline replay toggle and detail view', html.includes('Pipeline replay (optional)') && html.includes('function ragReplayDetailHtml') && html.includes('function toggleRagPipeline') && html.includes('.rag-pipe-panel{display:none'));
+check('Phase 2 replay override controls exposed', html.includes('function ragToggleSourceOverride') && html.includes('function ragRerunSynthesis') && html.includes('function ragSetVerifyDecision') && html.includes('function ragToggleReplayScopeCat') && html.includes('Regenerate synthesis (draft)'));
+check('Phase 2 userOverrides schema includes scope and verify', html.includes('scopeCats: null') && html.includes('verifyDecisions: {}'));
 
 export const result = { status: 'PASS', checks: checks.length, systemsValidated: 15, names: checks };

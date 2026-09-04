@@ -506,7 +506,7 @@ function bootRag(values, cats = ['B', 'C', 'F'], items = ['p11', 'alcoa', 'gamp5
   const s = boot(values, cats, items);
   s.selItems = new Set(items);
   s.ragGraphEnabled = true;
-  s.H = { ragReplay: { userOverrides: { forceInclude: [], exclude: [] } } };
+  s.H.ragReplay = null;
   return s;
 }
 
@@ -566,6 +566,30 @@ check('hybrid routing: provenance attached to every candidate', () => {
   });
 });
 
+check('Phase 2 replay: overrides and synthesis rerun update stages', () => {
+  const s = bootRag({ fw: 'FDA', system: 'LIMS', region: 'United States', domain: 'Pharma Mfg' });
+  s.H.ctx = { req: '21 CFR Part 11 audit trail LIMS batch release', sys: 'LIMS', outcome: 'Batch release' };
+  const req = s.H.ctx.req;
+  s.H.ragReplay = s.runRagGraph(req, s.H.ctx);
+  const ov = s.ragEnsureOverrides();
+  assert.ok(ov);
+  assert.ok(Array.isArray(ov.forceInclude));
+  assert.ok(Array.isArray(ov.exclude));
+  assert.equal(ov.scopeCats, null);
+  const firstId = s.H.ragReplay.stages.retrieve.output.candidates[0]?.chunk?.id;
+  assert.ok(firstId);
+  s.ragToggleSourceOverride(firstId, 'include');
+  assert.ok(ov.forceInclude.includes(firstId));
+  const beforeSynth = s.H.ragReplay.stages.synthesize.at;
+  s.ragRerunSynthesis();
+  assert.notEqual(s.H.ragReplay.stages.synthesize.at, beforeSynth);
+  const forced = s.H.ragReplay.stages.rerank.output.items.find(i => i.chunk.id === firstId);
+  assert.equal(forced?.label, 'primary');
+  const issueKey = 'format-TST';
+  s.ragSetVerifyDecision(issueKey, 'accepted');
+  assert.equal(ov.verifyDecisions[issueKey], 'accepted');
+});
+
 if (failures.length) throw new Error(failures.join('\n'));
 
-export const result = { status: 'PASS', checks: 19, systemsValidated: 15, ragFixtures: RAG_FIXTURES.length };
+export const result = { status: 'PASS', checks: 20, systemsValidated: 15, ragFixtures: RAG_FIXTURES.length };

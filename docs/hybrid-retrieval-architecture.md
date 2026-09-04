@@ -123,9 +123,18 @@ Pipeline replay panel (`ragReplaySummaryHtml`) shows:
 
 1. Open `index.html` — confirm RAG toggle is ON (default).
 2. Load product-grade sample; generate PBIs with Part 11 requirement.
-3. Expand **Pipeline replay** on a story card — verify Hybrid Retrieve route log and provenance badges.
+3. Expand **Pipeline replay (optional)** on a story card — verify stage sections, source labels, override buttons, and regenerate synthesis.
 4. Disable RAG (`?rag=0`) — confirm legacy ranking path unchanged.
 5. Run: `node p0-regression.mjs && node qc-compat-regression.mjs`
+
+---
+
+## Phase 2 replay UI
+
+- **Default view:** PBI output only; pipeline panel collapsed (`display:none`)
+- **Expanded:** Parse / Retrieve / ReRank / Synthesis / Verify sections with provenance and relevance labels
+- **Overrides:** `H.ragReplay.userOverrides` — `forceInclude`, `exclude`, `scopeCats`, `verifyDecisions`
+- **Regenerate synthesis:** client-side re-run of retrieve→rerank→synthesize→verify (does not auto-rewrite all PBI story text in demo mode)
 
 ---
 

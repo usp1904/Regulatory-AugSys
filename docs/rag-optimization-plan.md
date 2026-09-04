@@ -342,6 +342,19 @@ doGenerate()
 
 ### Phase 2 — ReRank labels + Replay UI toggle
 
+**Status (2026-09-04):** Implemented in `index.html`.
+
+- Collapsible **Pipeline replay (optional)** under each PBI card (collapsed by default)
+- Expanded view shows Parse, Retrieve (with hybrid route log + source rows), ReRank (labeled sources), Synthesis inputs, Verify warnings
+- Replay controls wired to `H.ragReplay.userOverrides`:
+  - `forceInclude` / `exclude` per source (Force / Exclude / Clear)
+  - `scopeCats` category chips (A–H)
+  - `verifyDecisions` accept/reject per warning
+  - **Regenerate synthesis (draft)** re-runs Retrieve → ReRank → Synthesize → Verify
+- Quality Gate panel remains visible (Phase 3); Live AI **Regenerate improved version** unchanged
+
+See also: [hybrid-retrieval-architecture.md](./hybrid-retrieval-architecture.md) (Phase 1 retrieval).
+
 #### 1. Understanding
 - [ ] Label rules: primary = top score in-jurisdiction; suppressed = `applyJurisdictionFilter` dropped; not_applicable = domain mismatch
 
