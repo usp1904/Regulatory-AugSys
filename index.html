@@ -352,12 +352,18 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .prov-vector{background:#f5f3ff;color:#5b21b6}
 .qg-panel{margin:8px 0;padding:8px 10px;background:#fffbeb;border-radius:5px;border-left:3px solid #ca8a04}
 .qg-title{font-size:9px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px}
+.qg-lines{font-size:10px;line-height:1.65;color:var(--ink2)}
+.qg-line{margin:1px 0}
+.qg-pass{color:#166534;font-weight:600}
+.qg-fail{color:#92400e;font-weight:600}
 .qg-grid{display:flex;flex-wrap:wrap;gap:6px;font-size:10px}
 .qg-item{padding:3px 7px;border-radius:4px;background:#fff;border:1px solid var(--border)}
 .qg-item.ok{border-color:rgba(22,101,52,.3);color:#166534}
 .qg-item.no{color:#92400e}
 .qg-flag{font-size:10px;color:#78350f;margin:3px 0;padding:3px 6px;background:#fff;border-radius:3px;border:1px solid #fde68a}
 .qg-weak{font-size:10px;color:#1e3a5f;margin-top:4px}
+.qg-original,.qg-improved{margin-top:6px;padding:6px 8px;font-size:10px;line-height:1.5;border-radius:4px;background:#fff;border:1px solid var(--border)}
+.qg-improved{border-left:3px solid #3b82f6}
 .qg-regen{margin-top:6px;font-size:10px;padding:4px 10px;border:1px solid var(--border);border-radius:var(--r);background:#fff;cursor:pointer;font-family:inherit;color:var(--ink2)}
 .qg-regen:hover{border-color:var(--blue);color:var(--blue)}
 .rag-stage{margin:8px 0 0;padding:6px 0 0;border-top:1px dashed var(--border)}
@@ -2928,6 +2934,30 @@ function buildQualityGateSummary(story, parseOut) {
     packageStatus: 'DRAFT_NOT_CONTROLLED'
   };
 }
+function renderQualityGatePanel(index, story) {
+  if (!story._qgOriginalStory) story._qgOriginalStory = story.story || story.userStory || '';
+  const qg = buildQualityGateSummary(story, H.ragReplay?.stages?.parse?.output);
+  const invWeak = (qg.weakInvest || []).map(w => w.charAt(0).toUpperCase() + w.slice(1));
+  const invLabel = invWeak.length ? invWeak.join(', ') : 'Pass';
+  const invPass = !invWeak.length;
+  const draft = story._qgImprovedDraft;
+  const lines = [
+    ['Story format', qg.storyFormat, qg.storyFormatStatus],
+    ['Clarity', qg.clarity, qg.clarityStatus],
+    ['Testability', qg.testability, qg.testabilityStatus],
+    ['Grammar', qg.grammar, qg.grammarStatus]
+  ].map(([lbl, ok, stat]) =>
+    '<div class="qg-line">' + escapeHtml(lbl) + ': <span class="' + (ok ? 'qg-pass' : 'qg-fail') + '">' + escapeHtml(stat) + '</span></div>'
+  ).join('');
+  return '<div class="qg-panel">' +
+    '<div class="qg-title">Quality Gate (draft)</div>' +
+    '<div class="qg-lines">' + lines +
+    '<div class="qg-line">INVEST summary: <span class="' + (invPass ? 'qg-pass' : 'qg-fail') + '">' + escapeHtml(invLabel) + '</span></div>' +
+    '</div>' +
+    (draft ? '<div class="qg-improved"><b>Improved draft (optional):</b> ' + escapeHtml(draft.story || '') + '</div>' : '') +
+    '<button type="button" class="qg-regen" onclick="regenerateStoryImproved(' + index + ')">Regenerate improved version</button>' +
+    '</div>';
+}
 function scoreRagPipelineRubric(graph, story, scope) {
   const st = graph?.stages || {};
   const parseOut = st.parse?.output || {};
@@ -3186,18 +3216,26 @@ async function regenerateStoryImproved(index) {
   if (!story) return;
   const m = MODELS.find(x => x.id === selModel);
   if (!m || !apiKeys[m.id]) { alert('Save a valid API key before regenerating.'); return; }
+  if (!story._qgOriginalStory) story._qgOriginalStory = story.story || story.userStory || '';
   const profile = getLiveHarnessProfile(m.id);
   const citeLine = (H.ragReplay?.stages?.synthesize?.output?.cite_packet || []).slice(0, 4)
     .map(c => c.regulation + ' ' + c.section).join('; ');
   const sys = 'Improve ONE business PBI JSON only. Keep regulation, section, regRef traceability. Output strict JSON in ```json block.';
-  const user = 'Improve clarity, testability, and INVEST for:\n' + JSON.stringify({ id: story.id, title: story.title, story: story.story, ac: story.ac }) +
+  const user = 'Improve clarity, testability, and INVEST for:\n' + JSON.stringify({ id: story.id, title: story.title, story: story._qgOriginalStory, ac: story.ac }) +
     '\nCite only: ' + citeLine + '\nDo not invent sources. packageStatus DRAFT_NOT_CONTROLLED.';
   try {
     const txt = await callLLM(m, sys, user, profile.maxTokens.decomp || 1200);
     const jm = txt.match(/```json\s*([\s\S]*?)```/);
     if (!jm) { alert('No JSON returned — try again.'); return; }
     const improved = JSON.parse(jm[1]);
-    Object.assign(allStories[index], improved, { reviewStatus: 'DRAFT_UNREVIEWED', validationRubric: scoreValidationRubric({ ...story, ...improved }, resolveScopeControls()) });
+    story._qgImprovedDraft = {
+      story: improved.story || improved.userStory,
+      ac: improved.ac || story.ac,
+      title: improved.title || story.title,
+      generatedAt: new Date().toISOString(),
+      packageStatus: 'DRAFT_NOT_CONTROLLED'
+    };
+    story.validationRubric = scoreValidationRubric(story, resolveScopeControls());
     renderStories(allStories, { qcReport: H.qcReport });
   } catch (e) { alert('Regenerate failed: ' + (e.message || e)); }
 }
@@ -4867,23 +4905,7 @@ function renderStories(stories, pipelineResult) {
       </div>
       <div class="rubric-checks">${(rub.checks||[]).map(c=>`<span class="rubric-check ${c.pass?'ok':'no'}">${c.pass?'✓':'·'} ${c.label} (${c.score}/${c.weight})</span>`).join('')}</div>
     </div>` : '';
-    const qg = buildQualityGateSummary(s, H.ragReplay?.stages?.parse?.output);
-    const weakInv = (qg.weakInvest || []).map(w => escapeHtml(w)).join(', ');
-    const flagHtml = (qg.flags || []).slice(0, 4).map(f =>
-      `<div class="qg-flag">${escapeHtml(f.message)}</div>`).join('');
-    const qgHtml = ragGraphEnabled ? `<div class="qg-panel">
-      <div class="qg-title">Quality Gate (draft) — SME/QA approval still required</div>
-      <div class="qg-grid">
-        <span class="qg-item ${qg.storyFormat?'ok':'no'}">Story format: ${escapeHtml(qg.storyFormatStatus)}</span>
-        <span class="qg-item ${qg.clarity?'ok':'no'}">Clarity: ${escapeHtml(qg.clarityStatus)}</span>
-        <span class="qg-item ${qg.testability?'ok':'no'}">Testability: ${escapeHtml(qg.testabilityStatus)}</span>
-        <span class="qg-item ${qg.grammar?'ok':'no'}">Grammar: ${escapeHtml(qg.grammarStatus)}</span>
-        <span class="qg-item ${qg.invest>=5?'ok':'no'}">INVEST ${qg.invest}/${qg.investTotal}</span>
-      </div>
-      ${weakInv ? `<div class="qg-weak">Weak INVEST: ${weakInv}</div>` : ''}
-      ${flagHtml}
-      <button type="button" class="qg-regen" onclick="regenerateStoryImproved(${i})">Regenerate improved version (Live AI only)</button>
-    </div>` : '';
+    const qgHtml = renderQualityGatePanel(i, s);
     const ragPipeHtml = ragGraphEnabled ? `<button type="button" class="sc-expand rag-pipe-btn" onclick="toggleRagPipeline(this)">
       <span>Pipeline replay (optional)</span><span style="transition:transform .14s">▼</span>
     </button><div class="rag-pipe-panel">${ragReplayDetailHtml()}</div>` : '';
@@ -4904,10 +4926,11 @@ function renderStories(stories, pipelineResult) {
           ${s.gamp?`<span class="tag t-gamp">${escapeHtml(s.gamp)}</span>`:''}
           ${fwBadges}
         </div>
-        <p class="sc-story">${escapeHtml(s.story||s.userStory)}</p>
+        <p class="sc-story">${escapeHtml(s._qgOriginalStory || s.story || s.userStory)}</p>
+        ${qgHtml}
         ${sourceUrl?`<div style="font-size:10px;margin:4px 0 8px"><a href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">Open authoritative source ↗</a> · ${s.sourceExcerptVerified?'Exact excerpt captured':'Curated summary'} · ${escapeHtml(s.sourceApprovalStatus||'SME_PENDING')}</div>`:`<div style="font-size:10px;color:#b45309;margin:4px 0 8px">No authoritative source URL mapped — clarification required</div>`}
         ${s.sourceExcerpt?`<div style="font-size:10px;color:#475569;margin:0 0 8px;padding:7px 9px;background:#f8fafc;border-left:2px solid #94a3b8"><b>Source excerpt:</b> ${escapeHtml(s.sourceExcerpt)}<br><b>Version:</b> ${escapeHtml(s.sourceVersion||'')} · <b>Captured:</b> ${escapeHtml(s.sourceCapturedAt||'')} · <b>License:</b> ${escapeHtml(s.sourceLicenseTag||'')}</div>`:''}
-        ${boiHtml}${investHtml}${rubHtml}${qgHtml}
+        ${boiHtml}${investHtml}${rubHtml}
       </div>
       ${ragPipeHtml}
       <button class="sc-expand" onclick="toggleAC(this)">
