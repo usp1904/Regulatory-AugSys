@@ -47,12 +47,12 @@ def upgrade() -> None:
         sa.Column("resolved_at", sa.DateTime(timezone=True), nullable=True),
         sa.ForeignKeyConstraint(["mapping_id"], ["requirements_mappings.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("question_key"),
     )
     op.create_index(
         "ix_clarification_questions_question_key",
         "clarification_questions",
         ["question_key"],
+        unique=True,
     )
     op.create_index(
         "ix_clarification_questions_mapping_id",
