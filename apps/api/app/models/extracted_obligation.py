@@ -42,7 +42,9 @@ class ExtractedObligation(Base):
     segment_index: Mapped[int] = mapped_column(Integer, nullable=False)
     excerpt: Mapped[str] = mapped_column(Text, nullable=False)
     trigger_terms: Mapped[str] = mapped_column(String(512), nullable=False)
-    extraction_method: Mapped[str] = mapped_column(String(64), nullable=False, default="RULE_BASED_V1")
+    extraction_method: Mapped[str] = mapped_column(
+        String(64), nullable=False, default="RULE_BASED_V1"
+    )
     confidence: Mapped[float] = mapped_column(Float, nullable=False, default=0.5)
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="DRAFT", index=True)
     reviewer: Mapped[str | None] = mapped_column(String(256), nullable=True)
