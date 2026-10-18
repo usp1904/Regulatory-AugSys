@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.models.clarification import ClarificationQuestion
 from app.models.requirements_mapping import RequirementsMapping
 from app.schemas.requirements_mapping import (
     RequirementsMappingCreateRequest,
@@ -14,6 +15,8 @@ from app.schemas.requirements_mapping import (
     RequirementsMappingReviewRequest,
     RequirementsMappingUpdateRequest,
 )
+from app.schemas.clarification import ClarificationCreateRequest, ClarificationResponse, ClarificationUpdateRequest
+from app.services.clarifications import ClarificationError, create_question, get_question, list_questions, update_question
 from app.services.requirements_mapping import (
     RequirementsMappingError,
     create_mapping,
@@ -141,3 +144,54 @@ def review_requirements_mapping(
     except RequirementsMappingError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     return mapping_to_response(reviewed)
+
+
+@router.post("/clarifications", response_model=ClarificationResponse, status_code=201)
+def create_clarification(
+    payload: ClarificationCreateRequest,
+    db: Session = Depends(get_db),
+    _access: str = Depends(require_mapping_writer),
+) -> dict:
+    try:
+        return create_question(db, payload)
+    except ClarificationError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.get("/clarifications", response_model=list[ClarificationResponse])
+def get_clarifications(
+    status: str | None = Query(default=None, max_length=32),
+    mapping_id: int | None = Query(default=None, gt=0),
+    dossier_id: str | None = Query(default=None, max_length=128),
+    db: Session = Depends(get_db),
+    _access: str = Depends(require_mapping_reader),
+) -> list[dict]:
+    return list_questions(db, status=status, mapping_id=mapping_id, dossier_id=dossier_id)
+
+
+@router.get("/clarifications/{question_id}", response_model=ClarificationResponse)
+def get_clarification(
+    question_id: int,
+    db: Session = Depends(get_db),
+    _access: str = Depends(require_mapping_reader),
+) -> dict:
+    result = get_question(db, question_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Clarification not found")
+    return result
+
+
+@router.patch("/clarifications/{question_id}", response_model=ClarificationResponse)
+def update_clarification(
+    question_id: int,
+    payload: ClarificationUpdateRequest,
+    db: Session = Depends(get_db),
+    _access: str = Depends(require_mapping_writer),
+) -> dict:
+    item = db.get(ClarificationQuestion, question_id)
+    if item is None:
+        raise HTTPException(status_code=404, detail="Clarification not found")
+    try:
+        return update_question(db, item, payload)
+    except ClarificationError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
