@@ -19,7 +19,7 @@ This slice adds persistent requirements-mapping records to the existing FastAPI 
 - Mapping records and review decisions produce audit events with actor, event type, and mapping key.
 - Readiness is computed from the stored data on response; client-supplied readiness labels are not trusted.
 - An unresolved interpretation, unfinalized applicability, unreviewed source, missing evidence, open dependency, missing test evidence, or incomplete PBI blocks approval.
-- Routes require separate server-side writer and reviewer bearer keys. Set `MARAS_REQUIREMENTS_MAPPING_WRITE_KEY` and `MARAS_REQUIREMENTS_MAPPING_REVIEW_KEY` in the API environment; blank/unset keys fail closed with HTTP 503. Reviewer routes reject writer-only keys.
+- Routes require server-side writer and reviewer service keys. Set `MARAS_REQUIREMENTS_MAPPING_WRITE_KEY` and `MARAS_REQUIREMENTS_MAPPING_REVIEW_KEY` in both API and web runtime environments; the Next.js proxy forwards these keys without exposing them to browser code.
 - These are shared service credentials, not individual identity. Reviewer name is still supplied by the request, so this is an interim access boundary—not user-level authentication or a validated electronic signature. Do not expose either key in browser JavaScript or public hosting.
 
 ## Database migration
