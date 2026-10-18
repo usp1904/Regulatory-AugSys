@@ -38,7 +38,10 @@ def require_mapping_writer(authorization: str | None = Header(default=None)) -> 
     expected = _configured_key("MARAS_REQUIREMENTS_MAPPING_WRITE_KEY")
     supplied = authorization.removeprefix("Bearer ").strip() if authorization else ""
     if not supplied or not hmac.compare_digest(supplied, expected):
-        raise HTTPException(status_code=401, detail="Valid mapping writer credentials are required.")
+        raise HTTPException(
+            status_code=401,
+            detail="Valid mapping writer credentials are required.",
+        )
     return "mapping-writer"
 
 
@@ -55,7 +58,10 @@ def require_mapping_reader(authorization: str | None = Header(default=None)) -> 
             detail="Requirements mapping API is disabled until access keys are configured.",
         )
     if not supplied or not any(hmac.compare_digest(supplied, key) for key in candidates):
-        raise HTTPException(status_code=401, detail="Valid mapping access credentials are required.")
+        raise HTTPException(
+            status_code=401,
+            detail="Valid mapping access credentials are required.",
+        )
     return "mapping-reader"
 
 
