@@ -7,7 +7,9 @@ This slice adds persistent requirements-mapping records to the existing FastAPI 
 - `POST /api/v1/requirements-mappings` — create a draft mapping. The API does not accept client-side approval as authoritative; review starts as `PENDING`.
 - `GET /api/v1/requirements-mappings?dossier_id=...` — list mappings, optionally scoped to a dossier.
 - `GET /api/v1/requirements-mappings/{id}` — retrieve a mapping.
+- `PUT /api/v1/requirements-mappings/{id}` — revise a mapping after stakeholder clarification; source evidence is revalidated and prior review is reset.
 - `POST /api/v1/requirements-mappings/{id}/review` — record a reviewer decision. Approval is rejected with HTTP 409 while completeness blockers remain.
+- Web UI: `/requirements-mappings` — select source documents, capture obligations and system impact, record decisions, draft PBIs, inspect blockers, and review mappings.
 
 ## Data and controls
 
