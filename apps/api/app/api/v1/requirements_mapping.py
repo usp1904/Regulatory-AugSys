@@ -10,15 +10,15 @@ from app.core.database import get_db
 from app.models.clarification import ClarificationQuestion
 from app.models.extracted_obligation import ExtractedObligation
 from app.models.requirements_mapping import RequirementsMapping
-from app.schemas.extracted_obligation import (
-    ExtractedObligationResponse,
-    ObligationExtractionRequest,
-    ObligationReviewRequest,
-)
 from app.schemas.clarification import (
     ClarificationCreateRequest,
     ClarificationResponse,
     ClarificationUpdateRequest,
+)
+from app.schemas.extracted_obligation import (
+    ExtractedObligationResponse,
+    ObligationExtractionRequest,
+    ObligationReviewRequest,
 )
 from app.schemas.requirements_mapping import (
     RequirementsMappingCreateRequest,
@@ -26,19 +26,19 @@ from app.schemas.requirements_mapping import (
     RequirementsMappingReviewRequest,
     RequirementsMappingUpdateRequest,
 )
-from app.services.obligation_extraction import (
-    ObligationExtractionError,
-    create_mapping_from_obligation,
-    extract_obligations,
-    list_obligations,
-    review_obligation,
-)
 from app.services.clarifications import (
     ClarificationError,
     create_question,
     get_question,
     list_questions,
     update_question,
+)
+from app.services.obligation_extraction import (
+    ObligationExtractionError,
+    create_mapping_from_obligation,
+    extract_obligations,
+    list_obligations,
+    review_obligation,
 )
 from app.services.requirements_mapping import (
     RequirementsMappingError,
