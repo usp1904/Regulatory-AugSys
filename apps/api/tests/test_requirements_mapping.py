@@ -104,6 +104,7 @@ def test_mapping_approval_requires_all_completeness_gates(client) -> None:
         json={
             "dossier_id": "DOS-MAP-002",
             "created_by": "qa.author",
+            "source_document_id": _upload_source_document(client),
             "data": data,
         },
     )
@@ -127,6 +128,7 @@ def test_approved_mapping_is_ready_and_audited(client, db_session) -> None:
         json={
             "dossier_id": "DOS-MAP-003",
             "created_by": "qa.author",
+            "source_document_id": _upload_source_document(client),
             "data": _valid_mapping_data(),
         },
     )
@@ -166,6 +168,7 @@ def test_mapping_can_be_filtered_by_dossier(client) -> None:
             json={
                 "dossier_id": dossier_id,
                 "created_by": "qa.author",
+            "source_document_id": _upload_source_document(client),
                 "data": _valid_mapping_data(),
             },
         )
@@ -190,6 +193,7 @@ def test_writer_key_cannot_approve_mapping(client) -> None:
         json={
             "dossier_id": "DOS-ROLE-001",
             "created_by": "qa.author",
+            "source_document_id": _upload_source_document(client),
             "data": _valid_mapping_data(),
         },
     )
@@ -215,6 +219,7 @@ def test_mapping_api_fails_closed_when_writer_key_missing(
         json={
             "dossier_id": "DOS-KEY-001",
             "created_by": "qa.author",
+            "source_document_id": _upload_source_document(client),
             "data": _valid_mapping_data(),
         },
     )
