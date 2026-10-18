@@ -1,4 +1,5 @@
 import hashlib
+import json
 import re
 from datetime import UTC, datetime
 
@@ -7,8 +8,11 @@ from sqlalchemy.orm import Session
 
 from app.models.document import Document
 from app.models.extracted_obligation import ExtractedObligation
+from app.models.requirements_mapping import RequirementsMapping
 from app.schemas.extracted_obligation import ObligationExtractionRequest, ObligationReviewRequest
+from app.schemas.requirements_mapping import RequirementsMappingCreateRequest
 from app.services.audit import record_audit_event
+from app.services.requirements_mapping import create_mapping
 
 
 class ObligationExtractionError(ValueError):
@@ -136,3 +140,71 @@ def review_obligation(
     db.commit()
     db.refresh(item)
     return item
+
+
+
+def create_mapping_from_obligation(
+    db: Session,
+    item: ExtractedObligation,
+    *,
+    created_by: str,
+) -> RequirementsMapping:
+    if item.status != "APPROVED":
+        raise ObligationExtractionError("Only approved obligation candidates can seed a mapping")
+    if item.mapping_id:
+        existing = db.get(RequirementsMapping, item.mapping_id)
+        if existing is not None:
+            return existing
+    document = db.get(Document, item.source_document_id)
+    if document is None:
+        raise ObligationExtractionError("Source document no longer exists")
+    data = {
+        "source": {
+            "sourceId": f"DOC-{document.id}",
+            "title": document.filename,
+            "authority": "",
+            "version": str(document.version),
+            "url": "",
+            "approvalStatus": "PENDING_REVIEW",
+            "clauseId": item.clause_id,
+            "excerpt": item.excerpt,
+        },
+        "obligation": item.excerpt,
+        "applicability": "APPLICABLE",
+        "system": {
+            "name": "",
+            "finding": "UNKNOWN",
+            "evidenceRef": "System baseline evidence has not yet been supplied.",
+        },
+        "clarification": {
+            "question": "Which system/process implements this obligation, and what evidence demonstrates current behaviour?",
+            "questionOwner": "System Owner",
+            "decision": "Interpretation pending stakeholder review.",
+            "decisionStatus": "OPEN",
+            "owner": "Regulatory SME",
+            "dependencyStatus": "OPEN",
+        },
+        "requirement": "",
+        "pbi": {"title": "", "acceptanceCriteria": "", "testEvidence": ""},
+    }
+    mapping = create_mapping(
+        db,
+        RequirementsMappingCreateRequest(
+            dossier_id=f"DOC-{document.id}-V{document.version}",
+            created_by=created_by,
+            source_document_id=document.id,
+            data=data,
+        ),
+    )
+    item.mapping_id = mapping.id
+    db.add(item)
+    record_audit_event(
+        db,
+        event_type="obligation_mapping_created",
+        actor=created_by,
+        document_id=document.id,
+        detail={"obligation_key": item.obligation_key, "mapping_key": mapping.mapping_key},
+    )
+    db.commit()
+    db.refresh(item)
+    return mapping
