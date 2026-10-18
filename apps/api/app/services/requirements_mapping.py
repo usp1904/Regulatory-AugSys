@@ -1,12 +1,14 @@
 """Completeness gates and persistence for draft requirements mappings."""
 
 import json
+import re
 from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.models.document import Document
 from app.models.requirements_mapping import RequirementsMapping
 from app.schemas.requirements_mapping import (
     RequirementsMappingCreateRequest,
@@ -39,6 +41,9 @@ def validate_mapping(data: dict[str, Any]) -> list[str]:
         "Source version is required",
     )
     need(bool(source.get("authority")), "Issuing authority is required")
+    need(bool(source.get("sourceDocumentId")), "Controlled source document link is required")
+    need(bool(source.get("sourceDocumentVersion")), "Captured source document version is required")
+    need(bool(source.get("sourceFileHash")), "Captured source file hash is required")
     source_url = str(source.get("url", source.get("sourceUrl", ""))).lower()
     need(source_url.startswith("https://"), "Official HTTPS source URL is required")
     need(
@@ -143,10 +148,28 @@ def mapping_to_response(item: RequirementsMapping) -> dict[str, Any]:
     }
 
 
-def create_mapping(db: Session, payload: RequirementsMappingCreateRequest) -> RequirementsMapping:
+def create_mapping(
+    db: Session,
+    payload: RequirementsMappingCreateRequest,
+) -> RequirementsMapping:
+    document = db.get(Document, payload.source_document_id)
+    if document is None:
+        raise RequirementsMappingError("Controlled source document not found")
+    data = json.loads(json.dumps(payload.data, ensure_ascii=False))
+    source = data["source"]
+    excerpt = str(source.get("excerpt", source.get("sourceExcerpt", ""))).strip()
+    extracted_text = document.full_extracted_text()
+    normalize = lambda value: re.sub(r"\s+", " ", value).strip().casefold()
+    if not normalize(excerpt) or normalize(excerpt) not in normalize(extracted_text):
+        raise RequirementsMappingError(
+            "Source excerpt does not match the selected document's extracted text"
+        )
+    source["sourceDocumentId"] = document.id
+    source["sourceDocumentVersion"] = document.version
+    source["sourceFileHash"] = document.file_hash
     item = RequirementsMapping(
         dossier_id=payload.dossier_id,
-        data_json=json.dumps(payload.data, ensure_ascii=False),
+        data_json=json.dumps(data, ensure_ascii=False),
         readiness_status="BLOCKED_DRAFT",
         review_status="PENDING",
         created_by=payload.created_by,
