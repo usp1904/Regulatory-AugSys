@@ -189,6 +189,8 @@ def update_question(
     payload: ClarificationUpdateRequest,
 ) -> dict[str, Any]:
     action = payload.action
+    if action not in {"ANSWER", "CONFIRM", "REJECT", "REOPEN", "ASSIGN"}:
+        raise ClarificationError("Unsupported clarification action")
     actor = payload.actor.strip()
     if action == "ASSIGN":
         if not payload.owner or not payload.owner.strip():
@@ -201,6 +203,10 @@ def update_question(
             raise ClarificationError("A substantive answer is required")
         item.answer = payload.answer.strip()
         item.answered_by = actor
+        item.decision = None
+        item.rationale = None
+        item.resolved_by = None
+        item.resolved_at = None
         item.status = "ANSWERED"
     elif action == "CONFIRM":
         if item.status != "ANSWERED":
@@ -228,6 +234,7 @@ def update_question(
             raise ClarificationError("Only a decided question can be reopened")
         if not payload.rationale or len(payload.rationale.strip()) < 8:
             raise ClarificationError("A reason for reopening is required")
+        item.decision = None
         item.rationale = payload.rationale.strip()
         item.status = "REOPENED"
         item.resolved_by = None
