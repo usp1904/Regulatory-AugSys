@@ -227,7 +227,7 @@ def test_mapping_not_found_returns_404(client) -> None:
     assert response.status_code == 404
 
 
-def test_mapping_review_is_available_without_auth_during_mvp(client) -> None:
+def test_mapping_review_accepts_configured_reviewer_key(client) -> None:
     created = client.post(
         "/api/v1/requirements-mappings",
         json={
@@ -243,8 +243,9 @@ def test_mapping_review_is_available_without_auth_during_mvp(client) -> None:
         json={
             "reviewer": "qa.reviewer",
             "decision": "APPROVED",
-            "rationale": "Authentication is intentionally deferred for this MVP.",
+            "rationale": "User login is deferred; this is the interim service-to-service key.",
         },
+        headers={"Authorization": "Bearer reviewer-test-key"},
     )
     assert response.status_code == 200
 
