@@ -171,6 +171,8 @@ def create_mapping(
     source["sourceDocumentId"] = document.id
     source["sourceDocumentVersion"] = document.version
     source["sourceFileHash"] = document.file_hash
+    # The API does not trust client-supplied source approval claims.
+    source["approvalStatus"] = "PENDING_REVIEW"
     item = RequirementsMapping(
         dossier_id=payload.dossier_id,
         data_json=json.dumps(data, ensure_ascii=False),
@@ -229,6 +231,8 @@ def update_mapping(
     source["sourceDocumentId"] = document.id
     source["sourceDocumentVersion"] = document.version
     source["sourceFileHash"] = document.file_hash
+    # Any content revision requires source review again.
+    source["approvalStatus"] = "PENDING_REVIEW"
     item.data_json = json.dumps(data, ensure_ascii=False)
     item.review_status = "PENDING"
     item.readiness_status = "BLOCKED_DRAFT"
@@ -272,11 +276,26 @@ def review_mapping(
     item: RequirementsMapping,
     payload: RequirementsMappingReviewRequest,
 ) -> RequirementsMapping:
-    blockers = validate_mapping(json.loads(item.data_json))
-    if payload.decision == "APPROVED" and blockers:
-        raise RequirementsMappingError(
-            "Cannot approve mapping with blockers: " + "; ".join(blockers)
-        )
+    data = json.loads(item.data_json)
+    blockers = validate_mapping(data)
+    if payload.decision == "APPROVED":
+        non_source_blockers = [
+            blocker
+            for blocker in blockers
+            if blocker != "Source review approval is required"
+        ]
+        if non_source_blockers:
+            raise RequirementsMappingError(
+                "Cannot approve mapping with blockers: "
+                + "; ".join(non_source_blockers)
+            )
+        data["source"]["approvalStatus"] = "APPROVED_FOR_REVIEW"
+        blockers = validate_mapping(data)
+        if blockers:
+            raise RequirementsMappingError(
+                "Cannot approve mapping with blockers: " + "; ".join(blockers)
+            )
+        item.data_json = json.dumps(data, ensure_ascii=False)
     item.reviewer = payload.reviewer
     item.reviewer_decision = payload.decision
     item.reviewer_rationale = payload.rationale
