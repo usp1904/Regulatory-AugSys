@@ -14,6 +14,9 @@
   function validate(r) {
     var checks = [
       ['Source identity and version', !!r.sourceId && !!r.sourceVersion],
+      ['Issuing authority identified', !!r.sourceAuthority],
+      ['Official source URL recorded', /^https:\/\//i.test(r.sourceUrl)],
+      ['Source review status approved', r.sourceApprovalStatus === 'APPROVED_FOR_REVIEW'],
       ['Stable clause/section reference', !!r.clauseId],
       ['Source excerpt captured', r.sourceExcerpt.length >= 12],
       ['Atomic obligation stated', r.obligation.length >= 12],
@@ -47,7 +50,9 @@
       packageStatus:'DRAFT_NOT_CONTROLLED',
       source:{sourceId:val('maras-rm-source-id'),title:val('maras-rm-source-title'),authority:val('maras-rm-authority'),
         version:val('maras-rm-source-version'),effectiveDate:val('maras-rm-effective-date'),capturedAt:val('maras-rm-captured-at'),
-        url:val('maras-rm-source-url'),clauseId:val('maras-rm-clause-id'),excerpt:val('maras-rm-source-excerpt')},
+        authority:val('maras-rm-authority'),url:val('maras-rm-source-url'),licenseTag:val('maras-rm-license-tag'),
+        sourceHash:val('maras-rm-source-hash'),approvalStatus:val('maras-rm-source-approval'),
+        clauseId:val('maras-rm-clause-id'),excerpt:val('maras-rm-source-excerpt')},
       obligation:val('maras-rm-obligation'), applicability:val('maras-rm-applicability'),
       notApplicableRationale:val('maras-rm-na-rationale'),
       system:{name:val('maras-rm-system-name'),finding:val('maras-rm-system-finding'),evidenceRef:val('maras-rm-system-evidence'),observedAt:val('maras-rm-evidence-date')},
@@ -60,7 +65,8 @@
         approvedAt:val('maras-rm-approval') === 'APPROVED' ? new Date().toISOString() : null}
     };
     r.validation = validate({
-      sourceId:r.source.sourceId, sourceVersion:r.source.version, clauseId:r.source.clauseId,
+      sourceId:r.source.sourceId, sourceVersion:r.source.version, sourceAuthority:r.source.authority,
+      sourceUrl:r.source.url, sourceApprovalStatus:r.source.approvalStatus, clauseId:r.source.clauseId,
       sourceExcerpt:r.source.excerpt, obligation:r.obligation, applicability:r.applicability,
       notApplicableRationale:r.notApplicableRationale, systemFinding:r.system.finding, systemEvidence:r.system.evidenceRef,
       decision:r.clarification.decision, decisionStatus:r.clarification.decisionStatus, question:r.clarification.question,
@@ -102,7 +108,10 @@
     '<div class="maras-rm-field"><label>Version / revision / edition *</label><input id="maras-rm-source-version" required placeholder="Revision or publication date"></div>' +
     '<div class="maras-rm-field"><label>Effective date</label><input id="maras-rm-effective-date" type="date"></div>' +
     '<div class="maras-rm-field"><label>Capture date *</label><input id="maras-rm-captured-at" type="date" required></div>' +
-    '<div class="maras-rm-field wide"><label>Official source URL</label><input id="maras-rm-source-url" type="url" placeholder="https://..."></div>' +
+    '<div class="maras-rm-field wide"><label>Official source URL *</label><input id="maras-rm-source-url" type="url" required placeholder="https://..."></div>' +
+    '<div class="maras-rm-field"><label>Source approval status *</label><select id="maras-rm-source-approval"><option value="PENDING">Pending source review</option><option value="APPROVED_FOR_REVIEW">Approved for mapping review</option><option value="HELD">Held — do not use</option></select></div>' +
+    '<div class="maras-rm-field"><label>License / use restriction *</label><select id="maras-rm-license-tag"><option value="UNKNOWN">Unknown — review required</option><option value="PUBLIC_OFFICIAL">Public official source</option><option value="LICENSED_RESTRICTED">Licensed / restricted</option><option value="INTERNAL_CONTROLLED">Internal controlled document</option></select></div>' +
+    '<div class="maras-rm-field wide"><label>Source file SHA-256 (if captured)</label><input id="maras-rm-source-hash" placeholder="64-character SHA-256 from controlled ingestion"></div>' +
     '<div class="maras-rm-field"><label>Stable clause / section ID *</label><input id="maras-rm-clause-id" required placeholder="e.g. §11.10(a)"></div>' +
     '<div class="maras-rm-field wide"><label>Exact excerpt / evidence text *</label><textarea id="maras-rm-source-excerpt" required placeholder="Paste the relevant excerpt and preserve its source reference"></textarea><span class="maras-rm-help">Excerpt capture does not prove that the source is current or applicable.</span></div></div>' +
     '<div class="maras-rm-section">2 · Obligation and applicability</div><div class="maras-rm-grid">' +
