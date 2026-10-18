@@ -193,11 +193,11 @@ def test_mapping_not_found_returns_404(client) -> None:
     assert response.status_code == 404
 
 
-def test_writer_key_cannot_approve_mapping(client) -> None:
+def test_mapping_review_is_available_without_auth_during_mvp(client) -> None:
     created = client.post(
         "/api/v1/requirements-mappings",
         json={
-            "dossier_id": "DOS-ROLE-001",
+            "dossier_id": "DOS-MVP-OPEN-API",
             "created_by": "qa.author",
             "source_document_id": _upload_source_document(client),
             "data": _valid_mapping_data(),
@@ -209,28 +209,10 @@ def test_writer_key_cannot_approve_mapping(client) -> None:
         json={
             "reviewer": "qa.reviewer",
             "decision": "APPROVED",
-            "rationale": "Should be rejected",
+            "rationale": "Authentication is intentionally deferred for this MVP.",
         },
     )
-    assert response.status_code == 401
-
-
-def test_mapping_api_fails_closed_when_writer_key_missing(
-    client,
-    monkeypatch,
-) -> None:
-    monkeypatch.delenv("MARAS_REQUIREMENTS_MAPPING_WRITE_KEY")
-    response = client.post(
-        "/api/v1/requirements-mappings",
-        json={
-            "dossier_id": "DOS-KEY-001",
-            "created_by": "qa.author",
-            "source_document_id": _upload_source_document(client),
-            "data": _valid_mapping_data(),
-        },
-    )
-    assert response.status_code == 503
-
+    assert response.status_code == 200
 
 
 def test_mapping_rejects_excerpt_not_found_in_source_document(client) -> None:
