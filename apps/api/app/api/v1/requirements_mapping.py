@@ -21,7 +21,15 @@ from app.schemas.extracted_obligation import (
     ObligationExtractionRequest,
     ObligationReviewRequest,
 )
-from app.schemas.regulatory_truth import (\n    InterpretationCreate,\n    InterpretationResponse,\n    InterpretationReview,\n    RegulatorySourceCreate,\n    RegulatorySourceResponse,\n    RegulatorySourceReview,\n)\nfrom app.schemas.requirements_mapping import (
+from app.schemas.regulatory_truth import (
+    InterpretationCreate,
+    InterpretationResponse,
+    InterpretationReview,
+    RegulatorySourceCreate,
+    RegulatorySourceResponse,
+    RegulatorySourceReview,
+)
+from app.schemas.requirements_mapping import (
     RequirementsMappingCreateRequest,
     RequirementsMappingResponse,
     RequirementsMappingReviewRequest,
@@ -41,7 +49,14 @@ from app.services.obligation_extraction import (
     list_obligations,
     review_obligation,
 )
-from app.services.regulatory_truth import (\n    RegulatoryTruthError,\n    create_interpretation,\n    create_source_record,\n    review_interpretation,\n    review_source_record,\n)\nfrom app.services.requirements_mapping import (
+from app.services.regulatory_truth import (
+    RegulatoryTruthError,
+    create_interpretation,
+    create_source_record,
+    review_interpretation,
+    review_source_record,
+)
+from app.services.requirements_mapping import (
     RequirementsMappingError,
     create_mapping,
     list_mappings,
