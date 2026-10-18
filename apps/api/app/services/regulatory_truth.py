@@ -145,6 +145,11 @@ def review_interpretation(
     if payload.decision == "APPROVED":
         if source is None or source.source_status != "VERIFIED":
             raise RegulatoryTruthError("Layer 1 source must be verified before Layer 2 can be approved")
+        document = db.get(Document, obligation.source_document_id)
+        if document is None or source.content_hash != document.file_hash:
+            raise RegulatoryTruthError(
+                "Layer 1 source content changed after verification; re-register and verify the current version"
+            )
         if item.applicability == "UNDECIDED":
             raise RegulatoryTruthError("Applicability must be decided before approval")
         if item.unresolved_questions.strip():
