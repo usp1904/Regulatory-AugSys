@@ -159,6 +159,7 @@ def create_mapping(
     source = data["source"]
     excerpt = str(source.get("excerpt", source.get("sourceExcerpt", ""))).strip()
     extracted_text = document.full_extracted_text()
+
     def normalize_text(value: str) -> str:
         return re.sub(r"\s+", " ", value).strip().casefold()
 
