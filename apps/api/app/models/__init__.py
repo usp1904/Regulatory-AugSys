@@ -7,6 +7,7 @@ from app.models.document import Document, DocumentPage, DocumentParagraph
 from app.models.dossier_export import DossierExport
 from app.models.evidence_item import EvidenceItem
 from app.models.extracted_obligation import ExtractedObligation
+from app.models.regulatory_truth import InterpretationDecision, RegulatorySourceRecord
 from app.models.requirements_mapping import RequirementsMapping
 
 __all__ = [
@@ -20,5 +21,7 @@ __all__ = [
     "DossierExport",
     "EvidenceItem",
     "ExtractedObligation",
+    "InterpretationDecision",
+    "RegulatorySourceRecord",
     "RequirementsMapping",
 ]
