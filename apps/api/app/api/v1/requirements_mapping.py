@@ -9,8 +9,8 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.clarification import ClarificationQuestion
 from app.models.extracted_obligation import ExtractedObligation
-from app.models.requirements_mapping import RequirementsMapping
 from app.models.regulatory_truth import InterpretationDecision, RegulatorySourceRecord
+from app.models.requirements_mapping import RequirementsMapping
 from app.schemas.clarification import (
     ClarificationCreateRequest,
     ClarificationResponse,
