@@ -5839,7 +5839,7 @@ function renderCtdHouseDocs(){
   }
   el.innerHTML=ctdHouseDocs.map((d,i)=>`
     <div class="assurance-card" style="margin-bottom:8px">
-      <div class="assurance-card-h"><b>${d.name}</b> <span class="assurance-pill">${d.parseStatus||'—'}</span></div>
+      <div class="assurance-card-h"><b>${escapeHtml(d.name)}</b> <span class="assurance-pill">${escapeHtml(d.parseStatus||'—')}</span></div>
       <div class="assurance-card-b" style="font-size:12px;color:var(--ink3)">
         ${d.fileHash?`SHA-256: ${d.fileHash.slice(0,16)}… · `:''}${d.size?`${Math.round(d.size/1024)} KB · `:''}${d.uploadedAt?d.uploadedAt.slice(0,10):''}
         <button class="save-bar-btn" style="margin-left:8px;padding:2px 8px;font-size:11px" onclick="removeCtdHouseDoc(${i})">Remove</button>
@@ -6151,5 +6151,6 @@ function sourceMetaFor(reg,sourceKey){
 
 init();
 </script>
+<script src="./requirements-mapping.js"></script>
 </body>
 </html>
