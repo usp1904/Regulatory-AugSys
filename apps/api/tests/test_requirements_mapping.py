@@ -121,6 +121,7 @@ def test_mapping_update_resets_review_and_revalidates_source(client) -> None:
             "decision": "APPROVED",
             "rationale": "Initial decision confirmed.",
         },
+        headers={"Authorization": "Bearer reviewer-test-key"},
     )
     assert approved.status_code == 200
 
