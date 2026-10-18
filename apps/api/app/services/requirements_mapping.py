@@ -1,16 +1,19 @@
 """Completeness gates and persistence for draft requirements mappings."""
 
 import json
+import re
 from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.models.document import Document
 from app.models.requirements_mapping import RequirementsMapping
 from app.schemas.requirements_mapping import (
     RequirementsMappingCreateRequest,
     RequirementsMappingReviewRequest,
+    RequirementsMappingUpdateRequest,
 )
 from app.services.audit import record_audit_event
 
@@ -39,6 +42,9 @@ def validate_mapping(data: dict[str, Any]) -> list[str]:
         "Source version is required",
     )
     need(bool(source.get("authority")), "Issuing authority is required")
+    need(bool(source.get("sourceDocumentId")), "Controlled source document link is required")
+    need(bool(source.get("sourceDocumentVersion")), "Captured source document version is required")
+    need(bool(source.get("sourceFileHash")), "Captured source file hash is required")
     source_url = str(source.get("url", source.get("sourceUrl", ""))).lower()
     need(source_url.startswith("https://"), "Official HTTPS source URL is required")
     need(
@@ -143,10 +149,33 @@ def mapping_to_response(item: RequirementsMapping) -> dict[str, Any]:
     }
 
 
-def create_mapping(db: Session, payload: RequirementsMappingCreateRequest) -> RequirementsMapping:
+def create_mapping(
+    db: Session,
+    payload: RequirementsMappingCreateRequest,
+) -> RequirementsMapping:
+    document = db.get(Document, payload.source_document_id)
+    if document is None:
+        raise RequirementsMappingError("Controlled source document not found")
+    data = json.loads(json.dumps(payload.data, ensure_ascii=False))
+    source = data["source"]
+    excerpt = str(source.get("excerpt", source.get("sourceExcerpt", ""))).strip()
+    extracted_text = document.full_extracted_text()
+
+    def normalize_text(value: str) -> str:
+        return re.sub(r"\s+", " ", value).strip().casefold()
+
+    if not normalize_text(excerpt) or normalize_text(excerpt) not in normalize_text(extracted_text):
+        raise RequirementsMappingError(
+            "Source excerpt does not match the selected document's extracted text"
+        )
+    source["sourceDocumentId"] = document.id
+    source["sourceDocumentVersion"] = document.version
+    source["sourceFileHash"] = document.file_hash
+    # The API does not trust client-supplied source approval claims.
+    source["approvalStatus"] = "PENDING_REVIEW"
     item = RequirementsMapping(
         dossier_id=payload.dossier_id,
-        data_json=json.dumps(payload.data, ensure_ascii=False),
+        data_json=json.dumps(data, ensure_ascii=False),
         readiness_status="BLOCKED_DRAFT",
         review_status="PENDING",
         created_by=payload.created_by,
@@ -157,7 +186,72 @@ def create_mapping(db: Session, payload: RequirementsMappingCreateRequest) -> Re
         db,
         event_type="requirements_mapping_create",
         actor=payload.created_by,
-        detail={"mapping_key": item.mapping_key, "dossier_id": item.dossier_id},
+        document_id=document.id,
+        detail={
+            "mapping_key": item.mapping_key,
+            "dossier_id": item.dossier_id,
+            "source_document_version": document.version,
+            "source_file_hash": document.file_hash,
+        },
+    )
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+def update_mapping(
+    db: Session,
+    item: RequirementsMapping,
+    payload: RequirementsMappingUpdateRequest,
+) -> RequirementsMapping:
+    data = json.loads(json.dumps(payload.data, ensure_ascii=False))
+    source = data["source"]
+    if not source.get("sourceDocumentId"):
+        previous_data = json.loads(item.data_json)
+        source["sourceDocumentId"] = (previous_data.get("source") or {}).get(
+            "sourceDocumentId"
+        )
+    raw_document_id = source.get("sourceDocumentId")
+    document_id = int(raw_document_id) if str(raw_document_id).isdigit() else None
+    document = db.get(Document, document_id) if document_id else None
+    if document is None:
+        raise RequirementsMappingError(
+            "Mapping update must retain a valid controlled source document link"
+        )
+    excerpt = str(source.get("excerpt", source.get("sourceExcerpt", ""))).strip()
+    extracted_text = document.full_extracted_text()
+
+    def normalize_text(value: str) -> str:
+        return re.sub(r"\s+", " ", value).strip().casefold()
+
+    if not normalize_text(excerpt) or normalize_text(excerpt) not in normalize_text(extracted_text):
+        raise RequirementsMappingError(
+            "Source excerpt does not match the selected document's extracted text"
+        )
+    source["sourceDocumentId"] = document.id
+    source["sourceDocumentVersion"] = document.version
+    source["sourceFileHash"] = document.file_hash
+    # Any content revision requires source review again.
+    source["approvalStatus"] = "PENDING_REVIEW"
+    item.data_json = json.dumps(data, ensure_ascii=False)
+    item.review_status = "PENDING"
+    item.readiness_status = "BLOCKED_DRAFT"
+    item.reviewer = None
+    item.reviewer_decision = None
+    item.reviewer_rationale = None
+    item.reviewed_at = None
+    db.add(item)
+    record_audit_event(
+        db,
+        event_type="requirements_mapping_update",
+        actor=payload.updated_by,
+        document_id=document.id,
+        detail={
+            "mapping_key": item.mapping_key,
+            "source_document_version": document.version,
+            "source_file_hash": document.file_hash,
+            "readiness_reset": True,
+        },
     )
     db.commit()
     db.refresh(item)
@@ -182,11 +276,26 @@ def review_mapping(
     item: RequirementsMapping,
     payload: RequirementsMappingReviewRequest,
 ) -> RequirementsMapping:
-    blockers = validate_mapping(json.loads(item.data_json))
-    if payload.decision == "APPROVED" and blockers:
-        raise RequirementsMappingError(
-            "Cannot approve mapping with blockers: " + "; ".join(blockers)
-        )
+    data = json.loads(item.data_json)
+    blockers = validate_mapping(data)
+    if payload.decision == "APPROVED":
+        non_source_blockers = [
+            blocker
+            for blocker in blockers
+            if blocker != "Source review approval is required"
+        ]
+        if non_source_blockers:
+            raise RequirementsMappingError(
+                "Cannot approve mapping with blockers: "
+                + "; ".join(non_source_blockers)
+            )
+        data["source"]["approvalStatus"] = "APPROVED_FOR_REVIEW"
+        blockers = validate_mapping(data)
+        if blockers:
+            raise RequirementsMappingError(
+                "Cannot approve mapping with blockers: " + "; ".join(blockers)
+            )
+        item.data_json = json.dumps(data, ensure_ascii=False)
     item.reviewer = payload.reviewer
     item.reviewer_decision = payload.decision
     item.reviewer_rationale = payload.rationale

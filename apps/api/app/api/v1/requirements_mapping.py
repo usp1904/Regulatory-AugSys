@@ -12,6 +12,7 @@ from app.schemas.requirements_mapping import (
     RequirementsMappingCreateRequest,
     RequirementsMappingResponse,
     RequirementsMappingReviewRequest,
+    RequirementsMappingUpdateRequest,
 )
 from app.services.requirements_mapping import (
     RequirementsMappingError,
@@ -19,6 +20,7 @@ from app.services.requirements_mapping import (
     list_mappings,
     mapping_to_response,
     review_mapping,
+    update_mapping,
 )
 
 router = APIRouter(prefix="/requirements-mappings", tags=["requirements-mapping"])
@@ -79,7 +81,11 @@ def create_requirements_mapping(
     db: Session = Depends(get_db),
     _access: str = Depends(require_mapping_writer),
 ) -> dict:
-    return mapping_to_response(create_mapping(db, payload))
+    try:
+        item = create_mapping(db, payload)
+    except RequirementsMappingError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return mapping_to_response(item)
 
 
 @router.get("", response_model=list[RequirementsMappingResponse])
@@ -101,6 +107,23 @@ def get_requirements_mapping(
     if item is None:
         raise HTTPException(status_code=404, detail="Requirements mapping not found")
     return mapping_to_response(item)
+
+
+@router.put("/{mapping_id}", response_model=RequirementsMappingResponse)
+def update_requirements_mapping(
+    mapping_id: int,
+    payload: RequirementsMappingUpdateRequest,
+    db: Session = Depends(get_db),
+    _access: str = Depends(require_mapping_writer),
+) -> dict:
+    item = db.get(RequirementsMapping, mapping_id)
+    if item is None:
+        raise HTTPException(status_code=404, detail="Requirements mapping not found")
+    try:
+        updated = update_mapping(db, item, payload)
+    except RequirementsMappingError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return mapping_to_response(updated)
 
 
 @router.post("/{mapping_id}/review", response_model=RequirementsMappingResponse)

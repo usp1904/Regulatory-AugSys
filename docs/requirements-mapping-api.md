@@ -7,15 +7,19 @@ This slice adds persistent requirements-mapping records to the existing FastAPI 
 - `POST /api/v1/requirements-mappings` — create a draft mapping. The API does not accept client-side approval as authoritative; review starts as `PENDING`.
 - `GET /api/v1/requirements-mappings?dossier_id=...` — list mappings, optionally scoped to a dossier.
 - `GET /api/v1/requirements-mappings/{id}` — retrieve a mapping.
+- `PUT /api/v1/requirements-mappings/{id}` — revise a mapping after stakeholder clarification; source evidence is revalidated and prior review is reset.
 - `POST /api/v1/requirements-mappings/{id}/review` — record a reviewer decision. Approval is rejected with HTTP 409 while completeness blockers remain.
+- `PUT /api/v1/requirements-mappings/{id}` — revise mapping data after clarification; the source excerpt is rechecked and prior review is reset.
+- Web UI: `/requirements-mappings` — select source documents, capture obligations and system impact, record decisions, draft PBIs, inspect blockers, and review mappings.
 
 ## Data and controls
 
 - Mapping body is stored as JSON text, preserving the source, obligation, system finding/evidence, clarification, requirement, PBI, acceptance criteria, and test evidence fields.
+- Mapping creation requires an existing controlled source document ID. The API checks the excerpt against the document's extracted text and copies the stored document ID, version, and SHA-256 into the mapping; client-supplied version/hash values are not trusted.
 - Mapping records and review decisions produce audit events with actor, event type, and mapping key.
 - Readiness is computed from the stored data on response; client-supplied readiness labels are not trusted.
 - An unresolved interpretation, unfinalized applicability, unreviewed source, missing evidence, open dependency, missing test evidence, or incomplete PBI blocks approval.
-- Routes require separate server-side writer and reviewer bearer keys. Set `MARAS_REQUIREMENTS_MAPPING_WRITE_KEY` and `MARAS_REQUIREMENTS_MAPPING_REVIEW_KEY` in the API environment; blank/unset keys fail closed with HTTP 503. Reviewer routes reject writer-only keys.
+- Routes require server-side writer and reviewer service keys. Set `MARAS_REQUIREMENTS_MAPPING_WRITE_KEY` and `MARAS_REQUIREMENTS_MAPPING_REVIEW_KEY` in both API and web runtime environments; the Next.js proxy forwards these keys without exposing them to browser code.
 - These are shared service credentials, not individual identity. Reviewer name is still supplied by the request, so this is an interim access boundary—not user-level authentication or a validated electronic signature. Do not expose either key in browser JavaScript or public hosting.
 
 ## Database migration

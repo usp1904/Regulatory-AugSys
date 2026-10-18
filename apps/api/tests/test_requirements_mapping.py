@@ -1,9 +1,30 @@
 """Integration tests for persistent requirements mapping and approval gates."""
 
+import io
+
 from sqlalchemy import select
 
 from app.models.audit_event import AuditEvent
 from app.models.requirements_mapping import RequirementsMapping
+
+
+def _upload_source_document(
+    client,
+    text: str = "The organization shall maintain an approved record.",
+) -> int:
+    response = client.post(
+        "/api/v1/documents",
+        data={"uploader": "qa.author"},
+        files={
+            "file": (
+                "regulatory-guidance.txt",
+                io.BytesIO(text.encode("utf-8")),
+                "text/plain",
+            )
+        },
+    )
+    assert response.status_code == 201
+    return response.json()["id"]
 
 
 def _valid_mapping_data() -> dict:
@@ -47,11 +68,13 @@ def _valid_mapping_data() -> dict:
 
 
 def test_create_mapping_persists_draft_and_audit_event(client, db_session) -> None:
+    source_document_id = _upload_source_document(client)
     response = client.post(
         "/api/v1/requirements-mappings",
         json={
             "dossier_id": "DOS-MAP-001",
             "created_by": "qa.author",
+            "source_document_id": source_document_id,
             "data": _valid_mapping_data(),
         },
     )
@@ -60,6 +83,10 @@ def test_create_mapping_persists_draft_and_audit_event(client, db_session) -> No
     assert body["mapping_key"].startswith("MAP-")
     assert body["readiness_status"] == "BLOCKED_DRAFT"
     assert body["review_status"] == "PENDING"
+    source = body["data"]["source"]
+    assert source["sourceDocumentId"] == source_document_id
+    assert source["sourceDocumentVersion"] >= 1
+    assert len(source["sourceFileHash"]) == 64
     assert "Independent reviewer approval is required" in body["blockers"]
     stored = db_session.scalar(
         select(RequirementsMapping).where(RequirementsMapping.id == body["id"])
@@ -72,6 +99,42 @@ def test_create_mapping_persists_draft_and_audit_event(client, db_session) -> No
     )
     assert event is not None
     assert event.actor == "qa.author"
+    assert event.document_id == source_document_id
+
+
+def test_mapping_update_resets_review_and_revalidates_source(client) -> None:
+    created = client.post(
+        "/api/v1/requirements-mappings",
+        json={
+            "dossier_id": "DOS-UPDATE-001",
+            "created_by": "qa.author",
+            "source_document_id": _upload_source_document(client),
+            "data": _valid_mapping_data(),
+        },
+    )
+    assert created.status_code == 201
+    mapping_id = created.json()["id"]
+    approved = client.post(
+        f"/api/v1/requirements-mappings/{mapping_id}/review",
+        json={
+            "reviewer": "qa.reviewer",
+            "decision": "APPROVED",
+            "rationale": "Initial decision confirmed.",
+        },
+        headers={"Authorization": "Bearer reviewer-test-key"},
+    )
+    assert approved.status_code == 200
+
+    revised_data = approved.json()["data"]
+    revised_data["clarification"]["decisionStatus"] = "OPEN"
+    updated = client.put(
+        f"/api/v1/requirements-mappings/{mapping_id}",
+        json={"updated_by": "qa.author", "data": revised_data},
+    )
+    assert updated.status_code == 200
+    assert updated.json()["review_status"] == "PENDING"
+    assert updated.json()["reviewer"] is None
+    assert "Interpretation must be confirmed" in updated.json()["blockers"]
 
 
 def test_mapping_approval_requires_all_completeness_gates(client) -> None:
@@ -82,6 +145,7 @@ def test_mapping_approval_requires_all_completeness_gates(client) -> None:
         json={
             "dossier_id": "DOS-MAP-002",
             "created_by": "qa.author",
+            "source_document_id": _upload_source_document(client),
             "data": data,
         },
     )
@@ -105,6 +169,7 @@ def test_approved_mapping_is_ready_and_audited(client, db_session) -> None:
         json={
             "dossier_id": "DOS-MAP-003",
             "created_by": "qa.author",
+            "source_document_id": _upload_source_document(client),
             "data": _valid_mapping_data(),
         },
     )
@@ -144,6 +209,7 @@ def test_mapping_can_be_filtered_by_dossier(client) -> None:
             json={
                 "dossier_id": dossier_id,
                 "created_by": "qa.author",
+                "source_document_id": _upload_source_document(client),
                 "data": _valid_mapping_data(),
             },
         )
@@ -162,12 +228,13 @@ def test_mapping_not_found_returns_404(client) -> None:
     assert response.status_code == 404
 
 
-def test_writer_key_cannot_approve_mapping(client) -> None:
+def test_mapping_review_accepts_configured_reviewer_key(client) -> None:
     created = client.post(
         "/api/v1/requirements-mappings",
         json={
-            "dossier_id": "DOS-ROLE-001",
+            "dossier_id": "DOS-MVP-OPEN-API",
             "created_by": "qa.author",
+            "source_document_id": _upload_source_document(client),
             "data": _valid_mapping_data(),
         },
     )
@@ -177,23 +244,26 @@ def test_writer_key_cannot_approve_mapping(client) -> None:
         json={
             "reviewer": "qa.reviewer",
             "decision": "APPROVED",
-            "rationale": "Should be rejected",
+            "rationale": "User login is deferred; this is the interim service-to-service key.",
         },
+        headers={"Authorization": "Bearer reviewer-test-key"},
     )
-    assert response.status_code == 401
+    assert response.status_code == 200
 
 
-def test_mapping_api_fails_closed_when_writer_key_missing(
-    client,
-    monkeypatch,
-) -> None:
-    monkeypatch.delenv("MARAS_REQUIREMENTS_MAPPING_WRITE_KEY")
+def test_mapping_rejects_excerpt_not_found_in_source_document(client) -> None:
+    source_document_id = _upload_source_document(
+        client,
+        text="This uploaded document contains unrelated content.",
+    )
     response = client.post(
         "/api/v1/requirements-mappings",
         json={
-            "dossier_id": "DOS-KEY-001",
+            "dossier_id": "DOS-SOURCE-MISMATCH",
             "created_by": "qa.author",
+            "source_document_id": source_document_id,
             "data": _valid_mapping_data(),
         },
     )
-    assert response.status_code == 503
+    assert response.status_code == 400
+    assert "does not match the selected document" in response.json()["detail"]

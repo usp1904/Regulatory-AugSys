@@ -11,6 +11,20 @@ REVIEW_DECISIONS = frozenset({"APPROVED", "CHANGES_REQUIRED", "REJECTED"})
 class RequirementsMappingCreateRequest(BaseModel):
     dossier_id: str = Field(min_length=1, max_length=128)
     created_by: str = Field(min_length=1, max_length=256)
+    source_document_id: int = Field(gt=0)
+    data: dict[str, Any]
+
+    @field_validator("data")
+    @classmethod
+    def require_mapping_sections(cls, value: dict[str, Any]) -> dict[str, Any]:
+        for key in ("source", "system", "clarification", "pbi"):
+            if not isinstance(value.get(key), dict):
+                raise ValueError(f"data.{key} must be an object")
+        return value
+
+
+class RequirementsMappingUpdateRequest(BaseModel):
+    updated_by: str = Field(min_length=1, max_length=256)
     data: dict[str, Any]
 
     @field_validator("data")
