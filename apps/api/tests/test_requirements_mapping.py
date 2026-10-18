@@ -68,12 +68,13 @@ def _valid_mapping_data() -> dict:
 
 
 def test_create_mapping_persists_draft_and_audit_event(client, db_session) -> None:
+    source_document_id = _upload_source_document(client)
     response = client.post(
         "/api/v1/requirements-mappings",
         json={
             "dossier_id": "DOS-MAP-001",
             "created_by": "qa.author",
-            "source_document_id": _upload_source_document(client),
+            "source_document_id": source_document_id,
             "data": _valid_mapping_data(),
         },
     )
@@ -82,6 +83,10 @@ def test_create_mapping_persists_draft_and_audit_event(client, db_session) -> No
     assert body["mapping_key"].startswith("MAP-")
     assert body["readiness_status"] == "BLOCKED_DRAFT"
     assert body["review_status"] == "PENDING"
+    source = body["data"]["source"]
+    assert source["sourceDocumentId"] == source_document_id
+    assert source["sourceDocumentVersion"] >= 1
+    assert len(source["sourceFileHash"]) == 64
     assert "Independent reviewer approval is required" in body["blockers"]
     stored = db_session.scalar(
         select(RequirementsMapping).where(RequirementsMapping.id == body["id"])
@@ -94,6 +99,7 @@ def test_create_mapping_persists_draft_and_audit_event(client, db_session) -> No
     )
     assert event is not None
     assert event.actor == "qa.author"
+    assert event.document_id == source_document_id
 
 
 def test_mapping_approval_requires_all_completeness_gates(client) -> None:
