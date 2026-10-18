@@ -57,11 +57,18 @@ def extract_obligations(
         clause_id = _clause_id(excerpt, index)
         fingerprint = f"{document.file_hash}:{document.version}:{clause_id}:{lower}"
         key = "OBL-" + hashlib.sha256(fingerprint.encode("utf-8")).hexdigest()[:24].upper()
-        existing = db.scalar(select(ExtractedObligation).where(ExtractedObligation.obligation_key == key))
+        existing = db.scalar(
+            select(ExtractedObligation).where(
+                ExtractedObligation.obligation_key == key
+            )
+        )
         if existing:
             results.append(existing)
             continue
-        strong = any(term in matches for term in ("shall", "must", "must not", "shall not", "required to"))
+        strong = any(
+            term in matches
+            for term in ("shall", "must", "must not", "shall not", "required to")
+        )
         item = ExtractedObligation(
             obligation_key=key,
             source_document_id=document.id,
@@ -177,7 +184,10 @@ def create_mapping_from_obligation(
             "evidenceRef": "System baseline evidence has not yet been supplied.",
         },
         "clarification": {
-            "question": "Which system/process implements this obligation, and what evidence demonstrates current behaviour?",
+            "question": (
+                "Which system/process implements this obligation, and what "
+                "evidence demonstrates current behaviour?"
+            ),
             "questionOwner": "System Owner",
             "decision": "Interpretation pending stakeholder review.",
             "decisionStatus": "OPEN",
