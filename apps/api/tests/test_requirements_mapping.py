@@ -69,6 +69,7 @@ def test_mapping_approval_requires_all_completeness_gates(client) -> None:
     response = client.post(
         f"/api/v1/requirements-mappings/{created.json()['id']}/review",
         json={"reviewer": "qa.reviewer", "decision": "APPROVED", "rationale": "Reviewed"},
+        headers={"Authorization": "Bearer reviewer-test-key"},
     )
     assert response.status_code == 409
     assert "Interpretation must be confirmed" in response.json()["detail"]
@@ -84,6 +85,7 @@ def test_approved_mapping_is_ready_and_audited(client, db_session) -> None:
     reviewed = client.post(
         f"/api/v1/requirements-mappings/{mapping_id}/review",
         json={"reviewer": "qa.reviewer", "decision": "APPROVED", "rationale": "SME evidence and criteria reviewed."},
+        headers={"Authorization": "Bearer reviewer-test-key"},
     )
     assert reviewed.status_code == 200
     assert reviewed.json()["readiness_status"] == "READY_FOR_CONTROLLED_REVIEW"
