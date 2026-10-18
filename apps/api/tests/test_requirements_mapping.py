@@ -112,3 +112,26 @@ def test_mapping_can_be_filtered_by_dossier(client) -> None:
 def test_mapping_not_found_returns_404(client) -> None:
     response = client.get("/api/v1/requirements-mappings/99999")
     assert response.status_code == 404
+
+
+
+def test_writer_key_cannot_approve_mapping(client) -> None:
+    created = client.post(
+        "/api/v1/requirements-mappings",
+        json={"dossier_id": "DOS-ROLE-001", "created_by": "qa.author", "data": _valid_mapping_data()},
+    )
+    assert created.status_code == 201
+    response = client.post(
+        f"/api/v1/requirements-mappings/{created.json()['id']}/review",
+        json={"reviewer": "qa.reviewer", "decision": "APPROVED", "rationale": "Should be rejected"},
+    )
+    assert response.status_code == 401
+
+
+def test_mapping_api_fails_closed_when_writer_key_missing(client, monkeypatch) -> None:
+    monkeypatch.delenv("MARAS_REQUIREMENTS_MAPPING_WRITE_KEY")
+    response = client.post(
+        "/api/v1/requirements-mappings",
+        json={"dossier_id": "DOS-KEY-001", "created_by": "qa.author", "data": _valid_mapping_data()},
+    )
+    assert response.status_code == 503
