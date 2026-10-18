@@ -1,6 +1,5 @@
 """Controlled operations for source verification and interpretation decisions."""
 
-import hashlib
 from datetime import UTC, datetime
 
 from sqlalchemy import select
@@ -32,8 +31,14 @@ def create_source_record(db: Session, payload: RegulatorySourceCreate) -> Regula
         )
     )
     if existing is not None:
-        raise RegulatoryTruthError("A source record already exists for this document; create a new document version instead")
-    if payload.effective_date and payload.publication_date and payload.effective_date < payload.publication_date:
+        raise RegulatoryTruthError(
+            "A source record already exists for this document; create a new version instead"
+        )
+    if (
+        payload.effective_date
+        and payload.publication_date
+        and payload.effective_date < payload.publication_date
+    ):
         raise RegulatoryTruthError("Effective date cannot precede publication date")
     item = RegulatorySourceRecord(
         document_id=document.id,
@@ -72,7 +77,9 @@ def review_source_record(
         if not item.official_url.startswith("https://") or not item.issuing_authority.strip():
             raise RegulatoryTruthError("An HTTPS source URL and issuing authority are required")
         if item.content_hash != document.file_hash:
-            raise RegulatoryTruthError("Source hash no longer matches the controlled document; register a new version")
+            raise RegulatoryTruthError(
+                "Source hash no longer matches the controlled document; register a new version"
+            )
     item.source_status = payload.decision
     item.verified_by = payload.reviewer.strip()
     item.verification_rationale = payload.rationale.strip()
@@ -107,7 +114,9 @@ def create_interpretation(
             .order_by(InterpretationDecision.version.desc())
         )
         if previous is not None:
-            raise RegulatoryTruthError("A prior interpretation exists; specify supersedes_id to create a new version")
+            raise RegulatoryTruthError(
+                "A prior interpretation exists; specify supersedes_id to create a new version"
+            )
         version = 1
     item = InterpretationDecision(
         obligation_id=obligation.id, version=version,
@@ -144,11 +153,14 @@ def review_interpretation(
     )
     if payload.decision == "APPROVED":
         if source is None or source.source_status != "VERIFIED":
-            raise RegulatoryTruthError("Layer 1 source must be verified before Layer 2 can be approved")
+            raise RegulatoryTruthError(
+                "Layer 1 source must be verified before Layer 2 can be approved"
+            )
         document = db.get(Document, obligation.source_document_id)
         if document is None or source.content_hash != document.file_hash:
             raise RegulatoryTruthError(
-                "Layer 1 source content changed after verification; re-register and verify the current version"
+                "Layer 1 source content changed after verification; "
+                "re-register and verify the current version"
             )
         if item.applicability == "UNDECIDED":
             raise RegulatoryTruthError("Applicability must be decided before approval")
