@@ -182,7 +182,13 @@ def create_mapping(
         db,
         event_type="requirements_mapping_create",
         actor=payload.created_by,
-        detail={"mapping_key": item.mapping_key, "dossier_id": item.dossier_id},
+        document_id=document.id,
+        detail={
+            "mapping_key": item.mapping_key,
+            "dossier_id": item.dossier_id,
+            "source_document_version": document.version,
+            "source_file_hash": document.file_hash,
+        },
     )
     db.commit()
     db.refresh(item)
