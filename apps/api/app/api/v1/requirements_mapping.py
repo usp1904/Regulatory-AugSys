@@ -100,6 +100,17 @@ def get_requirements_mappings(
     return [mapping_to_response(item) for item in list_mappings(db, dossier_id)]
 
 
+@router.get("/clarifications", response_model=list[ClarificationResponse])
+def get_clarifications(
+    status: str | None = Query(default=None, max_length=32),
+    mapping_id: int | None = Query(default=None, gt=0),
+    dossier_id: str | None = Query(default=None, max_length=128),
+    db: Session = Depends(get_db),
+    _access: str = Depends(require_mapping_reader),
+) -> list[dict]:
+    return list_questions(db, status=status, mapping_id=mapping_id, dossier_id=dossier_id)
+
+
 @router.get("/{mapping_id}", response_model=RequirementsMappingResponse)
 def get_requirements_mapping(
     mapping_id: int,
@@ -156,17 +167,6 @@ def create_clarification(
         return create_question(db, payload)
     except ClarificationError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-
-
-@router.get("/clarifications", response_model=list[ClarificationResponse])
-def get_clarifications(
-    status: str | None = Query(default=None, max_length=32),
-    mapping_id: int | None = Query(default=None, gt=0),
-    dossier_id: str | None = Query(default=None, max_length=128),
-    db: Session = Depends(get_db),
-    _access: str = Depends(require_mapping_reader),
-) -> list[dict]:
-    return list_questions(db, status=status, mapping_id=mapping_id, dossier_id=dossier_id)
 
 
 @router.get("/clarifications/{question_id}", response_model=ClarificationResponse)
