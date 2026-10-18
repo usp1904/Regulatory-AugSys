@@ -28,7 +28,9 @@ class RegulatorySourceRecord(Base):
     effective_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     applicability_scope: Mapped[str] = mapped_column(Text, nullable=False)
     content_hash: Mapped[str] = mapped_column(String(64), nullable=False)
-    source_status: Mapped[str] = mapped_column(String(32), nullable=False, default="UNVERIFIED", index=True)
+    source_status: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="UNVERIFIED", index=True
+    )
     created_by: Mapped[str] = mapped_column(String(256), nullable=False)
     verification_rationale: Mapped[str | None] = mapped_column(Text, nullable=True)
     verified_by: Mapped[str | None] = mapped_column(String(256), nullable=True)
