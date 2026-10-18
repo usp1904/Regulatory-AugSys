@@ -31,18 +31,34 @@ def upgrade() -> None:
         sa.Column("effective_date", sa.Date(), nullable=True),
         sa.Column("applicability_scope", sa.Text(), nullable=False),
         sa.Column("content_hash", sa.String(64), nullable=False),
-        sa.Column("source_status", sa.String(32), nullable=False, server_default="UNVERIFIED"),
+        sa.Column(
+            "source_status", sa.String(32), nullable=False, server_default="UNVERIFIED"
+        ),
         sa.Column("created_by", sa.String(256), nullable=False),
         sa.Column("verification_rationale", sa.Text(), nullable=True),
         sa.Column("verified_by", sa.String(256), nullable=True),
         sa.Column("verified_at", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True),
+            server_default=sa.func.now(), nullable=False
+        ),
+        sa.Column(
+            "updated_at", sa.DateTime(timezone=True),
+            server_default=sa.func.now(), nullable=False
+        ),
         sa.ForeignKeyConstraint(["document_id"], ["documents.id"], ondelete="CASCADE"),
         sa.UniqueConstraint("document_id", name="uq_regulatory_source_document"),
     )
-    op.create_index("ix_regulatory_source_records_document_id", "regulatory_source_records", ["document_id"])
-    op.create_index("ix_regulatory_source_records_source_status", "regulatory_source_records", ["source_status"])
+    op.create_index(
+        "ix_regulatory_source_records_document_id",
+        "regulatory_source_records",
+        ["document_id"],
+    )
+    op.create_index(
+        "ix_regulatory_source_records_source_status",
+        "regulatory_source_records",
+        ["source_status"],
+    )
 
     op.create_table(
         "interpretation_decisions",
@@ -50,10 +66,14 @@ def upgrade() -> None:
         sa.Column("obligation_id", sa.Integer(), nullable=False),
         sa.Column("version", sa.Integer(), nullable=False, server_default="1"),
         sa.Column("interpretation", sa.Text(), nullable=False),
-        sa.Column("applicability", sa.String(32), nullable=False, server_default="UNDECIDED"),
+        sa.Column(
+            "applicability", sa.String(32), nullable=False, server_default="UNDECIDED"
+        ),
         sa.Column("rationale", sa.Text(), nullable=False),
         sa.Column("assumptions", sa.Text(), nullable=False, server_default=""),
-        sa.Column("unresolved_questions", sa.Text(), nullable=False, server_default=""),
+        sa.Column(
+            "unresolved_questions", sa.Text(), nullable=False, server_default=""
+        ),
         sa.Column("decision_owner", sa.String(256), nullable=False),
         sa.Column("status", sa.String(32), nullable=False, server_default="DRAFT"),
         sa.Column("submitted_by", sa.String(256), nullable=False),
@@ -64,17 +84,34 @@ def upgrade() -> None:
         sa.Column("supersedes_id", sa.Integer(), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.ForeignKeyConstraint(["obligation_id"], ["extracted_obligations.id"], ondelete="CASCADE"),
-        sa.ForeignKeyConstraint(["supersedes_id"], ["interpretation_decisions.id"], ondelete="SET NULL"),
+        sa.ForeignKeyConstraint(
+            ["obligation_id"], ["extracted_obligations.id"], ondelete="CASCADE"
+        ),
+        sa.ForeignKeyConstraint(
+            ["supersedes_id"], ["interpretation_decisions.id"], ondelete="SET NULL"
+        ),
     )
-    op.create_index("ix_interpretation_decisions_obligation_id", "interpretation_decisions", ["obligation_id"])
+    op.create_index(
+        "ix_interpretation_decisions_obligation_id",
+        "interpretation_decisions",
+        ["obligation_id"],
+    )
     op.create_index("ix_interpretation_decisions_status", "interpretation_decisions", ["status"])
 
 
 def downgrade() -> None:
     op.drop_index("ix_interpretation_decisions_status", table_name="interpretation_decisions")
-    op.drop_index("ix_interpretation_decisions_obligation_id", table_name="interpretation_decisions")
+    op.drop_index(
+        "ix_interpretation_decisions_obligation_id",
+        table_name="interpretation_decisions",
+    )
     op.drop_table("interpretation_decisions")
-    op.drop_index("ix_regulatory_source_records_source_status", table_name="regulatory_source_records")
-    op.drop_index("ix_regulatory_source_records_document_id", table_name="regulatory_source_records")
+    op.drop_index(
+        "ix_regulatory_source_records_source_status",
+        table_name="regulatory_source_records",
+    )
+    op.drop_index(
+        "ix_regulatory_source_records_document_id",
+        table_name="regulatory_source_records",
+    )
     op.drop_table("regulatory_source_records")
