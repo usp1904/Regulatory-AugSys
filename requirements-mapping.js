@@ -20,6 +20,9 @@
       ['Applicability decision recorded', r.applicability !== 'UNDECIDED'],
       ['System evidence or explicit unknown recorded', r.systemFinding === 'UNKNOWN' ? !!r.systemEvidence : (r.systemFinding !== 'NOT_ASSESSED' && !!r.systemEvidence)],
       ['Interpretation/decision recorded', r.decision.length >= 12],
+      ['Decision is explicitly confirmed', r.decisionStatus === 'CONFIRMED'],
+      ['Open clarification has an assigned owner', !r.question || !!r.questionOwner],
+      ['Dependencies are resolved or not required', r.dependencyStatus !== 'OPEN'], 
       ['Decision owner identified', !!r.decisionOwner],
       ['Observable business requirement', r.requirement.length >= 20],
       ['Testable acceptance criteria', r.acceptanceCriteria.length >= 20],
@@ -27,6 +30,7 @@
     ].map(function (c) { return {label:c[0], pass:c[1]}; });
     var blockers = checks.filter(function (c) { return !c.pass; }).map(function (c) { return c.label; });
     if (r.applicability === 'NOT_APPLICABLE' && !r.notApplicableRationale) blockers.push('Not-applicable rationale is required');
+    if (r.systemFinding === 'NOT_APPLICABLE' && !r.notApplicableRationale) blockers.push('System not-applicable rationale is required');
     if (!r.approver) blockers.push('Named approver is required');
     if (r.approvalDecision !== 'APPROVED') blockers.push('Approver has not approved this mapping');
     return {
@@ -47,8 +51,9 @@
       obligation:val('maras-rm-obligation'), applicability:val('maras-rm-applicability'),
       notApplicableRationale:val('maras-rm-na-rationale'),
       system:{name:val('maras-rm-system-name'),finding:val('maras-rm-system-finding'),evidenceRef:val('maras-rm-system-evidence'),observedAt:val('maras-rm-evidence-date')},
-      clarification:{question:val('maras-rm-question'),decision:val('maras-rm-decision'),owner:val('maras-rm-decision-owner'),
-        rationale:val('maras-rm-decision-rationale'),dependency:val('maras-rm-dependency')},
+      clarification:{question:val('maras-rm-question'),questionOwner:val('maras-rm-question-owner'), questionDueDate:val('maras-rm-question-due'),
+        decisionStatus:val('maras-rm-decision-status'), decision:val('maras-rm-decision'),owner:val('maras-rm-decision-owner'),
+        rationale:val('maras-rm-decision-rationale'),dependency:val('maras-rm-dependency'),dependencyStatus:val('maras-rm-dependency-status')},
       requirement:val('maras-rm-requirement'),
       pbi:{title:val('maras-rm-pbi-title'),acceptanceCriteria:val('maras-rm-ac'),testEvidence:val('maras-rm-test-evidence')},
       approval:{approver:val('maras-rm-approver'),decision:val('maras-rm-approval'),comment:val('maras-rm-approval-comment'),
@@ -58,7 +63,9 @@
       sourceId:r.source.sourceId, sourceVersion:r.source.version, clauseId:r.source.clauseId,
       sourceExcerpt:r.source.excerpt, obligation:r.obligation, applicability:r.applicability,
       notApplicableRationale:r.notApplicableRationale, systemFinding:r.system.finding, systemEvidence:r.system.evidenceRef,
-      decision:r.clarification.decision, decisionOwner:r.clarification.owner, requirement:r.requirement,
+      decision:r.clarification.decision, decisionStatus:r.clarification.decisionStatus, question:r.clarification.question,
+      questionOwner:r.clarification.questionOwner, dependencyStatus:r.clarification.dependencyStatus,
+      decisionOwner:r.clarification.owner, requirement:r.requirement,
       acceptanceCriteria:r.pbi.acceptanceCriteria, testEvidence:r.pbi.testEvidence,
       approver:r.approval.approver, approvalDecision:r.approval.decision
     });
@@ -109,9 +116,13 @@
     '<div class="maras-rm-field"><label>Evidence observed date</label><input id="maras-rm-evidence-date" type="date"></div></div>' +
     '<div class="maras-rm-section">4 · Clarification and decision</div><div class="maras-rm-grid">' +
     '<div class="maras-rm-field wide"><label>Question for System Owner / SME / Product Owner</label><textarea id="maras-rm-question" placeholder="What needs clarification?"></textarea></div>' +
-    '<div class="maras-rm-field wide"><label>Decision / interpretation *</label><textarea id="maras-rm-decision" required placeholder="Agreed interpretation or explicitly open decision"></textarea></div>' +
+    '<div class="maras-rm-field"><label>Question owner</label><input id="maras-rm-question-owner" placeholder="Person / accountable role"></div>' +
+    '<div class="maras-rm-field"><label>Question due date</label><input id="maras-rm-question-due" type="date"></div>' +
+    '<div class="maras-rm-field"><label>Decision status *</label><select id="maras-rm-decision-status"><option value="OPEN">Open — clarification needed</option><option value="PROPOSED">Proposed — awaiting confirmation</option><option value="CONFIRMED">Confirmed by accountable owner</option><option value="REJECTED">Rejected — rework required</option></select></div>' +
+    '<div class="maras-rm-field wide"><label>Decision / interpretation *</label><textarea id="maras-rm-decision" required placeholder="Record the decision and its rationale, or current proposal"></textarea></div>' +
     '<div class="maras-rm-field"><label>Decision owner *</label><input id="maras-rm-decision-owner" required placeholder="Accountable owner / role"></div>' +
     '<div class="maras-rm-field"><label>Dependency / blocker</label><input id="maras-rm-dependency" placeholder="What must be resolved first?"></div>' +
+    '<div class="maras-rm-field"><label>Dependency status *</label><select id="maras-rm-dependency-status"><option value="NOT_REQUIRED">No dependency</option><option value="OPEN">Open — blocks release</option><option value="RESOLVED">Resolved</option></select></div>' +
     '<div class="maras-rm-field wide"><label>Decision rationale</label><textarea id="maras-rm-decision-rationale" placeholder="Why this interpretation applies to this system and scope"></textarea></div></div>' +
     '<div class="maras-rm-section">5 · Requirement, PBI and verification</div><div class="maras-rm-grid">' +
     '<div class="maras-rm-field wide"><label>Business requirement (observable outcome) *</label><textarea id="maras-rm-requirement" required placeholder="The system/process shall ..."></textarea></div>' +
