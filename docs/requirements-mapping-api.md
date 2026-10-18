@@ -11,6 +11,8 @@ This slice adds persistent requirements-mapping records to the existing FastAPI 
 - `POST /api/v1/requirements-mappings/{id}/review` — record a reviewer decision. Approval is rejected with HTTP 409 while completeness blockers remain.
 - `PUT /api/v1/requirements-mappings/{id}` — revise mapping data after clarification; the source excerpt is rechecked and prior review is reset.
 - Web UI: `/requirements-mappings` — select source documents, capture obligations and system impact, record decisions, draft PBIs, inspect blockers, and review mappings.
+- Clarification queue: `POST/GET /api/v1/requirements-mappings/clarifications`, `GET /api/v1/requirements-mappings/clarifications/{id}`, and `PATCH /api/v1/requirements-mappings/clarifications/{id}`. Every action appends a snapshot to the decision history and synchronizes unresolved decisions back to the linked mapping.
+- Web UI: `/clarifications` — assign questions, record answers, confirm/reject interpretations, reopen decisions, and inspect history.
 
 ## Data and controls
 
