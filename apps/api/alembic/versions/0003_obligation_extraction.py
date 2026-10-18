@@ -48,8 +48,17 @@ def upgrade() -> None:
             name="uq_extracted_obligation_source_clause_version",
         ),
     )
-    op.create_index("ix_extracted_obligations_obligation_key", "extracted_obligations", ["obligation_key"], unique=True)
-    op.create_index("ix_extracted_obligations_source_document_id", "extracted_obligations", ["source_document_id"])
+    op.create_index(
+        "ix_extracted_obligations_obligation_key",
+        "extracted_obligations",
+        ["obligation_key"],
+        unique=True,
+    )
+    op.create_index(
+        "ix_extracted_obligations_source_document_id",
+        "extracted_obligations",
+        ["source_document_id"],
+    )
     op.create_index("ix_extracted_obligations_mapping_id", "extracted_obligations", ["mapping_id"])
     op.create_index("ix_extracted_obligations_status", "extracted_obligations", ["status"])
 
