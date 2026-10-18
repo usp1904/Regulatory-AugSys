@@ -26,11 +26,12 @@ docker compose up --build
 | Web CTD/eCTD Engine | http://localhost:3000/ctd |
 | Requirements Mapping Workbench | http://localhost:3000/requirements-mappings |
 | Clarification Queue | http://localhost:3000/clarifications |
+| Obligation Extraction | http://localhost:3000/obligations |
 | API (FastAPI `/health`) | http://localhost:8000/health |
 | API CTD sections | `GET /api/v1/ctd-sections` |
 | API document store | `POST /api/v1/documents`, `GET /api/v1/documents`, `GET /api/v1/documents/{id}`, `GET /api/v1/documents/{id}/download` |
 | API evidence | `POST /api/v1/evidence`, `GET /api/v1/evidence`, `PATCH /api/v1/evidence/{id}`, `POST /api/v1/evidence/{id}/review`, `GET /api/v1/evidence/{id}/review-context`, `GET /api/v1/evidence/export` |
-| API requirements mapping | `POST /api/v1/requirements-mappings`, `GET /api/v1/requirements-mappings`, `GET /api/v1/requirements-mappings/{id}`, `PUT /api/v1/requirements-mappings/{id}`, `POST /api/v1/requirements-mappings/{id}/review`, `POST/GET /api/v1/requirements-mappings/clarifications`, `GET /api/v1/requirements-mappings/clarifications/{id}`, `PATCH /api/v1/requirements-mappings/clarifications/{id}` |
+| API requirements mapping | `POST /api/v1/requirements-mappings`, `GET /api/v1/requirements-mappings`, `GET /api/v1/requirements-mappings/{id}`, `PUT /api/v1/requirements-mappings/{id}`, `POST /api/v1/requirements-mappings/{id}/review`, `POST/GET /api/v1/requirements-mappings/clarifications`, `GET /api/v1/requirements-mappings/clarifications/{id}`, `PATCH /api/v1/requirements-mappings/clarifications/{id}`, `GET /api/v1/requirements-mappings/obligations`, `POST /api/v1/requirements-mappings/obligations/extract/{document_id}`, `PUT /api/v1/requirements-mappings/obligations/{id}/review`, `POST /api/v1/requirements-mappings/obligations/{id}/create-mapping` |
 | API dossier export | `POST /api/v1/dossiers/{dossier_id}/export`, `GET /api/v1/dossier-exports/{export_id}`, `GET /api/v1/dossier-exports/{export_id}/download` |
 | API CTD validation | `POST /api/v1/ctd-engine/validate` |
 | PostgreSQL | `localhost:5432` (user/db: `regulatory` / `regulatory_augsys`) |
@@ -88,7 +89,7 @@ export NEXT_PUBLIC_API_URL=http://localhost:8000
 npm run dev
 ```
 
-Open http://localhost:3000 — the health page shows web status and polls the API. Evidence review UI: `/evidence/review/{id}` (side-by-side source text and review form). Capture evidence from `/documents/{id}`. Dossier export: `/dossiers`. Requirements Mapping Workbench: `/requirements-mappings` (source-linked obligations, system impact, clarification decisions, draft PBIs, readiness blockers, and review). Clarification Queue: `/clarifications` (assign questions, record answers, confirm decisions, and inspect append-only history).
+Open http://localhost:3000 — the health page shows web status and polls the API. Evidence review UI: `/evidence/review/{id}` (side-by-side source text and review form). Capture evidence from `/documents/{id}`. Dossier export: `/dossiers`. Requirements Mapping Workbench: `/requirements-mappings` (source-linked obligations, system impact, clarification decisions, draft PBIs, readiness blockers, and review). Clarification Queue: `/clarifications` (assign questions, record answers, confirm decisions, and inspect append-only history). Obligation Extraction: `/obligations` (rule-based candidate extraction from source text, SME review, and mapping draft handoff).
 
 ```bash
 npm run typecheck
