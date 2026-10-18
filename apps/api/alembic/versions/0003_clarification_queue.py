@@ -32,15 +32,33 @@ def upgrade() -> None:
         sa.Column("rationale", sa.Text(), nullable=True),
         sa.Column("due_date", sa.Date(), nullable=True),
         sa.Column("resolved_by", sa.String(length=256), nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            nullable=False,
+        ),
         sa.Column("resolved_at", sa.DateTime(timezone=True), nullable=True),
         sa.ForeignKeyConstraint(["mapping_id"], ["requirements_mappings.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("question_key"),
     )
-    op.create_index("ix_clarification_questions_question_key", "clarification_questions", ["question_key"])
-    op.create_index("ix_clarification_questions_mapping_id", "clarification_questions", ["mapping_id"])
+    op.create_index(
+        "ix_clarification_questions_question_key",
+        "clarification_questions",
+        ["question_key"],
+    )
+    op.create_index(
+        "ix_clarification_questions_mapping_id",
+        "clarification_questions",
+        ["mapping_id"],
+    )
     op.create_index("ix_clarification_questions_status", "clarification_questions", ["status"])
 
     op.create_table(
@@ -51,10 +69,18 @@ def upgrade() -> None:
         sa.Column("actor", sa.String(length=256), nullable=False),
         sa.Column("snapshot_json", sa.Text(), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.ForeignKeyConstraint(["clarification_id"], ["clarification_questions.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(
+            ["clarification_id"],
+            ["clarification_questions.id"],
+            ondelete="CASCADE",
+        ),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index("ix_clarification_history_clarification_id", "clarification_history", ["clarification_id"])
+    op.create_index(
+        "ix_clarification_history_clarification_id",
+        "clarification_history",
+        ["clarification_id"],
+    )
 
 
 def downgrade() -> None:
