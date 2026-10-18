@@ -214,7 +214,7 @@ def update_mapping(
     extracted_text = document.full_extracted_text()
 
     def normalize_text(value: str) -> str:
-        return re.sub(r"\\s+", " ", value).strip().casefold()
+        return re.sub(r"\s+", " ", value).strip().casefold()
 
     if not normalize_text(excerpt) or normalize_text(excerpt) not in normalize_text(extracted_text):
         raise RequirementsMappingError(
