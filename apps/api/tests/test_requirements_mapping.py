@@ -8,7 +8,10 @@ from app.models.audit_event import AuditEvent
 from app.models.requirements_mapping import RequirementsMapping
 
 
-def _upload_source_document(client, text: str = "The organization shall maintain an approved record.") -> int:
+def _upload_source_document(
+    client,
+    text: str = "The organization shall maintain an approved record.",
+) -> int:
     response = client.post(
         "/api/v1/documents",
         data={"uploader": "qa.author"},
