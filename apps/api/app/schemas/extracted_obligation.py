@@ -20,6 +20,7 @@ class ExtractedObligationResponse(BaseModel):
     id: int
     obligation_key: str
     source_document_id: int
+    mapping_id: int | None = None
     source_version: int
     source_file_hash: str
     clause_id: str
