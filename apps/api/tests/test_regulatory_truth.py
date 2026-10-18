@@ -61,7 +61,9 @@ def test_layer1_source_must_be_verified_before_layer2_approval(client, db_sessio
 
     decision_payload = {
         "obligation_id": obligation.id,
-        "interpretation": "Batch records must be retained and retrievable for each manufactured lot.",
+        "interpretation": (
+            "Batch records must be retained and retrievable for each manufactured lot."
+        ),
         "applicability": "APPLICABLE",
         "rationale": "The organisation manufactures products within the stated scope.",
         "assumptions": "The controlled manufacturing site is in the jurisdiction.",
