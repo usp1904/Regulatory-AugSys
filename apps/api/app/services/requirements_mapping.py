@@ -13,6 +13,7 @@ from app.models.requirements_mapping import RequirementsMapping
 from app.schemas.requirements_mapping import (
     RequirementsMappingCreateRequest,
     RequirementsMappingReviewRequest,
+    RequirementsMappingUpdateRequest,
 )
 from app.services.audit import record_audit_event
 
@@ -189,6 +190,58 @@ def create_mapping(
             "dossier_id": item.dossier_id,
             "source_document_version": document.version,
             "source_file_hash": document.file_hash,
+        },
+    )
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+def update_mapping(
+    db: Session,
+    item: RequirementsMapping,
+    payload: RequirementsMappingUpdateRequest,
+) -> RequirementsMapping:
+    data = json.loads(json.dumps(payload.data, ensure_ascii=False))
+    source = data["source"]
+    document_id = source.get("sourceDocumentId")
+    document = db.get(Document, document_id) if document_id else None
+    if document is None:
+        raise RequirementsMappingError(
+            "Mapping update must retain a valid controlled source document link"
+        )
+    excerpt = str(source.get("excerpt", source.get("sourceExcerpt", ""))).strip()
+    extracted_text = document.full_extracted_text()
+
+    def normalize_text(value: str) -> str:
+        return re.sub(r"\\s+", " ", value).strip().casefold()
+
+    if not normalize_text(excerpt) or normalize_text(excerpt) not in normalize_text(extracted_text):
+        raise RequirementsMappingError(
+            "Source excerpt does not match the selected document's extracted text"
+        )
+    source["sourceDocumentId"] = document.id
+    source["sourceDocumentVersion"] = document.version
+    source["sourceFileHash"] = document.file_hash
+    item.data_json = json.dumps(data, ensure_ascii=False)
+    item.created_by = item.created_by
+    item.review_status = "PENDING"
+    item.readiness_status = "BLOCKED_DRAFT"
+    item.reviewer = None
+    item.reviewer_decision = None
+    item.reviewer_rationale = None
+    item.reviewed_at = None
+    db.add(item)
+    record_audit_event(
+        db,
+        event_type="requirements_mapping_update",
+        actor=payload.updated_by,
+        document_id=document.id,
+        detail={
+            "mapping_key": item.mapping_key,
+            "source_document_version": document.version,
+            "source_file_hash": document.file_hash,
+            "readiness_reset": True,
         },
     )
     db.commit()
