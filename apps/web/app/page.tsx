@@ -90,7 +90,7 @@ export default async function HealthPage() {
           <CardTitle>Platform workflows</CardTitle>
           <CardDescription>End-to-end paths for controlled documents and evidence</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
           <Link
             href="/ctd"
             className="panel block transition-colors hover:border-primary/40 hover:bg-muted/20"
@@ -107,6 +107,24 @@ export default async function HealthPage() {
             <h3 className="font-medium">Requirements Mapping</h3>
             <p className="mt-2 text-sm text-muted-foreground">
               Link source clauses to obligations, system findings, stakeholder decisions, traceable PBIs, and review gates.
+            </p>
+          </Link>
+          <Link
+            href="/clarifications"
+            className="panel block transition-colors hover:border-primary/40 hover:bg-muted/20"
+          >
+            <h3 className="font-medium">Clarification Queue</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Assign regulatory questions, record stakeholder answers and decisions, and preserve decision history.
+            </p>
+          </Link>
+          <Link
+            href="/obligations"
+            className="panel block transition-colors hover:border-primary/40 hover:bg-muted/20"
+          >
+            <h3 className="font-medium">Obligation Extraction</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Screen source text for candidate obligations, review them, and create traceable mapping drafts.
             </p>
           </Link>
           <Link

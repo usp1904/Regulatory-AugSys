@@ -267,3 +267,97 @@ def test_mapping_rejects_excerpt_not_found_in_source_document(client) -> None:
     )
     assert response.status_code == 400
     assert "does not match the selected document" in response.json()["detail"]
+
+
+def test_clarification_answer_confirmation_and_history(client) -> None:
+    created_mapping = client.post(
+        "/api/v1/requirements-mappings",
+        json={
+            "dossier_id": "DOS-CLAR-001",
+            "created_by": "qa.author",
+            "source_document_id": _upload_source_document(client),
+            "data": _valid_mapping_data(),
+        },
+    )
+    assert created_mapping.status_code == 201
+    mapping_id = created_mapping.json()["id"]
+
+    created_question = client.post(
+        "/api/v1/requirements-mappings/clarifications",
+        json={
+            "mapping_id": mapping_id,
+            "question": "Which approved record type must this system retain?",
+            "owner": "system.owner",
+            "created_by": "qa.author",
+        },
+    )
+    assert created_question.status_code == 201
+    question_id = created_question.json()["id"]
+    assert created_question.json()["status"] == "OPEN"
+    assert created_question.json()["history"][0]["action"] == "CREATED"
+
+    answered = client.patch(
+        f"/api/v1/requirements-mappings/clarifications/{question_id}",
+        json={
+            "actor": "system.owner",
+            "action": "ANSWER",
+            "answer": "Retain the approved electronic batch record.",
+        },
+    )
+    assert answered.status_code == 200
+    assert answered.json()["status"] == "ANSWERED"
+
+    confirmed = client.patch(
+        f"/api/v1/requirements-mappings/clarifications/{question_id}",
+        json={
+            "actor": "regulatory.sme",
+            "action": "CONFIRM",
+            "decision": "The electronic batch record is in scope.",
+            "rationale": "The approved record is part of the regulated process.",
+        },
+    )
+    assert confirmed.status_code == 200
+    assert confirmed.json()["status"] == "CONFIRMED"
+    assert [entry["action"] for entry in confirmed.json()["history"]] == [
+        "CREATED",
+        "ANSWER",
+        "CONFIRM",
+    ]
+
+    mapping = client.get(f"/api/v1/requirements-mappings/{mapping_id}")
+    assert mapping.status_code == 200
+    assert mapping.json()["data"]["clarification"]["decisionStatus"] == "CONFIRMED"
+    assert mapping.json()["data"]["clarification"]["dependencyStatus"] == "RESOLVED"
+    assert mapping.json()["review_status"] == "PENDING"
+
+
+def test_clarification_cannot_be_confirmed_before_answer(client) -> None:
+    created_mapping = client.post(
+        "/api/v1/requirements-mappings",
+        json={
+            "dossier_id": "DOS-CLAR-002",
+            "created_by": "qa.author",
+            "source_document_id": _upload_source_document(client),
+            "data": _valid_mapping_data(),
+        },
+    )
+    created_question = client.post(
+        "/api/v1/requirements-mappings/clarifications",
+        json={
+            "mapping_id": created_mapping.json()["id"],
+            "question": "Which evidence proves the control is configured?",
+            "owner": "system.owner",
+            "created_by": "qa.author",
+        },
+    )
+    response = client.patch(
+        f"/api/v1/requirements-mappings/clarifications/{created_question.json()['id']}",
+        json={
+            "actor": "qa.reviewer",
+            "action": "CONFIRM",
+            "decision": "Control is confirmed.",
+            "rationale": "A reason is supplied but there is no answer yet.",
+        },
+    )
+    assert response.status_code == 409
+    assert "Answer the question before confirming" in response.json()["detail"]

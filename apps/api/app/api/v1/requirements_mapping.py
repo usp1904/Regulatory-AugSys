@@ -7,12 +7,38 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.models.clarification import ClarificationQuestion
+from app.models.extracted_obligation import ExtractedObligation
 from app.models.requirements_mapping import RequirementsMapping
+from app.schemas.clarification import (
+    ClarificationCreateRequest,
+    ClarificationResponse,
+    ClarificationUpdateRequest,
+)
+from app.schemas.extracted_obligation import (
+    ExtractedObligationResponse,
+    ObligationExtractionRequest,
+    ObligationReviewRequest,
+)
 from app.schemas.requirements_mapping import (
     RequirementsMappingCreateRequest,
     RequirementsMappingResponse,
     RequirementsMappingReviewRequest,
     RequirementsMappingUpdateRequest,
+)
+from app.services.clarifications import (
+    ClarificationError,
+    create_question,
+    get_question,
+    list_questions,
+    update_question,
+)
+from app.services.obligation_extraction import (
+    ObligationExtractionError,
+    create_mapping_from_obligation,
+    extract_obligations,
+    list_obligations,
+    review_obligation,
 )
 from app.services.requirements_mapping import (
     RequirementsMappingError,
@@ -97,6 +123,32 @@ def get_requirements_mappings(
     return [mapping_to_response(item) for item in list_mappings(db, dossier_id)]
 
 
+@router.get("/clarifications", response_model=list[ClarificationResponse])
+def get_clarifications(
+    status: str | None = Query(default=None, max_length=32),
+    mapping_id: int | None = Query(default=None, gt=0),
+    dossier_id: str | None = Query(default=None, max_length=128),
+    db: Session = Depends(get_db),
+    _access: str = Depends(require_mapping_reader),
+) -> list[dict]:
+    return list_questions(
+        db,
+        status=status,
+        mapping_id=mapping_id,
+        dossier_id=dossier_id,
+    )
+
+
+@router.get("/obligations", response_model=list[ExtractedObligationResponse])
+def get_extracted_obligations(
+    document_id: int | None = Query(default=None, gt=0),
+    status: str | None = Query(default=None, max_length=32),
+    db: Session = Depends(get_db),
+    _access: str = Depends(require_mapping_reader),
+) -> list[ExtractedObligation]:
+    return list_obligations(db, document_id=document_id, status=status)
+
+
 @router.get("/{mapping_id}", response_model=RequirementsMappingResponse)
 def get_requirements_mapping(
     mapping_id: int,
@@ -141,3 +193,99 @@ def review_requirements_mapping(
     except RequirementsMappingError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     return mapping_to_response(reviewed)
+
+
+@router.post("/clarifications", response_model=ClarificationResponse, status_code=201)
+def create_clarification(
+    payload: ClarificationCreateRequest,
+    db: Session = Depends(get_db),
+    _access: str = Depends(require_mapping_writer),
+) -> dict:
+    try:
+        return create_question(db, payload)
+    except ClarificationError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.get("/clarifications/{question_id}", response_model=ClarificationResponse)
+def get_clarification(
+    question_id: int,
+    db: Session = Depends(get_db),
+    _access: str = Depends(require_mapping_reader),
+) -> dict:
+    result = get_question(db, question_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Clarification not found")
+    return result
+
+
+@router.patch("/clarifications/{question_id}", response_model=ClarificationResponse)
+def update_clarification(
+    question_id: int,
+    payload: ClarificationUpdateRequest,
+    db: Session = Depends(get_db),
+    _access: str = Depends(require_mapping_writer),
+) -> dict:
+    item = db.get(ClarificationQuestion, question_id)
+    if item is None:
+        raise HTTPException(status_code=404, detail="Clarification not found")
+    try:
+        return update_question(db, item, payload)
+    except ClarificationError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+
+@router.post(
+    "/obligations/extract/{document_id}",
+    response_model=list[ExtractedObligationResponse],
+)
+def run_obligation_extraction(
+    document_id: int,
+    payload: ObligationExtractionRequest,
+    db: Session = Depends(get_db),
+    _access: str = Depends(require_mapping_writer),
+) -> list[ExtractedObligation]:
+    try:
+        return extract_obligations(db, document_id, payload)
+    except ObligationExtractionError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.put(
+    "/obligations/{obligation_id}/review",
+    response_model=ExtractedObligationResponse,
+)
+def review_extracted_obligation(
+    obligation_id: int,
+    payload: ObligationReviewRequest,
+    db: Session = Depends(get_db),
+    _access: str = Depends(require_mapping_reviewer),
+) -> ExtractedObligation:
+    item = db.get(ExtractedObligation, obligation_id)
+    if item is None:
+        raise HTTPException(status_code=404, detail="Obligation candidate not found")
+    try:
+        return review_obligation(db, item, payload)
+    except ObligationExtractionError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.post(
+    "/obligations/{obligation_id}/create-mapping",
+    response_model=RequirementsMappingResponse,
+)
+def create_mapping_from_extracted_obligation(
+    obligation_id: int,
+    created_by: str = Query(min_length=1, max_length=256),
+    db: Session = Depends(get_db),
+    _access: str = Depends(require_mapping_writer),
+) -> dict:
+    item = db.get(ExtractedObligation, obligation_id)
+    if item is None:
+        raise HTTPException(status_code=404, detail="Obligation candidate not found")
+    try:
+        mapping = create_mapping_from_obligation(db, item, created_by=created_by)
+    except ObligationExtractionError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    return mapping_to_response(mapping)

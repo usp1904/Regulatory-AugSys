@@ -6,7 +6,8 @@ const NAV_ITEMS = [
   { href: "/", label: "Dashboard" },
   { href: "/ctd", label: "CTD Engine" },
   { href: "/requirements-mappings", label: "Requirements Mapping" },
-  { href: "/requirements-mappings", label: "Requirements Mapping" },
+  { href: "/clarifications", label: "Clarifications" },
+  { href: "/obligations", label: "Obligation Extraction" },
   { href: "/dossiers", label: "Dossier Export" },
 ] as const;
 
