@@ -123,6 +123,9 @@ def test_approved_mapping_is_ready_and_audited(client, db_session) -> None:
     assert reviewed.json()["readiness_status"] == "READY_FOR_CONTROLLED_REVIEW"
     assert reviewed.json()["review_status"] == "APPROVED"
     assert reviewed.json()["reviewer"] == "qa.reviewer"
+    stored = db_session.get(RequirementsMapping, mapping_id)
+    assert stored is not None
+    assert stored.readiness_status == "READY_FOR_CONTROLLED_REVIEW"
     events = list(
         db_session.scalars(
             select(AuditEvent).where(
