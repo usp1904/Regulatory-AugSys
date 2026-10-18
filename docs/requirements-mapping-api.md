@@ -15,7 +15,8 @@ This slice adds persistent requirements-mapping records to the existing FastAPI 
 - Mapping records and review decisions produce audit events with actor, event type, and mapping key.
 - Readiness is computed from the stored data on response; client-supplied readiness labels are not trusted.
 - An unresolved interpretation, unfinalized applicability, unreviewed source, missing evidence, open dependency, missing test evidence, or incomplete PBI blocks approval.
-- Reviewer identity is currently supplied by the request. This is **not authentication** and must not be treated as proof of who made the decision.
+- Routes require separate server-side writer and reviewer bearer keys. Set `MARAS_REQUIREMENTS_MAPPING_WRITE_KEY` and `MARAS_REQUIREMENTS_MAPPING_REVIEW_KEY` in the API environment; blank/unset keys fail closed with HTTP 503. Reviewer routes reject writer-only keys.
+- These are shared service credentials, not individual identity. Reviewer name is still supplied by the request, so this is an interim access boundary—not user-level authentication or a validated electronic signature. Do not expose either key in browser JavaScript or public hosting.
 
 ## Database migration
 
@@ -29,11 +30,11 @@ The migration adds the `requirements_mappings` table and indexes. Test fixtures 
 
 ## Test coverage
 
-`tests/test_requirements_mapping.py` covers persistence, draft status, audit events, rejection of approval when the decision is unresolved, successful approval when all gates pass, dossier filtering, and 404 handling.
+`tests/test_requirements_mapping.py` covers persistence, draft status, audit events, rejection of approval when the decision is unresolved, successful approval when all gates pass, dossier filtering, 404 handling, writer/reviewer key separation, and fail-closed missing-key configuration.
 
 ## Known production gaps
 
-- Authentication and role-based authorization are not implemented for these new routes.
+- Per-user authentication, managed identity, and fine-grained role-based authorization are not implemented; the current separate shared writer/reviewer keys are an interim server-to-server control.
 - Reviewer identity is a supplied string, not an authenticated principal or electronic signature.
 - Source URL/revision/hash and source approval fields are still user-entered attestations; there is no independent source acquisition or hash verification in this slice.
 - There is no automatic AI clause extraction or direct Azure DevOps publishing yet.
