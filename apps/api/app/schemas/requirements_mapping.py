@@ -11,6 +11,7 @@ REVIEW_DECISIONS = frozenset({"APPROVED", "CHANGES_REQUIRED", "REJECTED"})
 class RequirementsMappingCreateRequest(BaseModel):
     dossier_id: str = Field(min_length=1, max_length=128)
     created_by: str = Field(min_length=1, max_length=256)
+    source_document_id: int = Field(gt=0)
     data: dict[str, Any]
 
     @field_validator("data")
