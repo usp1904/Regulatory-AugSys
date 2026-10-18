@@ -12,6 +12,7 @@ This slice adds persistent requirements-mapping records to the existing FastAPI 
 ## Data and controls
 
 - Mapping body is stored as JSON text, preserving the source, obligation, system finding/evidence, clarification, requirement, PBI, acceptance criteria, and test evidence fields.
+- Mapping creation requires an existing controlled source document ID. The API checks the excerpt against the document's extracted text and copies the stored document ID, version, and SHA-256 into the mapping; client-supplied version/hash values are not trusted.
 - Mapping records and review decisions produce audit events with actor, event type, and mapping key.
 - Readiness is computed from the stored data on response; client-supplied readiness labels are not trusted.
 - An unresolved interpretation, unfinalized applicability, unreviewed source, missing evidence, open dependency, missing test evidence, or incomplete PBI blocks approval.
