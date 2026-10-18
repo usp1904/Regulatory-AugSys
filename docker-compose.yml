@@ -23,6 +23,8 @@ services:
       API_HOST: 0.0.0.0
       API_PORT: 8000
       STORAGE_ROOT: /app/storage
+      MARAS_REQUIREMENTS_MAPPING_WRITE_KEY: ${MARAS_REQUIREMENTS_MAPPING_WRITE_KEY:-local-dev-maras-writer}
+      MARAS_REQUIREMENTS_MAPPING_REVIEW_KEY: ${MARAS_REQUIREMENTS_MAPPING_REVIEW_KEY:-local-dev-maras-reviewer}
     ports:
       - "8000:8000"
     volumes:
@@ -38,6 +40,8 @@ services:
         NEXT_PUBLIC_API_URL: http://localhost:8000
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:8000
+      MARAS_REQUIREMENTS_MAPPING_WRITE_KEY: ${MARAS_REQUIREMENTS_MAPPING_WRITE_KEY:-local-dev-maras-writer}
+      MARAS_REQUIREMENTS_MAPPING_REVIEW_KEY: ${MARAS_REQUIREMENTS_MAPPING_REVIEW_KEY:-local-dev-maras-reviewer}
     ports:
       - "3000:3000"
     depends_on:
