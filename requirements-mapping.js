@@ -20,7 +20,7 @@
       ['Stable clause/section reference', !!r.clauseId],
       ['Source excerpt captured', r.sourceExcerpt.length >= 12],
       ['Atomic obligation stated', r.obligation.length >= 12],
-      ['Applicability decision recorded', r.applicability !== 'UNDECIDED'],
+      ['Applicability decision finalized', r.applicability === 'APPLICABLE' || r.applicability === 'NOT_APPLICABLE'],
       ['System evidence or explicit unknown recorded', r.systemFinding === 'UNKNOWN' ? !!r.systemEvidence : (r.systemFinding !== 'NOT_ASSESSED' && !!r.systemEvidence)],
       ['Interpretation/decision recorded', r.decision.length >= 12],
       ['Decision is explicitly confirmed', r.decisionStatus === 'CONFIRMED'],
