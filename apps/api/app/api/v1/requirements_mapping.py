@@ -9,16 +9,16 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.clarification import ClarificationQuestion
 from app.models.requirements_mapping import RequirementsMapping
+from app.schemas.clarification import (
+    ClarificationCreateRequest,
+    ClarificationResponse,
+    ClarificationUpdateRequest,
+)
 from app.schemas.requirements_mapping import (
     RequirementsMappingCreateRequest,
     RequirementsMappingResponse,
     RequirementsMappingReviewRequest,
     RequirementsMappingUpdateRequest,
-)
-from app.schemas.clarification import (
-    ClarificationCreateRequest,
-    ClarificationResponse,
-    ClarificationUpdateRequest,
 )
 from app.services.clarifications import (
     ClarificationError,
