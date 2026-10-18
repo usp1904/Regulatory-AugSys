@@ -222,7 +222,9 @@ def update_question(
         item.resolved_at = datetime.now(UTC)
     elif action == "REJECT":
         if item.status != "ANSWERED":
-            raise ClarificationError("Answer the question before rejecting its proposed interpretation")
+            raise ClarificationError(
+                "Answer the question before rejecting its proposed interpretation"
+            )
         if not payload.rationale or len(payload.rationale.strip()) < 8:
             raise ClarificationError("A rejection rationale is required")
         item.rationale = payload.rationale.strip()
