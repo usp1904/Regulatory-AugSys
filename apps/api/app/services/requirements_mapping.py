@@ -101,7 +101,7 @@ def create_mapping(db: Session, payload: RequirementsMappingCreateRequest) -> Re
         db,
         event_type="requirements_mapping_create",
         actor=payload.created_by,
-        detail=json.dumps({"mapping_key": item.mapping_key, "dossier_id": item.dossier_id}),
+        detail={"mapping_key": item.mapping_key, "dossier_id": item.dossier_id},
     )
     db.commit()
     db.refresh(item)
@@ -129,7 +129,7 @@ def review_mapping(db: Session, item: RequirementsMapping, payload: Requirements
         db,
         event_type="requirements_mapping_review",
         actor=payload.reviewer,
-        detail=json.dumps({"mapping_key": item.mapping_key, "decision": payload.decision, "rationale": payload.rationale}),
+        detail={"mapping_key": item.mapping_key, "decision": payload.decision, "rationale": payload.rationale},
     )
     db.commit()
     db.refresh(item)
