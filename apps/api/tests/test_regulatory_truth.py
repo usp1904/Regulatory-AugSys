@@ -100,6 +100,24 @@ def test_layer1_source_must_be_verified_before_layer2_approval(client, db_sessio
     assert verified.status_code == 200, verified.text
     assert verified.json()["source_status"] == "VERIFIED"
 
+    # Hash integrity must be rechecked at the point of interpretation approval.
+    document.file_hash = "b" * 64
+    db_session.commit()
+    hash_drift = client.put(
+        f"/api/v1/requirements-mappings/interpretations/{decision['id']}/review",
+        headers={"Authorization": "Bearer reviewer-test-key"},
+        json={
+            "reviewer": "quality-reviewer",
+            "reviewer_role": "Quality SME",
+            "decision": "APPROVED",
+            "rationale": "Approval must be blocked when source bytes drift.",
+        },
+    )
+    assert hash_drift.status_code == 409
+    assert "content changed after verification" in hash_drift.json()["detail"]
+    document.file_hash = "a" * 64
+    db_session.commit()
+
     self_approval = client.put(
         f"/api/v1/requirements-mappings/interpretations/{decision['id']}/review",
         headers={"Authorization": "Bearer reviewer-test-key"},
