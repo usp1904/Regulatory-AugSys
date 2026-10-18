@@ -168,7 +168,7 @@ def test_mapping_can_be_filtered_by_dossier(client) -> None:
             json={
                 "dossier_id": dossier_id,
                 "created_by": "qa.author",
-            "source_document_id": _upload_source_document(client),
+                "source_document_id": _upload_source_document(client),
                 "data": _valid_mapping_data(),
             },
         )
