@@ -32,8 +32,9 @@ async function forward(request: NextRequest, context: RouteContext) {
   const contentType = request.headers.get("content-type");
   if (contentType) headers.set("content-type", contentType);
 
+  const upstreamMethod = request.method === "POST" && path[0] === "clarifications" && path.length > 1 ? "PATCH" : request.method;
   const init: RequestInit = {
-    method: request.method,
+    method: upstreamMethod,
     headers,
     cache: "no-store",
   };
