@@ -15,6 +15,7 @@ from app.schemas.requirements_mapping import (
 )
 from app.services.requirements_mapping import (
     RequirementsMappingError,
+    RequirementsMappingError,
     create_mapping,
     list_mappings,
     mapping_to_response,
@@ -79,7 +80,11 @@ def create_requirements_mapping(
     db: Session = Depends(get_db),
     _access: str = Depends(require_mapping_writer),
 ) -> dict:
-    return mapping_to_response(create_mapping(db, payload))
+    try:
+        item = create_mapping(db, payload)
+    except RequirementsMappingError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return mapping_to_response(item)
 
 
 @router.get("", response_model=list[RequirementsMappingResponse])
