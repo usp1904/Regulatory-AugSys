@@ -235,6 +235,7 @@ def update_question(
     if payload.due_date is not None:
         item.due_date = payload.due_date
     db.add(item)
+    db.flush()
     _record_history(db, item, action=action, actor=actor)
     mapping = db.get(RequirementsMapping, item.mapping_id)
     if mapping is None:
