@@ -25,6 +25,7 @@ from app.services.obligation_extraction import (
     extract_obligations,
     list_obligations,
     review_obligation,
+    create_mapping_from_obligation,
 )
 from app.services.requirements_mapping import (
     RequirementsMappingError,
@@ -199,3 +200,24 @@ def review_extracted_obligation(
         return review_obligation(db, item, payload)
     except ObligationExtractionError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+
+@router.post(
+    "/obligations/{obligation_id}/create-mapping",
+    response_model=RequirementsMappingResponse,
+)
+def create_mapping_from_extracted_obligation(
+    obligation_id: int,
+    created_by: str = Query(min_length=1, max_length=256),
+    db: Session = Depends(get_db),
+    _access: str = Depends(require_mapping_writer),
+) -> dict:
+    item = db.get(ExtractedObligation, obligation_id)
+    if item is None:
+        raise HTTPException(status_code=404, detail="Obligation candidate not found")
+    try:
+        mapping = create_mapping_from_obligation(db, item, created_by=created_by)
+    except ObligationExtractionError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    return mapping_to_response(mapping)
