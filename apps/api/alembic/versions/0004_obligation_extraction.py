@@ -34,11 +34,25 @@ def upgrade() -> None:
         sa.Column("status", sa.String(32), nullable=False),
         sa.Column("reviewer", sa.String(256), nullable=True),
         sa.Column("review_rationale", sa.Text(), nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            nullable=False,
+        ),
         sa.Column("reviewed_at", sa.DateTime(timezone=True), nullable=True),
-        sa.ForeignKeyConstraint(["source_document_id"], ["documents.id"], ondelete="CASCADE"),
-        sa.ForeignKeyConstraint(["mapping_id"], ["requirements_mappings.id"], ondelete="SET NULL"),
+        sa.ForeignKeyConstraint(
+            ["source_document_id"], ["documents.id"], ondelete="CASCADE"
+        ),
+        sa.ForeignKeyConstraint(
+            ["mapping_id"], ["requirements_mappings.id"], ondelete="SET NULL"
+        ),
         sa.UniqueConstraint("obligation_key", name="uq_extracted_obligations_key"),
         sa.UniqueConstraint(
             "source_document_id",
@@ -47,13 +61,26 @@ def upgrade() -> None:
             name="uq_extracted_obligation_source_clause_version",
         ),
     )
-    op.create_index("ix_extracted_obligations_source_document_id", "extracted_obligations", ["source_document_id"])
-    op.create_index("ix_extracted_obligations_mapping_id", "extracted_obligations", ["mapping_id"])
+    op.create_index(
+        "ix_extracted_obligations_source_document_id",
+        "extracted_obligations",
+        ["source_document_id"],
+    )
+    op.create_index(
+        "ix_extracted_obligations_mapping_id", "extracted_obligations", ["mapping_id"]
+    )
     op.create_index("ix_extracted_obligations_status", "extracted_obligations", ["status"])
 
 
 def downgrade() -> None:
-    op.drop_index("ix_extracted_obligations_status", table_name="extracted_obligations")
-    op.drop_index("ix_extracted_obligations_mapping_id", table_name="extracted_obligations")
-    op.drop_index("ix_extracted_obligations_source_document_id", table_name="extracted_obligations")
+    op.drop_index(
+        "ix_extracted_obligations_status", table_name="extracted_obligations"
+    )
+    op.drop_index(
+        "ix_extracted_obligations_mapping_id", table_name="extracted_obligations"
+    )
+    op.drop_index(
+        "ix_extracted_obligations_source_document_id",
+        table_name="extracted_obligations",
+    )
     op.drop_table("extracted_obligations")
