@@ -12,7 +12,9 @@ This slice adds persistent requirements-mapping records to the existing FastAPI 
 - `PUT /api/v1/requirements-mappings/{id}` — revise mapping data after clarification; the source excerpt is rechecked and prior review is reset.
 - Web UI: `/requirements-mappings` — select source documents, capture obligations and system impact, record decisions, draft PBIs, inspect blockers, and review mappings.
 - Clarification queue: `POST/GET /api/v1/requirements-mappings/clarifications`, `GET /api/v1/requirements-mappings/clarifications/{id}`, and `PATCH /api/v1/requirements-mappings/clarifications/{id}`. Every action appends a snapshot to the decision history and synchronizes unresolved decisions back to the linked mapping.
+- Obligation extraction: `POST /api/v1/requirements-mappings/obligations/extract/{document_id}`, `GET /api/v1/requirements-mappings/obligations`, `PUT /api/v1/requirements-mappings/obligations/{id}/review`, and `POST /api/v1/requirements-mappings/obligations/{id}/create-mapping`. Extraction is deterministic keyword screening, not AI interpretation.
 - Web UI: `/clarifications` — assign questions, record answers, confirm/reject interpretations, reopen decisions, and inspect history.
+- Web UI: `/obligations` — screen extracted text for candidate obligations, review them, and seed traceable mapping drafts.
 
 ## Data and controls
 
