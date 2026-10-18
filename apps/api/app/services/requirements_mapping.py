@@ -204,6 +204,11 @@ def update_mapping(
 ) -> RequirementsMapping:
     data = json.loads(json.dumps(payload.data, ensure_ascii=False))
     source = data["source"]
+    if not source.get("sourceDocumentId"):
+        previous_data = json.loads(item.data_json)
+        source["sourceDocumentId"] = (previous_data.get("source") or {}).get(
+            "sourceDocumentId"
+        )
     raw_document_id = source.get("sourceDocumentId")
     document_id = int(raw_document_id) if str(raw_document_id).isdigit() else None
     document = db.get(Document, document_id) if document_id else None
