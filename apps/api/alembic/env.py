@@ -15,6 +15,7 @@ from app.models import (  # noqa: F401
     DocumentParagraph,
     DossierExport,
     EvidenceItem,
+    RequirementsMapping,
 )
 
 config = context.config

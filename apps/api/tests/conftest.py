@@ -18,6 +18,7 @@ from app.models import (  # noqa: F401
     DocumentParagraph,
     DossierExport,
     EvidenceItem,
+    RequirementsMapping,
 )
 from app.services.ctd_seed import seed_ctd_module_32s
 
@@ -41,11 +42,16 @@ def db_session() -> Generator[Session, None, None]:
 
 
 @pytest.fixture()
-def client(db_session: Session) -> Generator[TestClient, None, None]:
+def client(
+    db_session: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> Generator[TestClient, None, None]:
     def override_get_db() -> Generator[Session, None, None]:
         yield db_session
 
+    monkeypatch.setenv("MARAS_REQUIREMENTS_MAPPING_WRITE_KEY", "writer-test-key")
+    monkeypatch.setenv("MARAS_REQUIREMENTS_MAPPING_REVIEW_KEY", "reviewer-test-key")
     app.dependency_overrides[get_db] = override_get_db
-    with TestClient(app) as test_client:
+    with TestClient(app, headers={"Authorization": "Bearer writer-test-key"}) as test_client:
         yield test_client
     app.dependency_overrides.clear()
