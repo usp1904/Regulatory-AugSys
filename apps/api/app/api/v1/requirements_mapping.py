@@ -15,8 +15,18 @@ from app.schemas.requirements_mapping import (
     RequirementsMappingReviewRequest,
     RequirementsMappingUpdateRequest,
 )
-from app.schemas.clarification import ClarificationCreateRequest, ClarificationResponse, ClarificationUpdateRequest
-from app.services.clarifications import ClarificationError, create_question, get_question, list_questions, update_question
+from app.schemas.clarification import (
+    ClarificationCreateRequest,
+    ClarificationResponse,
+    ClarificationUpdateRequest,
+)
+from app.services.clarifications import (
+    ClarificationError,
+    create_question,
+    get_question,
+    list_questions,
+    update_question,
+)
 from app.services.requirements_mapping import (
     RequirementsMappingError,
     create_mapping,
@@ -108,7 +118,12 @@ def get_clarifications(
     db: Session = Depends(get_db),
     _access: str = Depends(require_mapping_reader),
 ) -> list[dict]:
-    return list_questions(db, status=status, mapping_id=mapping_id, dossier_id=dossier_id)
+    return list_questions(
+        db,
+        status=status,
+        mapping_id=mapping_id,
+        dossier_id=dossier_id,
+    )
 
 
 @router.get("/{mapping_id}", response_model=RequirementsMappingResponse)
