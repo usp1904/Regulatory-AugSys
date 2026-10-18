@@ -191,6 +191,11 @@ def review_mapping(
     item.reviewer_decision = payload.decision
     item.reviewer_rationale = payload.rationale
     item.review_status = "APPROVED" if payload.decision == "APPROVED" else payload.decision
+    item.readiness_status = (
+        "READY_FOR_CONTROLLED_REVIEW"
+        if payload.decision == "APPROVED"
+        else "BLOCKED_DRAFT"
+    )
     item.reviewed_at = datetime.now(UTC)
     db.add(item)
     record_audit_event(
