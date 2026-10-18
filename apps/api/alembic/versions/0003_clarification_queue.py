@@ -7,8 +7,8 @@ Create Date: 2026-10-18
 
 from collections.abc import Sequence
 
-import sqlalchemy as sa
 from alembic import op
+import sqlalchemy as sa
 
 revision: str = "0003_clarification_queue"
 down_revision: str | None = "0002_requirements_mappings"
