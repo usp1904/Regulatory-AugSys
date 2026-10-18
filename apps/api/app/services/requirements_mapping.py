@@ -224,7 +224,6 @@ def update_mapping(
     source["sourceDocumentVersion"] = document.version
     source["sourceFileHash"] = document.file_hash
     item.data_json = json.dumps(data, ensure_ascii=False)
-    item.created_by = item.created_by
     item.review_status = "PENDING"
     item.readiness_status = "BLOCKED_DRAFT"
     item.reviewer = None
