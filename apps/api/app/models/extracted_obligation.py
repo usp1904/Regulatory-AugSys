@@ -2,7 +2,16 @@
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint, func
+from sqlalchemy import (
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -31,11 +40,6 @@ class ExtractedObligation(Base):
         nullable=True,
         index=True,
     )
-    mapping_id: Mapped[int | None] = mapped_column(
-        ForeignKey("requirements_mappings.id", ondelete="SET NULL"),
-        nullable=True,
-        index=True,
-    )
     source_version: Mapped[int] = mapped_column(Integer, nullable=False)
     source_file_hash: Mapped[str] = mapped_column(String(64), nullable=False)
     clause_id: Mapped[str] = mapped_column(String(128), nullable=False)
@@ -46,13 +50,19 @@ class ExtractedObligation(Base):
         String(64), nullable=False, default="RULE_BASED_V1"
     )
     confidence: Mapped[float] = mapped_column(Float, nullable=False, default=0.5)
-    status: Mapped[str] = mapped_column(String(32), nullable=False, default="DRAFT", index=True)
+    status: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="DRAFT", index=True
+    )
     reviewer: Mapped[str | None] = mapped_column(String(256), nullable=True)
     review_rationale: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
         onupdate=func.now(),
     )
-    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    reviewed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
