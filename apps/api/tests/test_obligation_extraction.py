@@ -69,7 +69,9 @@ def test_approved_obligation_creates_traceable_mapping_draft(client: TestClient)
     mapping = created.json()
     assert mapping["data"]["source"]["sourceDocumentId"] == document_id
     assert mapping["data"]["source"]["clauseId"] == "2.1"
-    assert mapping["data"]["obligation"] == "2.1 The organization shall maintain an approved record."
+    assert mapping["data"]["obligation"] == (
+        "2.1 The organization shall maintain an approved record."
+    )
 
     listed = client.get(
         "/api/v1/requirements-mappings/obligations",
