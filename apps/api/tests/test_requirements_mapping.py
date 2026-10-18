@@ -1,9 +1,27 @@
 """Integration tests for persistent requirements mapping and approval gates."""
 
+import io
+
 from sqlalchemy import select
 
 from app.models.audit_event import AuditEvent
 from app.models.requirements_mapping import RequirementsMapping
+
+
+def _upload_source_document(client, text: str = "The organization shall maintain an approved record.") -> int:
+    response = client.post(
+        "/api/v1/documents",
+        data={"uploader": "qa.author"},
+        files={
+            "file": (
+                "regulatory-guidance.txt",
+                io.BytesIO(text.encode("utf-8")),
+                "text/plain",
+            )
+        },
+    )
+    assert response.status_code == 201
+    return response.json()["id"]
 
 
 def _valid_mapping_data() -> dict:
@@ -52,6 +70,7 @@ def test_create_mapping_persists_draft_and_audit_event(client, db_session) -> No
         json={
             "dossier_id": "DOS-MAP-001",
             "created_by": "qa.author",
+            "source_document_id": _upload_source_document(client),
             "data": _valid_mapping_data(),
         },
     )
@@ -197,3 +216,21 @@ def test_mapping_api_fails_closed_when_writer_key_missing(
         },
     )
     assert response.status_code == 503
+
+
+
+def test_mapping_rejects_excerpt_not_found_in_source_document(client) -> None:
+    response = client.post(
+        "/api/v1/requirements-mappings",
+        json={
+            "dossier_id": "DOS-SOURCE-MISMATCH",
+            "created_by": "qa.author",
+            "source_document_id": _upload_source_document(
+                client,
+                text="This uploaded document contains unrelated content.",
+            ),
+            "data": _valid_mapping_data(),
+        },
+    )
+    assert response.status_code == 400
+    assert "does not match the selected document" in response.json()["detail"]
