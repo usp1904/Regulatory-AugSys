@@ -15,7 +15,6 @@ from app.schemas.requirements_mapping import (
 )
 from app.services.requirements_mapping import (
     RequirementsMappingError,
-    RequirementsMappingError,
     create_mapping,
     list_mappings,
     mapping_to_response,
