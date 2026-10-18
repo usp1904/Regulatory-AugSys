@@ -223,15 +223,16 @@ def test_mapping_api_fails_closed_when_writer_key_missing(
 
 
 def test_mapping_rejects_excerpt_not_found_in_source_document(client) -> None:
+    source_document_id = _upload_source_document(
+        client,
+        text="This uploaded document contains unrelated content.",
+    )
     response = client.post(
         "/api/v1/requirements-mappings",
         json={
             "dossier_id": "DOS-SOURCE-MISMATCH",
             "created_by": "qa.author",
-            "source_document_id": _upload_source_document(
-                client,
-                text="This uploaded document contains unrelated content.",
-            ),
+            "source_document_id": source_document_id,
             "data": _valid_mapping_data(),
         },
     )
