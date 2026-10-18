@@ -20,7 +20,7 @@ class ExtractedObligation(Base):
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    obligation_key: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, index=True)
+    obligation_key: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
     source_document_id: Mapped[int] = mapped_column(
         ForeignKey("documents.id", ondelete="CASCADE"),
         nullable=False,
