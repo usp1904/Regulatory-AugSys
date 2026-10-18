@@ -10,6 +10,7 @@ from app.core.database import get_db
 from app.models.clarification import ClarificationQuestion
 from app.models.extracted_obligation import ExtractedObligation
 from app.models.requirements_mapping import RequirementsMapping
+from app.models.regulatory_truth import InterpretationDecision, RegulatorySourceRecord
 from app.schemas.clarification import (
     ClarificationCreateRequest,
     ClarificationResponse,
@@ -20,7 +21,7 @@ from app.schemas.extracted_obligation import (
     ObligationExtractionRequest,
     ObligationReviewRequest,
 )
-from app.schemas.requirements_mapping import (
+from app.schemas.regulatory_truth import (\n    InterpretationCreate,\n    InterpretationResponse,\n    InterpretationReview,\n    RegulatorySourceCreate,\n    RegulatorySourceResponse,\n    RegulatorySourceReview,\n)\nfrom app.schemas.requirements_mapping import (
     RequirementsMappingCreateRequest,
     RequirementsMappingResponse,
     RequirementsMappingReviewRequest,
@@ -40,7 +41,7 @@ from app.services.obligation_extraction import (
     list_obligations,
     review_obligation,
 )
-from app.services.requirements_mapping import (
+from app.services.regulatory_truth import (\n    RegulatoryTruthError,\n    create_interpretation,\n    create_source_record,\n    review_interpretation,\n    review_source_record,\n)\nfrom app.services.requirements_mapping import (
     RequirementsMappingError,
     create_mapping,
     list_mappings,
@@ -289,3 +290,114 @@ def create_mapping_from_extracted_obligation(
     except ObligationExtractionError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     return mapping_to_response(mapping)
+
+
+
+# Layer 1: controlled regulatory source metadata and explicit human verification.
+@router.post(
+    "/regulatory-sources",
+    response_model=RegulatorySourceResponse,
+    status_code=201,
+)
+def create_regulatory_source(
+    payload: RegulatorySourceCreate,
+    db: Session = Depends(get_db),
+    _access: str = Depends(require_mapping_writer),
+) -> RegulatorySourceRecord:
+    try:
+        return create_source_record(db, payload)
+    except RegulatoryTruthError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.get(
+    "/regulatory-sources",
+    response_model=list[RegulatorySourceResponse],
+)
+def list_regulatory_sources(
+    document_id: int | None = Query(default=None, gt=0),
+    source_status: str | None = Query(default=None, max_length=32),
+    db: Session = Depends(get_db),
+    _access: str = Depends(require_mapping_reader),
+) -> list[RegulatorySourceRecord]:
+    query = db.query(RegulatorySourceRecord).order_by(RegulatorySourceRecord.created_at.desc())
+    if document_id is not None:
+        query = query.filter(RegulatorySourceRecord.document_id == document_id)
+    if source_status:
+        query = query.filter(RegulatorySourceRecord.source_status == source_status)
+    return query.all()
+
+
+@router.put(
+    "/regulatory-sources/{source_id}/review",
+    response_model=RegulatorySourceResponse,
+)
+def review_regulatory_source(
+    source_id: int,
+    payload: RegulatorySourceReview,
+    db: Session = Depends(get_db),
+    _access: str = Depends(require_mapping_reviewer),
+) -> RegulatorySourceRecord:
+    item = db.get(RegulatorySourceRecord, source_id)
+    if item is None:
+        raise HTTPException(status_code=404, detail="Regulatory source record not found")
+    try:
+        return review_source_record(db, item, payload)
+    except RegulatoryTruthError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+# Layer 2: organisation-specific interpretation is separate from source truth.
+@router.post(
+    "/interpretations",
+    response_model=InterpretationResponse,
+    status_code=201,
+)
+def submit_interpretation(
+    payload: InterpretationCreate,
+    db: Session = Depends(get_db),
+    _access: str = Depends(require_mapping_writer),
+) -> InterpretationDecision:
+    try:
+        return create_interpretation(db, payload)
+    except RegulatoryTruthError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.get(
+    "/interpretations",
+    response_model=list[InterpretationResponse],
+)
+def list_interpretations(
+    obligation_id: int | None = Query(default=None, gt=0),
+    status: str | None = Query(default=None, max_length=32),
+    db: Session = Depends(get_db),
+    _access: str = Depends(require_mapping_reader),
+) -> list[InterpretationDecision]:
+    query = db.query(InterpretationDecision).order_by(
+        InterpretationDecision.obligation_id, InterpretationDecision.version.desc()
+    )
+    if obligation_id is not None:
+        query = query.filter(InterpretationDecision.obligation_id == obligation_id)
+    if status:
+        query = query.filter(InterpretationDecision.status == status)
+    return query.all()
+
+
+@router.put(
+    "/interpretations/{interpretation_id}/review",
+    response_model=InterpretationResponse,
+)
+def review_organisational_interpretation(
+    interpretation_id: int,
+    payload: InterpretationReview,
+    db: Session = Depends(get_db),
+    _access: str = Depends(require_mapping_reviewer),
+) -> InterpretationDecision:
+    item = db.get(InterpretationDecision, interpretation_id)
+    if item is None:
+        raise HTTPException(status_code=404, detail="Interpretation decision not found")
+    try:
+        return review_interpretation(db, item, payload)
+    except RegulatoryTruthError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
