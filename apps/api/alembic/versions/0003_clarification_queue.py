@@ -68,7 +68,12 @@ def upgrade() -> None:
         sa.Column("action", sa.String(length=32), nullable=False),
         sa.Column("actor", sa.String(length=256), nullable=False),
         sa.Column("snapshot_json", sa.Text(), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            nullable=False,
+        ),
         sa.ForeignKeyConstraint(
             ["clarification_id"],
             ["clarification_questions.id"],
