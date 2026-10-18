@@ -30,37 +30,93 @@ def validate_mapping(data: dict[str, Any]) -> list[str]:
         if not condition:
             blockers.append(label)
 
-    need(bool(source.get("sourceId") or source.get("source_id")), "Source ID is required")
-    need(bool(source.get("version") or source.get("sourceVersion")), "Source version is required")
+    need(
+        bool(source.get("sourceId") or source.get("source_id")),
+        "Source ID is required",
+    )
+    need(
+        bool(source.get("version") or source.get("sourceVersion")),
+        "Source version is required",
+    )
     need(bool(source.get("authority")), "Issuing authority is required")
-    need(str(source.get("url", source.get("sourceUrl", ""))).lower().startswith("https://"), "Official HTTPS source URL is required")
-    need(source.get("approvalStatus") == "APPROVED_FOR_REVIEW", "Source review approval is required")
-    need(bool(source.get("clauseId") or source.get("clause_id")), "Stable clause reference is required")
-    need(len(str(source.get("excerpt", source.get("sourceExcerpt", ""))).strip()) >= 12, "Source excerpt is required")
-    need(len(str(data.get("obligation", "")).strip()) >= 12, "Atomic obligation is required")
+    source_url = str(source.get("url", source.get("sourceUrl", ""))).lower()
+    need(source_url.startswith("https://"), "Official HTTPS source URL is required")
+    need(
+        source.get("approvalStatus") == "APPROVED_FOR_REVIEW",
+        "Source review approval is required",
+    )
+    need(
+        bool(source.get("clauseId") or source.get("clause_id")),
+        "Stable clause reference is required",
+    )
+    excerpt = str(source.get("excerpt", source.get("sourceExcerpt", ""))).strip()
+    need(len(excerpt) >= 12, "Source excerpt is required")
+    need(
+        len(str(data.get("obligation", "")).strip()) >= 12,
+        "Atomic obligation is required",
+    )
     applicability = data.get("applicability")
-    need(applicability in {"APPLICABLE", "NOT_APPLICABLE"}, "Applicability must be finalized")
+    need(
+        applicability in {"APPLICABLE", "NOT_APPLICABLE"},
+        "Applicability must be finalized",
+    )
     if applicability == "NOT_APPLICABLE":
-        need(bool(str(data.get("notApplicableRationale", "")).strip()), "Not-applicable rationale is required")
+        need(
+            bool(str(data.get("notApplicableRationale", "")).strip()),
+            "Not-applicable rationale is required",
+        )
 
     finding = system.get("finding", system.get("systemFinding", "NOT_ASSESSED"))
     evidence = str(system.get("evidenceRef", system.get("systemEvidence", ""))).strip()
-    need(finding != "NOT_ASSESSED", "System impact must be assessed or explicitly marked unknown")
-    need(bool(evidence), "System evidence reference or explicit unknown reason is required")
+    need(
+        finding != "NOT_ASSESSED",
+        "System impact must be assessed or explicitly marked unknown",
+    )
+    need(
+        bool(evidence),
+        "System evidence reference or explicit unknown reason is required",
+    )
     if finding in {"NOT_APPLICABLE", "NOT_APPLICABLE_TO_SYSTEM"}:
-        need(bool(data.get("systemNotApplicableRationale")), "System not-applicable rationale is required")
+        need(
+            bool(data.get("systemNotApplicableRationale")),
+            "System not-applicable rationale is required",
+        )
 
-    need(len(str(clarification.get("decision", "")).strip()) >= 12, "Interpretation/decision is required")
-    need(clarification.get("decisionStatus") == "CONFIRMED", "Interpretation must be confirmed")
-    need(bool(clarification.get("owner") or clarification.get("decisionOwner")), "Decision owner is required")
-    need(clarification.get("dependencyStatus", "OPEN") in {"RESOLVED", "NOT_REQUIRED"}, "Open dependency blocks readiness")
+    need(
+        len(str(clarification.get("decision", "")).strip()) >= 12,
+        "Interpretation/decision is required",
+    )
+    need(
+        clarification.get("decisionStatus") == "CONFIRMED",
+        "Interpretation must be confirmed",
+    )
+    need(
+        bool(clarification.get("owner") or clarification.get("decisionOwner")),
+        "Decision owner is required",
+    )
+    need(
+        clarification.get("dependencyStatus", "OPEN") in {"RESOLVED", "NOT_REQUIRED"},
+        "Open dependency blocks readiness",
+    )
     if clarification.get("question"):
-        need(bool(clarification.get("questionOwner")), "Open clarification must have an owner")
+        need(
+            bool(clarification.get("questionOwner")),
+            "Open clarification must have an owner",
+        )
 
-    need(len(str(data.get("requirement", "")).strip()) >= 20, "Observable business requirement is required")
+    need(
+        len(str(data.get("requirement", "")).strip()) >= 20,
+        "Observable business requirement is required",
+    )
     need(bool(str(pbi.get("title", "")).strip()), "PBI title is required")
-    need(len(str(pbi.get("acceptanceCriteria", "")).strip()) >= 20, "Testable acceptance criteria are required")
-    need(len(str(pbi.get("testEvidence", "")).strip()) >= 12, "Verification method/evidence is required")
+    need(
+        len(str(pbi.get("acceptanceCriteria", "")).strip()) >= 20,
+        "Testable acceptance criteria are required",
+    )
+    need(
+        len(str(pbi.get("testEvidence", "")).strip()) >= 12,
+        "Verification method/evidence is required",
+    )
     return blockers
 
 
@@ -108,17 +164,29 @@ def create_mapping(db: Session, payload: RequirementsMappingCreateRequest) -> Re
     return item
 
 
-def list_mappings(db: Session, dossier_id: str | None = None) -> list[RequirementsMapping]:
-    statement = select(RequirementsMapping).order_by(RequirementsMapping.created_at.desc(), RequirementsMapping.id.desc())
+def list_mappings(
+    db: Session,
+    dossier_id: str | None = None,
+) -> list[RequirementsMapping]:
+    statement = select(RequirementsMapping).order_by(
+        RequirementsMapping.created_at.desc(),
+        RequirementsMapping.id.desc(),
+    )
     if dossier_id:
         statement = statement.where(RequirementsMapping.dossier_id == dossier_id)
     return list(db.scalars(statement).all())
 
 
-def review_mapping(db: Session, item: RequirementsMapping, payload: RequirementsMappingReviewRequest) -> RequirementsMapping:
+def review_mapping(
+    db: Session,
+    item: RequirementsMapping,
+    payload: RequirementsMappingReviewRequest,
+) -> RequirementsMapping:
     blockers = validate_mapping(json.loads(item.data_json))
     if payload.decision == "APPROVED" and blockers:
-        raise RequirementsMappingError("Cannot approve mapping with blockers: " + "; ".join(blockers))
+        raise RequirementsMappingError(
+            "Cannot approve mapping with blockers: " + "; ".join(blockers)
+        )
     item.reviewer = payload.reviewer
     item.reviewer_decision = payload.decision
     item.reviewer_rationale = payload.rationale
@@ -129,7 +197,11 @@ def review_mapping(db: Session, item: RequirementsMapping, payload: Requirements
         db,
         event_type="requirements_mapping_review",
         actor=payload.reviewer,
-        detail={"mapping_key": item.mapping_key, "decision": payload.decision, "rationale": payload.rationale},
+        detail={
+            "mapping_key": item.mapping_key,
+            "decision": payload.decision,
+            "rationale": payload.rationale,
+        },
     )
     db.commit()
     db.refresh(item)
