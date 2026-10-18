@@ -7,12 +7,24 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.models.extracted_obligation import ExtractedObligation
 from app.models.requirements_mapping import RequirementsMapping
+from app.schemas.extracted_obligation import (
+    ExtractedObligationResponse,
+    ObligationExtractionRequest,
+    ObligationReviewRequest,
+)
 from app.schemas.requirements_mapping import (
     RequirementsMappingCreateRequest,
     RequirementsMappingResponse,
     RequirementsMappingReviewRequest,
     RequirementsMappingUpdateRequest,
+)
+from app.services.obligation_extraction import (
+    ObligationExtractionError,
+    extract_obligations,
+    list_obligations,
+    review_obligation,
 )
 from app.services.requirements_mapping import (
     RequirementsMappingError,
@@ -97,6 +109,16 @@ def get_requirements_mappings(
     return [mapping_to_response(item) for item in list_mappings(db, dossier_id)]
 
 
+@router.get("/obligations", response_model=list[ExtractedObligationResponse])
+def get_extracted_obligations(
+    document_id: int | None = Query(default=None, gt=0),
+    status: str | None = Query(default=None, max_length=32),
+    db: Session = Depends(get_db),
+    _access: str = Depends(require_mapping_reader),
+) -> list[ExtractedObligation]:
+    return list_obligations(db, document_id=document_id, status=status)
+
+
 @router.get("/{mapping_id}", response_model=RequirementsMappingResponse)
 def get_requirements_mapping(
     mapping_id: int,
@@ -141,3 +163,39 @@ def review_requirements_mapping(
     except RequirementsMappingError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     return mapping_to_response(reviewed)
+
+
+
+@router.post(
+    "/obligations/extract/{document_id}",
+    response_model=list[ExtractedObligationResponse],
+)
+def run_obligation_extraction(
+    document_id: int,
+    payload: ObligationExtractionRequest,
+    db: Session = Depends(get_db),
+    _access: str = Depends(require_mapping_writer),
+) -> list[ExtractedObligation]:
+    try:
+        return extract_obligations(db, document_id, payload)
+    except ObligationExtractionError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.put(
+    "/obligations/{obligation_id}/review",
+    response_model=ExtractedObligationResponse,
+)
+def review_extracted_obligation(
+    obligation_id: int,
+    payload: ObligationReviewRequest,
+    db: Session = Depends(get_db),
+    _access: str = Depends(require_mapping_reviewer),
+) -> ExtractedObligation:
+    item = db.get(ExtractedObligation, obligation_id)
+    if item is None:
+        raise HTTPException(status_code=404, detail="Obligation candidate not found")
+    try:
+        return review_obligation(db, item, payload)
+    except ObligationExtractionError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
