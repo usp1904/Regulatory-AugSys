@@ -100,7 +100,10 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_index("ix_interpretation_decisions_status", table_name="interpretation_decisions")
+    op.drop_index(
+        "ix_interpretation_decisions_status",
+        table_name="interpretation_decisions",
+    )
     op.drop_index(
         "ix_interpretation_decisions_obligation_id",
         table_name="interpretation_decisions",
