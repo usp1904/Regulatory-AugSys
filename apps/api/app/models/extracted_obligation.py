@@ -31,6 +31,11 @@ class ExtractedObligation(Base):
         nullable=True,
         index=True,
     )
+    mapping_id: Mapped[int | None] = mapped_column(
+        ForeignKey("requirements_mappings.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     source_version: Mapped[int] = mapped_column(Integer, nullable=False)
     source_file_hash: Mapped[str] = mapped_column(String(64), nullable=False)
     clause_id: Mapped[str] = mapped_column(String(128), nullable=False)
