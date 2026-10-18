@@ -23,6 +23,7 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.Column("obligation_key", sa.String(length=64), nullable=False),
         sa.Column("source_document_id", sa.Integer(), nullable=False),
+        sa.Column("mapping_id", sa.Integer(), nullable=True),
         sa.Column("source_version", sa.Integer(), nullable=False),
         sa.Column("source_file_hash", sa.String(length=64), nullable=False),
         sa.Column("clause_id", sa.String(length=128), nullable=False),
@@ -38,6 +39,7 @@ def upgrade() -> None:
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
         sa.Column("reviewed_at", sa.DateTime(timezone=True), nullable=True),
         sa.ForeignKeyConstraint(["source_document_id"], ["documents.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["mapping_id"], ["requirements_mappings.id"], ondelete="SET NULL"),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint(
             "source_document_id",
@@ -48,11 +50,13 @@ def upgrade() -> None:
     )
     op.create_index("ix_extracted_obligations_obligation_key", "extracted_obligations", ["obligation_key"], unique=True)
     op.create_index("ix_extracted_obligations_source_document_id", "extracted_obligations", ["source_document_id"])
+    op.create_index("ix_extracted_obligations_mapping_id", "extracted_obligations", ["mapping_id"])
     op.create_index("ix_extracted_obligations_status", "extracted_obligations", ["status"])
 
 
 def downgrade() -> None:
     op.drop_index("ix_extracted_obligations_status", table_name="extracted_obligations")
+    op.drop_index("ix_extracted_obligations_mapping_id", table_name="extracted_obligations")
     op.drop_index("ix_extracted_obligations_source_document_id", table_name="extracted_obligations")
     op.drop_index("ix_extracted_obligations_obligation_key", table_name="extracted_obligations")
     op.drop_table("extracted_obligations")
