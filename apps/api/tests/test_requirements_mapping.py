@@ -102,6 +102,40 @@ def test_create_mapping_persists_draft_and_audit_event(client, db_session) -> No
     assert event.document_id == source_document_id
 
 
+def test_mapping_update_resets_review_and_revalidates_source(client) -> None:
+    created = client.post(
+        "/api/v1/requirements-mappings",
+        json={
+            "dossier_id": "DOS-UPDATE-001",
+            "created_by": "qa.author",
+            "source_document_id": _upload_source_document(client),
+            "data": _valid_mapping_data(),
+        },
+    )
+    assert created.status_code == 201
+    mapping_id = created.json()["id"]
+    approved = client.post(
+        f"/api/v1/requirements-mappings/{mapping_id}/review",
+        json={
+            "reviewer": "qa.reviewer",
+            "decision": "APPROVED",
+            "rationale": "Initial decision confirmed.",
+        },
+    )
+    assert approved.status_code == 200
+
+    revised_data = approved.json()["data"]
+    revised_data["clarification"]["decisionStatus"] = "OPEN"
+    updated = client.put(
+        f"/api/v1/requirements-mappings/{mapping_id}",
+        json={"updated_by": "qa.author", "data": revised_data},
+    )
+    assert updated.status_code == 200
+    assert updated.json()["review_status"] == "PENDING"
+    assert updated.json()["reviewer"] is None
+    assert "Interpretation must be confirmed" in updated.json()["blockers"]
+
+
 def test_mapping_approval_requires_all_completeness_gates(client) -> None:
     data = _valid_mapping_data()
     data["clarification"]["decisionStatus"] = "OPEN"
