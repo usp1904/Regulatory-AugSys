@@ -101,15 +101,6 @@ export default async function HealthPage() {
             </p>
           </Link>
           <Link
-            href="/requirements-mappings"
-            className="panel block transition-colors hover:border-primary/40 hover:bg-muted/20"
-          >
-            <h3 className="font-medium">Requirements Mapping</h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Link source clauses to obligations, system findings, stakeholder decisions, traceable PBIs, and review gates.
-            </p>
-          </Link>
-          <Link
             href="/clarifications"
             className="panel block transition-colors hover:border-primary/40 hover:bg-muted/20"
           >
