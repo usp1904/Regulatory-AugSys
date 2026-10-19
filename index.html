@@ -598,13 +598,13 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 
 <!-- TOP NAV -->
 <div class="nav">
-  <div class="nav-brand">
+  <a class="nav-brand" href="./" aria-label="MARAS home — return to Assure" onclick="event.preventDefault(); goTab('gen',document.getElementById('ntab-gen'));" style="text-decoration:none;cursor:pointer">
     <div class="nav-icon">M</div>
     <div class="nav-brand-text">
       <div class="nav-title">MARAS</div>
       <div class="nav-sub">Multi Agent Regulatory Augmented System</div>
     </div>
-  </div>
+  </a>
   <div class="nav-sep"></div>
   <div class="nav-tabs">
     <button class="nav-tab on" id="ntab-gen" onclick="goTab('gen',this)"><span class="nav-tab-pip"></span>Assure</button>
@@ -6247,7 +6247,10 @@ function sourceMetaFor(reg,sourceKey){
 
 
 init();
+// Legacy deep links to the retired mapper land in the existing Value Package tab.
+if (new URLSearchParams(window.location.search).get('tab') === 'results') {
+  goTab('results', document.getElementById('ntab-results'));
+}
 </script>
-<script src="./requirements-mapping.js"></script>
 </body>
 </html>
