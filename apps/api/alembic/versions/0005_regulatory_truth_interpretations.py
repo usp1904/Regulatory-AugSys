@@ -82,8 +82,14 @@ def upgrade() -> None:
         sa.Column("review_rationale", sa.Text(), nullable=True),
         sa.Column("approved_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("supersedes_id", sa.Integer(), nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True),
+            server_default=sa.func.now(), nullable=False
+        ),
+        sa.Column(
+            "updated_at", sa.DateTime(timezone=True),
+            server_default=sa.func.now(), nullable=False
+        ),
         sa.ForeignKeyConstraint(
             ["obligation_id"], ["extracted_obligations.id"], ondelete="CASCADE"
         ),
