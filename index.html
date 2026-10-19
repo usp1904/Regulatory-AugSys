@@ -572,19 +572,39 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
   .metric-row{grid-template-columns:1fr}
   .value-chain{grid-template-columns:1fr}
 }
+
+/* Existing Value Package traceability matrix — Layer 1 and Layer 2 */
+.rtm-wrap{margin:14px 0 18px;border:1px solid var(--border);border-radius:10px;background:var(--card,#fff);overflow:hidden}
+.rtm-head{padding:12px 14px;background:var(--bg);border-bottom:1px solid var(--border)}
+.rtm-title{font-size:14px;font-weight:700;color:var(--ink)}
+.rtm-sub{font-size:11px;line-height:1.5;color:var(--ink3);margin-top:3px}
+.rtm-scroll{overflow-x:auto}
+.rtm-table{width:100%;min-width:1180px;border-collapse:collapse;font-size:11px}
+.rtm-table th{padding:9px 10px;text-align:left;background:#f8fafc;color:#475569;border-bottom:1px solid var(--border);vertical-align:top}
+.rtm-table td{padding:10px;vertical-align:top;border-bottom:1px solid var(--border);min-width:190px}
+.rtm-table tr:last-child td{border-bottom:0}
+.rtm-field{display:block;width:100%;box-sizing:border-box;margin:4px 0 7px;padding:6px 7px;border:1px solid var(--border);border-radius:5px;background:white;color:var(--ink);font:inherit;line-height:1.4}
+.rtm-field:focus{outline:2px solid #93c5fd;outline-offset:1px}
+.rtm-field.rtm-area{min-height:54px;resize:vertical}
+.rtm-btn{border:0;border-radius:5px;padding:6px 8px;font-size:10px;font-weight:700;cursor:pointer;background:#e2e8f0;color:#334155}
+.rtm-btn.primary{background:#dbeafe;color:#1d4ed8}
+.rtm-status{display:inline-block;padding:3px 6px;border-radius:999px;font-size:9px;font-weight:700;background:#fef3c7;color:#92400e}
+.rtm-status.good{background:#dcfce7;color:#166534}
+.rtm-status.bad{background:#fee2e2;color:#991b1b}
+.rtm-note{font-size:10px;color:var(--ink3);line-height:1.45;margin-top:6px}
 </style>
 </head>
 <body>
 
 <!-- TOP NAV -->
 <div class="nav">
-  <div class="nav-brand">
+  <a class="nav-brand" href="./" aria-label="MARAS home — return to Assure" onclick="event.preventDefault(); goTab('gen',document.getElementById('ntab-gen'));" style="text-decoration:none;cursor:pointer">
     <div class="nav-icon">M</div>
     <div class="nav-brand-text">
       <div class="nav-title">MARAS</div>
       <div class="nav-sub">Multi Agent Regulatory Augmented System</div>
     </div>
-  </div>
+  </a>
   <div class="nav-sep"></div>
   <div class="nav-tabs">
     <button class="nav-tab on" id="ntab-gen" onclick="goTab('gen',this)"><span class="nav-tab-pip"></span>Assure</button>
@@ -929,6 +949,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
         <div class="st-meta" id="st-meta"></div>
       </div>
       <div class="exp-btns" id="exp-btns"></div>
+    </div>
+    <div id="feature-traceability-matrix" class="rtm-wrap" aria-label="Feature Traceability Matrix">
+      <div class="rtm-head"><div class="rtm-title">Feature Traceability Matrix</div><div class="rtm-sub">One traceability view for regulatory source truth (Layer 1), approved organisational interpretation (Layer 2), and the existing requirement → PBI → acceptance/test evidence chain. Source and interpretation attestations saved in this browser are draft records, not electronic signatures.</div></div>
+      <div class="rtm-scroll"><table class="rtm-table"><thead><tr><th>Trace / PBI</th><th>Layer 1 · Regulatory source truth</th><th>Layer 2 · Organisational interpretation</th><th>Implementation trace</th><th>Evidence status</th></tr></thead><tbody id="rtm-body"></tbody></table></div>
     </div>
     <div id="stories-list"></div>
   </div>
@@ -4879,6 +4903,7 @@ function renderStories(stories, pipelineResult) {
     ${H.ragReplay.stages.verify?.output?.pass ? 'verify OK (draft)' : 'verify flagged'} · DRAFT_NOT_CONTROLLED
   </div>` : '';
 
+  renderTraceabilityMatrix(stories);
   document.getElementById('stories-list').innerHTML = ragBanner + qcBanner + stories.map((s,i) => {
     const sourceUrl=safeExternalUrl(s.sourceUrl);
     const fwBadges = (s.frameworks_applied||[]).map(fw=>
@@ -4958,6 +4983,78 @@ function renderStories(stories, pipelineResult) {
     </div>`;
   }).join('');
   document.getElementById('stories-section').style.display = 'block';
+}
+
+
+
+/* The existing Value Package matrix is the single home for Layer 1/2 traceability. */
+function renderTraceabilityMatrix(stories){
+  const body=document.getElementById('rtm-body');
+  if(!body)return;
+  body.innerHTML=(stories||[]).map((s,i)=>{
+    const sourceStatus=s.sourceTruthStatus||'UNVERIFIED';
+    const interpStatus=s.organisationInterpretationStatus||'DRAFT';
+    const sourceBadge=sourceStatus==='VERIFIED'?'good':(['REJECTED','STALE'].includes(sourceStatus)?'bad':'');
+    const interpBadge=interpStatus==='APPROVED'?'good':(['REJECTED'].includes(interpStatus)?'bad':'');
+    const hash=s.sourceContentHash||s.sourceHash||s.fileHash||'';
+    const applicability=s.organisationApplicability||'UNDECIDED';
+    return `<tr data-rtm-row="${i}">
+      <td><b>${escapeHtml(s.id||s.req_id||('PBI-'+(s.num||i+1)))}</b><div style="margin-top:5px;font-weight:600">${escapeHtml(s.title||'Untitled PBI')}</div><div class="rtm-note">Regulatory reference: ${escapeHtml(s.regRef||((s.regulation||'')+' '+(s.section||''))||'Not mapped')}</div></td>
+      <td><span class="rtm-status ${sourceBadge}" id="rtm-source-status-${i}">${escapeHtml(sourceStatus)}</span>
+        <label>Issuing authority<input class="rtm-field" data-rtm-field="sourceAuthority" data-rtm-index="${i}" value="${escapeHtml(s.sourceAuthority||'')}" placeholder="Regulatory authority" /></label>
+        <label>Version / effective edition<input class="rtm-field" data-rtm-field="sourceVersion" data-rtm-index="${i}" value="${escapeHtml(s.sourceVersion||'')}" placeholder="Revision / edition / effective date" /></label>
+        <label>Clause / section<input class="rtm-field" data-rtm-field="section" data-rtm-index="${i}" value="${escapeHtml(s.section||s.clauseId||'')}" placeholder="Exact clause identifier" /></label>
+        <label>Source content SHA-256<input class="rtm-field" data-rtm-field="sourceContentHash" data-rtm-index="${i}" value="${escapeHtml(hash)}" placeholder="64-character SHA-256 hash" /></label>
+        <label>Official HTTPS URL<input class="rtm-field" data-rtm-field="sourceUrl" data-rtm-index="${i}" value="${escapeHtml(s.sourceUrl||'')}" placeholder="https://official-regulator.example/..." /></label>
+        <label>Exact source excerpt<textarea class="rtm-field rtm-area" data-rtm-field="sourceExcerpt" data-rtm-index="${i}" placeholder="Exact clause wording; do not paraphrase here">${escapeHtml(s.sourceExcerpt||'')}</textarea></label>
+        <label>Source reviewer<input class="rtm-field" data-rtm-field="sourceTruthReviewer" data-rtm-index="${i}" value="${escapeHtml(s.sourceTruthReviewer||'')}" placeholder="Regulatory SME name" /></label>
+        <label>Verification rationale<textarea class="rtm-field rtm-area" data-rtm-field="sourceTruthRationale" data-rtm-index="${i}" placeholder="How authority, version and applicability were checked">${escapeHtml(s.sourceTruthRationale||'')}</textarea></label>
+        <button class="rtm-btn primary" onclick="recordMatrixSourceReview(${i})">Record source verification</button>
+        <div class="rtm-note">Human attestation only. URL presence/hash alone does not prove official status or currency.</div>
+      </td>
+      <td><span class="rtm-status ${interpBadge}" id="rtm-interpretation-status-${i}">${escapeHtml(interpStatus)}</span>
+        <label>Organisational interpretation<textarea class="rtm-field rtm-area" data-rtm-field="organisationInterpretation" data-rtm-index="${i}" placeholder="What this obligation means for this organisation">${escapeHtml(s.organisationInterpretation||'')}</textarea></label>
+        <label>Applicability<select class="rtm-field" data-rtm-field="organisationApplicability" data-rtm-index="${i}">${['UNDECIDED','APPLICABLE','NOT_APPLICABLE','PARTIALLY_APPLICABLE'].map(v=>`<option value="${v}" ${applicability===v?'selected':''}>${v.replaceAll('_',' ')}</option>`).join('')}</select></label>
+        <label>Decision rationale<textarea class="rtm-field rtm-area" data-rtm-field="organisationRationale" data-rtm-index="${i}" placeholder="Explain applicability and decision basis">${escapeHtml(s.organisationRationale||'')}</textarea></label>
+        <label>Decision owner<input class="rtm-field" data-rtm-field="organisationDecisionOwner" data-rtm-index="${i}" value="${escapeHtml(s.organisationDecisionOwner||'')}" placeholder="Business / Quality owner" /></label>
+        <label>Unresolved questions<textarea class="rtm-field rtm-area" data-rtm-field="organisationUnresolvedQuestions" data-rtm-index="${i}" placeholder="Leave blank only when all questions are resolved">${escapeHtml(s.organisationUnresolvedQuestions||'')}</textarea></label>
+        <label>Approver<input class="rtm-field" data-rtm-field="organisationApprover" data-rtm-index="${i}" value="${escapeHtml(s.organisationApprover||'')}" placeholder="Independent approver" /></label>
+        <label>Approval rationale<textarea class="rtm-field rtm-area" data-rtm-field="organisationApprovalRationale" data-rtm-index="${i}" placeholder="Review rationale">${escapeHtml(s.organisationApprovalRationale||'')}</textarea></label>
+        <button class="rtm-btn primary" onclick="approveMatrixInterpretation(${i})">Approve interpretation</button>
+      </td>
+      <td><div><b>Requirement</b><div class="rtm-note">${escapeHtml(s.requirement||s.story||'Not separately recorded')}</div></div><div style="margin-top:8px"><b>Acceptance criteria</b><div class="rtm-note">${escapeHtml((s.ac||s.acceptanceCriteria||[]).join(' · ')||'Not recorded')}</div></div><div style="margin-top:8px"><b>Test/evidence reference</b><textarea class="rtm-field rtm-area" data-rtm-field="traceabilityTestEvidence" data-rtm-index="${i}" placeholder="Test case ID, execution result, evidence reference">${escapeHtml(s.traceabilityTestEvidence||s.testEvidence||'')}</textarea></div></td>
+      <td><div><b>Layer 1</b><div class="rtm-note">${escapeHtml(sourceStatus)}</div></div><div style="margin-top:8px"><b>Layer 2</b><div class="rtm-note">${escapeHtml(interpStatus)}</div></div><div class="rtm-note" style="margin-top:8px">${sourceStatus==='VERIFIED'&&interpStatus==='APPROVED'?'Source and interpretation gates recorded.': 'Draft only — review blockers before relying on this trace.'}</div></td>
+    </tr>`;
+  }).join('');
+  body.querySelectorAll('[data-rtm-field]').forEach(el=>el.addEventListener('change',()=>{
+    const index=Number(el.dataset.rtmIndex),field=el.dataset.rtmField;
+    if(!allStories[index]||!field)return;
+    allStories[index][field]=el.value;
+    if(field==='sourceUrl')allStories[index].sourceApprovalStatus='SME_PENDING';
+    allStories[index].organisationInterpretationStatus=allStories[index].organisationInterpretationStatus||'DRAFT';
+  }));
+}
+function recordMatrixSourceReview(index){
+  const s=allStories[index];if(!s)return;
+  const required=[s.sourceAuthority,s.sourceVersion,s.sourceUrl,s.section||s.clauseId,s.sourceExcerpt,s.sourceTruthReviewer,s.sourceTruthRationale,s.sourceContentHash];
+  if(required.some(v=>!String(v||'').trim())||!safeExternalUrl(s.sourceUrl)||!String(s.sourceUrl).startsWith('https://')||!/^[a-f0-9]{64}$/i.test(String(s.sourceContentHash||''))){
+    alert('To record Layer 1 verification, provide authority, version, HTTPS official URL, clause, exact excerpt, 64-character SHA-256 hash, reviewer, and verification rationale.');return;
+  }
+  s.sourceTruthStatus='VERIFIED';s.sourceTruthVerifiedAt=new Date().toISOString();
+  s.sourceApprovalStatus='SME_REVIEW_ATTESTED_DRAFT';
+  renderTraceabilityMatrix(allStories);
+}
+function approveMatrixInterpretation(index){
+  const s=allStories[index];if(!s)return;
+  const reviewer=String(s.organisationApprover||'').trim();
+  const submitter=String(s.organisationSubmittedBy||s.createdBy||'').trim();
+  if(s.sourceTruthStatus!=='VERIFIED'){alert('Verify Layer 1 source truth before approving the organisational interpretation.');return;}
+  if(!String(s.organisationInterpretation||'').trim()||s.organisationApplicability==='UNDECIDED'||!String(s.organisationRationale||'').trim()||!String(s.organisationDecisionOwner||'').trim()||String(s.organisationUnresolvedQuestions||'').trim()||!reviewer||!String(s.organisationApprovalRationale||'').trim()){
+    alert('Complete interpretation, decided applicability, rationale, decision owner, clear unresolved-questions field, independent approver, and approval rationale.');return;
+  }
+  if(submitter&&reviewer.toLowerCase()===submitter.toLowerCase()){alert('The interpretation submitter cannot approve their own decision.');return;}
+  s.organisationInterpretationStatus='APPROVED';s.organisationApprovedAt=new Date().toISOString();s.organisationReviewedBy=reviewer;
+  renderTraceabilityMatrix(allStories);
 }
 
 function toggleAC(btn){
@@ -6150,7 +6247,10 @@ function sourceMetaFor(reg,sourceKey){
 
 
 init();
+// Legacy deep links to the retired mapper land in the existing Value Package tab.
+if (new URLSearchParams(window.location.search).get('tab') === 'results') {
+  goTab('results', document.getElementById('ntab-results'));
+}
 </script>
-<script src="./requirements-mapping.js"></script>
 </body>
 </html>
