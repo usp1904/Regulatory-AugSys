@@ -18,7 +18,7 @@ export default function DeprecatedRequirementsMappingPage() {
           longer exposes a second mapping workflow.
         </p>
         <Link
-          href="https://usp1904.github.io/Regulatory-AugSys/"
+          href="https://usp1904.github.io/Regulatory-AugSys/?tab=results"
           className="inline-flex rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
           target="_blank"
           rel="noreferrer"
