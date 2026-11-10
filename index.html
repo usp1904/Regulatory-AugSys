@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>MARAS v6.4.1 MVP — Regulatory Business Assurance</title>
+<script>(function(){try{var q=new URLSearchParams(location.search);var eu=q.get('internal')!=='1'&&(localStorage.getItem('maras_end_user_surface_v1')!=='0');document.documentElement.classList.toggle('maras-end-user-surface',eu);document.documentElement.classList.toggle('maras-internal-surface',!eu);}catch(_e){document.documentElement.classList.add('maras-end-user-surface');}})();</script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -367,6 +368,8 @@ html.maras-caveman .qc-banner-title{font-size:10px}
 html.maras-caveman .delivery-pkg-sub:not(:first-of-type){display:none}
 html.maras-caveman .rtp-sub{display:none}
 html.maras-caveman .hard-fail-story-hint{display:none}
+/* End-user surface (default): hide staff/advanced chrome; staff use ?internal=1 or localStorage maras_end_user_surface_v1=0 */
+html.maras-end-user-surface .maras-internal-only{display:none!important}
 .rag-toggle-row{margin:0 0 10px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r2);background:#fff}
 .rag-toggle-lbl{display:flex;align-items:flex-start;gap:8px;font-size:11px;color:var(--ink2);cursor:pointer;line-height:1.45}
 .rag-toggle-lbl input{margin-top:2px;flex-shrink:0}
@@ -1075,7 +1078,7 @@ html.maras-caveman .hard-fail-story-hint{display:none}
   <!-- SUBMIT — full width, like Image 1 -->
   <div class="submit-footer">
     <div id="mvp-validation" role="alert" aria-live="assertive" tabindex="-1" style="display:none;margin:0 0 10px;padding:10px 12px;border:1px solid #dc2626;border-radius:7px;background:#fef2f2;color:#991b1b;font-size:12px;line-height:1.5"></div>
-    <div class="rag-toggle-row" id="rag-toggle-row">
+    <div class="rag-toggle-row maras-internal-only" id="rag-toggle-row">
       <label class="rag-toggle-lbl">
         <input type="checkbox" id="caveman-mode-toggle" aria-describedby="caveman-mode-hint" onchange="setCavemanMode(this.checked)">
         <span><b>Caveman mode</b> — plain-language cards first; technical/schema detail stays behind expanders. <span class="caveman-elide">Default ON every session.</span></span>
@@ -1127,7 +1130,7 @@ html.maras-caveman .hard-fail-story-hint{display:none}
     <details id="package-delivery-traceability" class="pkg-trace-bundle sc-compliance-collapsed" style="display:none" aria-label="Delivery Package and traceability">
       <summary>Delivery Package &amp; traceability</summary>
       <div class="pkg-trace-bundle-body">
-        <details id="feature-traceability-matrix-details" class="pbi-compliance-details sc-compliance-collapsed rtm-details">
+        <details id="feature-traceability-matrix-details" class="pbi-compliance-details sc-compliance-collapsed rtm-details maras-internal-only">
           <summary>Feature Traceability Matrix</summary>
           <div id="feature-traceability-matrix" class="rtm-wrap" aria-label="Feature Traceability Matrix">
             <div class="rtm-head"><div class="rtm-title">Feature Traceability Matrix</div><div class="rtm-sub">One traceability view for regulatory source truth (Layer 1), approved organisational interpretation (Layer 2), and the existing requirement → PBI → acceptance/test evidence chain. Source and interpretation attestations saved in this browser are draft records, not electronic signatures.</div></div>
@@ -1242,7 +1245,7 @@ html.maras-caveman .hard-fail-story-hint{display:none}
     <div class="assurance-kicker">Co-operations · Consulting &amp; strategy</div>
     <div class="assurance-title">Global regulation comparison engine</div>
     <div class="assurance-sub">Compare the same control topic across markets in a citation-backed matrix. Built for consulting firms and strategy teams harmonising multi-jurisdiction programmes — separate from the Assure delivery workflow. Draft citations only; SME approval still required.</div>
-    <div class="cmp-graph" id="compare-graph">Topic → market matrix → Diff → Co-op deliverable (DRAFT_NOT_CONTROLLED)</div>
+    <div class="cmp-graph maras-internal-only" id="compare-graph">Topic → market matrix → Diff → Co-op deliverable (DRAFT_NOT_CONTROLLED)</div>
     <div class="assurance-actions">
       <button class="assurance-btn" onclick="dlCompareJson()">Download comparison JSON</button>
       <button class="assurance-btn secondary" onclick="dlCompareCsv()">Download matrix CSV</button>
@@ -1250,7 +1253,7 @@ html.maras-caveman .hard-fail-story-hint{display:none}
     </div>
     <div class="metric-row" id="compare-metrics"></div>
   </div>
-  <div class="assurance-section">
+  <div class="assurance-section maras-internal-only">
     <div class="assurance-section-h">
       <div class="assurance-section-t">Cross-market matrix</div>
       <div class="assurance-section-s">Same topic · different markets · citations and deltas</div>
@@ -1846,6 +1849,8 @@ function init(){
   restoreSessionKeys();
   restoreIngestMemory();
   ensureValidModel();
+  initMarasEndUserSurface();
+  updateMarasEndUserSurfaceUI();
   initRagGraphFlag();
   updateRagGraphToggleUI();
   initCavemanMode();
@@ -2661,6 +2666,32 @@ const RAG_GRAPH_CONFIG = {
 };
 let ragGraphEnabled = true;
 
+/* MARAS_END_USER_MODE — default hides internal toggles/banners; staff: ?internal=1 or maras_end_user_surface_v1=0 */
+const MARAS_END_USER_MODE_CONFIG = { storageKey: 'maras_end_user_surface_v1' };
+let marasEndUserMode = true;
+
+function initMarasEndUserSurface() {
+  try {
+    const qs = new URLSearchParams(location.search);
+    if (qs.get('internal') === '1') marasEndUserMode = false;
+    else if (qs.get('internal') === '0') marasEndUserMode = true;
+    else {
+      const stored = localStorage.getItem(MARAS_END_USER_MODE_CONFIG.storageKey);
+      if (stored === '0') marasEndUserMode = false;
+      else if (stored === '1') marasEndUserMode = true;
+      else marasEndUserMode = true;
+    }
+  } catch (_e) { marasEndUserMode = true; }
+}
+function isMarasEndUserMode() { return !!marasEndUserMode; }
+function updateMarasEndUserSurfaceUI() {
+  const root = document.documentElement;
+  if (root) {
+    root.classList.toggle('maras-end-user-surface', marasEndUserMode);
+    root.classList.toggle('maras-internal-surface', !marasEndUserMode);
+  }
+}
+
 /* CAVE_MAN_MODE — CRS plain-language UI (default ON; persists in localStorage) */
 const CAVE_MAN_MODE_CONFIG = { storageKey: 'maras_caveman_mode_v1' };
 let cavemanModeEnabled = true;
@@ -2690,7 +2721,7 @@ function updateCavemanModeUI() {
   const el = document.getElementById('caveman-mode-toggle');
   if (el) el.checked = cavemanModeEnabled;
   const hint = document.getElementById('caveman-mode-hint');
-  if (hint) hint.style.display = cavemanModeEnabled ? 'block' : 'none';
+  if (hint) hint.style.display = (cavemanModeEnabled && !isMarasEndUserMode()) ? 'block' : 'none';
 }
 
 function initRagGraphFlag() {
@@ -2715,7 +2746,7 @@ function updateRagGraphToggleUI() {
   const el = document.getElementById('rag-graph-toggle');
   if (el) el.checked = ragGraphEnabled;
   const hint = document.getElementById('rag-graph-hint');
-  if (hint) hint.style.display = ragGraphEnabled ? 'block' : 'none';
+  if (hint) hint.style.display = (ragGraphEnabled && !isMarasEndUserMode()) ? 'block' : 'none';
 }
 function ragAuthorityLevel(meta) {
   const t = String(meta?.sourceType || '').toLowerCase();
@@ -6369,7 +6400,7 @@ function renderPbiComplianceDetailsAssure(s,i,bil,qgHtml,ragPipeHtml,boiHtml,inv
     ${ac.length?`<div style="margin-top:8px"><b>Acceptance criteria (trace)</b>${ac.map((a,j)=>`<div class="ac-item" style="margin-top:4px"><span class="ac-n">${j+1}</span><span class="ac-t">${escapeHtml(a)}</span></div>`).join('')}</div>`:''}
     ${s.accept?`<div style="margin-top:8px;padding:8px;background:#fefce8;border-radius:5px"><b>ACCEPT</b> · Action: ${escapeHtml(s.accept.action)} · Expected: ${escapeHtml(s.accept.expected)} · Pass/Fail: ${escapeHtml(s.accept.pass_fail)} · Trace: ${escapeHtml(s.accept.traceable||s.regRef)}</div>`:''}
     ${(()=>{const pr=s.definitionOfReady?.poReadiness;const rd=s.definitionOfDone?.recommendedDoD;if(!pr&&!rd)return'';const rows=[...(pr?.items||[]),...(rd?.items||[])].map(x=>`<div class="dor-dod-hint"><b>${escapeHtml(x.label)}</b>: ${escapeHtml(x.autoHint||x.dataHint||'')}</div>`).join('');return rows?`<details class="pbi-compliance-details sc-compliance-collapsed" style="margin-top:8px"><summary>PO readiness & DoD derivation hints</summary><div style="padding:6px 0">${rows}</div></details>`:'';})()}
-    <div style="margin-top:8px;font-size:9px;color:var(--ink4)">RTM row ${i+1} · DoR ${escapeHtml(s.definitionOfReady?.ready||'NOT_READY')} · DoD ${escapeHtml(s.definitionOfDone?.done||'NOT_DONE')} · interpretation logs — Value Package trace matrix (DRAFT_NOT_CONTROLLED)</div>
+    <div class="maras-internal-only" style="margin-top:8px;font-size:9px;color:var(--ink4)">RTM row ${i+1} · DoR ${escapeHtml(s.definitionOfReady?.ready||'NOT_READY')} · DoD ${escapeHtml(s.definitionOfDone?.done||'NOT_DONE')} · interpretation logs — Value Package trace matrix (DRAFT_NOT_CONTROLLED)</div>
     ${(s.finalOutputPackage||s.regulatoryOutputHardFail)?'<div style="margin-top:8px;font-size:9px;color:var(--ink4)">Structured obligations, RTM, and full trace pipeline are in Delivery Package &amp; traceability above (single package view).</div>':`${renderStructuredObligationCards(s.structuredObligations||s.regulatoryTracePipeline?.structuredObligations)}${renderStoryTracePipelineDetail(s,i)}`}
   </div></details>`;
 }
@@ -6402,7 +6433,7 @@ function renderStories(stories, pipelineResult) {
     </div>
   </div>` : '';
 
-  const ragBanner = (ragGraphEnabled && H.ragReplay?.stages) ? `<div class="rag-banner" id="rag-banner">
+  const ragBanner = (ragGraphEnabled && H.ragReplay?.stages) ? `<div class="rag-banner maras-internal-only" id="rag-banner">
     <b>RAG Graph (draft)</b> — Parse → Hybrid Retrieve → ReRank → Synthesize → Verify ·
     ${H.ragReplay.fallbackUsed ? '<span style="color:#b45309">legacy fallback active</span> · ' : ''}
     ${H.ragReplay.stages.retrieve?.output?.hybrid ? 'OKF+Graph+TF-IDF' : 'legacy'} ·
@@ -6440,9 +6471,9 @@ function renderStories(stories, pipelineResult) {
       <div class="rubric-checks">${(rub.checks||[]).map(c=>`<span class="rubric-check ${c.pass?'ok':'no'}">${c.pass?'✓':'·'} ${c.label} (${c.score}/${c.weight})</span>`).join('')}</div>
     </div>` : '';
     const qgHtml = renderQualityGatePanel(i, s);
-    const ragPipeHtml = ragGraphEnabled ? `<button type="button" class="sc-expand rag-pipe-btn" onclick="toggleRagPipeline(this)">
+    const ragPipeHtml = ragGraphEnabled ? `<div class="maras-internal-only"><button type="button" class="sc-expand rag-pipe-btn" onclick="toggleRagPipeline(this)">
       <span>Pipeline replay (optional)</span><span style="transition:transform .14s">▼</span>
-    </button><div class="rag-pipe-panel">${ragReplayDetailHtml()}</div>` : '';
+    </button><div class="rag-pipe-panel">${ragReplayDetailHtml()}</div></div>` : '';
     const pbi=ensureStoryPbi(s);
     return `<div class="story-card" data-story-index="${i}" data-pbi-complete="${pbi.complete?'true':'false'}">
       <div class="sc-top">
@@ -6871,7 +6902,7 @@ function renderCompareCell(c,row){
 }
 function renderCompareMatrix(rows){
   const markets=COMPARE_MARKETS.filter(m=>compareMarketSel.has(m.id));
-  let h='<div class="cmp-matrix-wrap"><table class="cmp-matrix"><thead><tr><th class="topic-col">Topic</th>';
+  let h='<div class="cmp-matrix-wrap maras-internal-only"><table class="cmp-matrix"><thead><tr><th class="topic-col">Topic</th>';
   markets.forEach(m=>h+=`<th>${escapeHtml(m.short)}</th>`);
   h+='<th>Differences</th></tr></thead><tbody>';
   rows.forEach(row=>{
