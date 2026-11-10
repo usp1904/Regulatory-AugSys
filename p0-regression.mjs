@@ -153,6 +153,9 @@ check('recommended DoD checklist keys', dodKeys.every(k => html.includes(`'${k}'
 check('computeStoryDefinitionOfDone recommendedDoD export', html.includes('recommendedDoD') && html.includes('deriveRecommendedDefinitionOfDone') && html.includes('poReadinessChecklists'));
 check('PO approval localStorage toggle', html.includes('maras.po-approval.v1') && html.includes('toggleStoryPoApproval'));
 check('DoR DoD UI on story cards', html.includes('Definition of Ready / PO review readiness') && html.includes('renderPoReadinessAndRecommendedDoD'));
+check('DoR DoD collapsed in pbi-accordion details', html.includes('class="pbi-accordion sc-compliance-collapsed dor-dod-wrap"') && html.includes('<summary>Definition of Ready / PO review readiness') && html.includes('<summary>Recommended Definition of Done (draft)'));
+check('PBI three questions use click-to-expand accordion', html.includes('Three questions ·') && html.includes('class="pbi-accordion sc-compliance-collapsed"'));
+check('caveman mode default ON with localStorage', html.includes('CAVE_MAN_MODE_CONFIG') && html.includes('maras_caveman_mode_v1') && html.includes('cavemanModeEnabled = true') && html.includes('else cavemanModeEnabled = true') && html.includes('html.maras-caveman') && html.includes('id="caveman-mode-toggle"'));
 check('definition of done doc', fs.existsSync('docs/definition-of-done.md') && fs.readFileSync('docs/definition-of-done.md','utf8').includes('DRAFT_NOT_CONTROLLED'));
 check('hard-fail governance doc', fs.existsSync('docs/hard-fail-output-governance.md') && fs.readFileSync('docs/hard-fail-output-governance.md','utf8').includes('ZERO_UNSUPPORTED_STATEMENTS'));
 check('FINAL_OUTPUT_ORDER schema constant', html.includes("FINAL_OUTPUT_ORDER_SCHEMA = 'maras.final-output-order.v1'"));

@@ -354,6 +354,19 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .dor-dod-item.unmet .dor-mark{color:#b45309}
 .dor-dod-hint{font-size:9px;color:var(--ink4);margin-left:20px}
 .dor-dod-draft{font-size:9px;color:#92400e;margin-top:6px}
+.pbi-accordion{margin:8px 0;border-radius:6px;border:1px solid var(--border);background:#fafbfc;overflow:hidden}
+.pbi-accordion>summary{cursor:pointer;font-size:11px;font-weight:600;color:var(--ink2);padding:10px 12px;list-style:none;line-height:1.4}
+.pbi-accordion>summary::-webkit-details-marker{display:none}
+.pbi-accordion[open]>summary{border-bottom:1px solid var(--border);background:#f8fafc}
+.pbi-accordion .dor-dod-inner,.pbi-accordion>.pbi-body{padding:8px 12px 10px;margin:0;border:0;background:transparent}
+.pbi-accordion.dor-dod-wrap{margin:8px 0}
+/* Caveman mode (default ON): plain-language PBI surface — hide schema-heavy chrome */
+html.maras-caveman .caveman-elide{display:none!important}
+html.maras-caveman .rubric-checks{display:none}
+html.maras-caveman .qc-banner-title{font-size:10px}
+html.maras-caveman .delivery-pkg-sub:not(:first-of-type){display:none}
+html.maras-caveman .rtp-sub{display:none}
+html.maras-caveman .hard-fail-story-hint{display:none}
 .rag-toggle-row{margin:0 0 10px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r2);background:#fff}
 .rag-toggle-lbl{display:flex;align-items:flex-start;gap:8px;font-size:11px;color:var(--ink2);cursor:pointer;line-height:1.45}
 .rag-toggle-lbl input{margin-top:2px;flex-shrink:0}
@@ -1064,6 +1077,11 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
     <div id="mvp-validation" role="alert" aria-live="assertive" tabindex="-1" style="display:none;margin:0 0 10px;padding:10px 12px;border:1px solid #dc2626;border-radius:7px;background:#fef2f2;color:#991b1b;font-size:12px;line-height:1.5"></div>
     <div class="rag-toggle-row" id="rag-toggle-row">
       <label class="rag-toggle-lbl">
+        <input type="checkbox" id="caveman-mode-toggle" aria-describedby="caveman-mode-hint" onchange="setCavemanMode(this.checked)">
+        <span><b>Caveman mode</b> — plain-language cards first; technical/schema detail stays behind expanders. <span class="caveman-elide">Default ON every session.</span></span>
+      </label>
+      <div id="caveman-mode-hint" class="rag-graph-hint caveman-elide" style="display:none">CRS Caveman UI — shortest safe summaries on PBI cards; full trace in Delivery Package &amp; Compliance Details · DRAFT_NOT_CONTROLLED</div>
+      <label class="rag-toggle-lbl" style="margin-top:8px">
         <input type="checkbox" id="rag-graph-toggle" aria-describedby="rag-graph-hint" onchange="setRagGraphMode(this.checked)">
         <span><b>RAG Graph pipeline (beta)</b> — Parse → Retrieve → ReRank → Synthesize → Verify → Replay. Enabled by default; uncheck to use legacy ranking only.</span>
       </label>
@@ -1830,6 +1848,8 @@ function init(){
   ensureValidModel();
   initRagGraphFlag();
   updateRagGraphToggleUI();
+  initCavemanMode();
+  updateCavemanModeUI();
   ensureStoryMapState();
   // Auto-select FDA on first load
   applyFramework('FDA');
@@ -2640,6 +2660,38 @@ const RAG_GRAPH_CONFIG = {
   vectorTopK: 8
 };
 let ragGraphEnabled = true;
+
+/* CAVE_MAN_MODE — CRS plain-language UI (default ON; persists in localStorage) */
+const CAVE_MAN_MODE_CONFIG = { storageKey: 'maras_caveman_mode_v1' };
+let cavemanModeEnabled = true;
+
+function initCavemanMode() {
+  try {
+    const qs = new URLSearchParams(location.search);
+    if (qs.get('caveman') === '1') cavemanModeEnabled = true;
+    else if (qs.get('caveman') === '0') cavemanModeEnabled = false;
+    else {
+      const stored = localStorage.getItem(CAVE_MAN_MODE_CONFIG.storageKey);
+      if (stored === '0') cavemanModeEnabled = false;
+      else if (stored === '1') cavemanModeEnabled = true;
+      else cavemanModeEnabled = true; // default ON when unset
+    }
+  } catch (_e) { cavemanModeEnabled = true; }
+}
+function setCavemanMode(on) {
+  cavemanModeEnabled = !!on;
+  try { localStorage.setItem(CAVE_MAN_MODE_CONFIG.storageKey, cavemanModeEnabled ? '1' : '0'); } catch (_e) {}
+  updateCavemanModeUI();
+}
+function isCavemanMode() { return !!cavemanModeEnabled; }
+function updateCavemanModeUI() {
+  const root = document.documentElement;
+  if (root) root.classList.toggle('maras-caveman', cavemanModeEnabled);
+  const el = document.getElementById('caveman-mode-toggle');
+  if (el) el.checked = cavemanModeEnabled;
+  const hint = document.getElementById('caveman-mode-hint');
+  if (hint) hint.style.display = cavemanModeEnabled ? 'block' : 'none';
+}
 
 function initRagGraphFlag() {
   try {
@@ -4147,22 +4199,29 @@ function renderPoReadinessAndRecommendedDoD(story, index, opts){
   const chain = story.regulatoryTracePipeline || (typeof buildRegulatoryTraceChainForStory === 'function' ? buildRegulatoryTraceChainForStory(story, index) : null);
   const dor = story.definitionOfReady?.poReadiness || derivePoReadinessChecklist(story, chain);
   const dod = story.definitionOfDone?.recommendedDoD || deriveRecommendedDefinitionOfDone(story, index, chain);
+  const dorMet = (dor.items || []).filter(i => i.met).length;
+  const dorTot = (dor.items || []).length;
   const dorRows = (dor.items || []).map(i => `<div class="dor-dod-item ${i.met?'met':'unmet'}"><span class="dor-mark">${i.met?'✓':'○'}</span><span>${escapeHtml(i.label)}</span></div>${opts?.verbose?`<div class="dor-dod-hint">${escapeHtml(i.autoHint || '')}</div>`:''}`).join('');
   const dodRows = (dod.items || []).map(i => `<div class="dor-dod-item ${i.met?'met':'unmet'}"><span class="dor-mark">${i.met?'✓':'○'}</span><span>${escapeHtml(i.label)}</span></div>${opts?.verbose?`<div class="dor-dod-hint">${escapeHtml(i.autoHint || '')}</div>`:''}`).join('');
   const sid = storyStableId(story, index);
   const poToggle = `<label class="dor-dod-item" style="cursor:pointer;margin-top:4px"><input type="checkbox" ${getStoryPoApproval(sid)?'checked':''} onchange="toggleStoryPoApproval('${escapeHtml(sid)}',${index})" /> <span>PO approval recorded (draft toggle — not baselining)</span></label>`;
-  return `<div class="dor-dod-wrap">
-    <div class="dor-dod-k">Definition of Ready / PO review readiness</div>
-    <div class="dor-dod-sub">Business-friendly checklist derived from the trace pipeline (stages 1–16). SME/QA review still required.</div>
-    <div class="dor-dod-list">${dorRows}</div>
-    <div class="dor-dod-draft">${dor.readyForPoReview ? 'PO review readiness: criteria met (draft)' : 'PO review readiness: gaps remain — expand Compliance Details'}</div>
-  </div>
-  <div class="dor-dod-wrap">
-    <div class="dor-dod-k">Recommended Definition of Done (draft)</div>
-    <div class="dor-dod-sub">Story is <em>not</em> marked Done in MARAS — ${dod.autoCriteriaMet}/${dod.autoCriteriaTotal} auto-checks suggest readiness for PO conversation.</div>
-    <div class="dor-dod-list">${dodRows}</div>
-    ${poToggle}
-  </div>`;
+  const dorSummary = `PO readiness: ${dorMet}/${dorTot}${dor.readyForPoReview ? ' · ready (draft)' : ' · gaps'}`;
+  return `<details class="pbi-accordion sc-compliance-collapsed dor-dod-wrap">
+    <summary>Definition of Ready / PO review readiness — ${dorSummary}</summary>
+    <div class="dor-dod-inner">
+      <div class="dor-dod-sub caveman-elide">Business-friendly checklist derived from the trace pipeline (stages 1–16). SME/QA review still required.</div>
+      <div class="dor-dod-list">${dorRows}</div>
+      <div class="dor-dod-draft">${dor.readyForPoReview ? 'PO review readiness: criteria met (draft)' : 'PO review readiness: gaps remain — expand Compliance Details'}</div>
+    </div>
+  </details>
+  <details class="pbi-accordion sc-compliance-collapsed dor-dod-wrap">
+    <summary>Recommended Definition of Done (draft) — ${dod.autoCriteriaMet}/${dod.autoCriteriaTotal} auto-checks</summary>
+    <div class="dor-dod-inner">
+      <div class="dor-dod-sub caveman-elide">Story is <em>not</em> marked Done in MARAS — ${dod.autoCriteriaMet}/${dod.autoCriteriaTotal} auto-checks suggest readiness for PO conversation.</div>
+      <div class="dor-dod-list">${dodRows}</div>
+      ${poToggle}
+    </div>
+  </details>`;
 }
 function computeStoryDefinitionOfReady(story, chain){
   const inv = story.invest||{};
@@ -4777,10 +4836,11 @@ function renderDeliveryPersonaEssentials(pkg, persona){
   const blocks = nums.map(n => {
     const sec = (pkg.sections||[]).find(s => s.num === n);
     if(!sec) return '';
-    return `<div class="delivery-ess-block"><div class="delivery-ess-k">${n}. ${escapeHtml(sec.label)}</div><div class="delivery-ess-body">${escapeHtml(formatDeliverySectionBody(sec))}</div></div>`;
+    return `<details class="pbi-accordion sc-compliance-collapsed delivery-ess-block"><summary>${n}. ${escapeHtml(sec.label)}</summary><div class="delivery-ess-body">${escapeHtml(formatDeliverySectionBody(sec))}</div></details>`;
   }).join('');
   const labels = { 'product-owner':'PO essentials', developer:'Dev essentials', tester:'Tester essentials', 'product-manager':'PM / Agile Coach', 'system-owner':'System Owner', 'rte-project-manager':'RTE / Project Manager' };
-  return `<div class="delivery-ess-block"><div class="delivery-ess-k">${escapeHtml(labels[persona]||persona)}</div>${blocks}</div>`;
+  const label = labels[persona] || persona;
+  return `<details class="pbi-accordion sc-compliance-collapsed delivery-ess-block"><summary>${escapeHtml(label)} · ${nums.length} section(s)</summary>${blocks}</details>`;
 }
 function renderFinalOutputOrderAccordion(pkg, opts){
   const rows = (pkg.sections||[]).map(sec => {
@@ -6264,20 +6324,26 @@ function renderPbiSectionBody(value,emptyLabel){
 function renderPbiThreeQuestions(pbi,opts={}){
   const incomplete=!computePbiComplete(pbi);
   const missing=[];
-  if(!isPbiSectionFilled(pbi?.poUnderstands)) missing.push('Product Owner understands');
-  if(!isPbiSectionFilled(pbi?.devBuilds)) missing.push('Developer builds');
-  if(!isPbiSectionFilled(pbi?.qaValidates)) missing.push('QA validates');
+  if(!isPbiSectionFilled(pbi?.poUnderstands)) missing.push('PO');
+  if(!isPbiSectionFilled(pbi?.devBuilds)) missing.push('Dev');
+  if(!isPbiSectionFilled(pbi?.qaValidates)) missing.push('QA');
   const badge=incomplete?`<div class="pbi-incomplete" data-pbi-incomplete="1">⚠ Incomplete requirement — ${missing.join(', ')||'one or more sections'} need elaboration before baselining.</div>`:'';
-  return `<div class="pbi-body" data-pbi-complete="${incomplete?'false':'true'}">
-    ${opts.showTitle!==false?`<div class="pbi-card-title">Product Backlog Item</div>`:''}
+  const filled=3-missing.length;
+  const summary=`Three questions · ${filled}/3${incomplete?' — '+missing.join(', ')+' open':''}`;
+  const body=`<div class="pbi-body" data-pbi-complete="${incomplete?'false':'true'}">
+    ${opts.showTitle!==false?`<div class="pbi-card-title caveman-elide">Product Backlog Item</div>`:''}
     <div class="pbi-h">Product Owner understands</div>
     ${renderPbiSectionBody(pbi?.poUnderstands,'Incomplete — PO business value, slice, and acceptance from business lens not recorded.')}
-  <div class="pbi-h">Developer builds</div>
+    <div class="pbi-h">Developer builds</div>
     ${renderPbiSectionBody(pbi?.devBuilds,'Incomplete — concrete screens, services, APIs, data, or behaviors not specified.')}
     <div class="pbi-h">QA validates</div>
     ${renderPbiSectionBody(pbi?.qaValidates,'Incomplete — test themes, pass/fail checks, or negative paths not defined.')}
     ${badge}
   </div>`;
+  return `<details class="pbi-accordion sc-compliance-collapsed">
+    <summary>${summary}</summary>
+    ${body}
+  </details>`;
 }
 function renderPbiComplianceDetailsAssure(s,i,bil,qgHtml,ragPipeHtml,boiHtml,investHtml,rubHtml,sourceUrl){
   const ac=(s.ac||s.acceptanceCriteria||[]);
