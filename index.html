@@ -524,6 +524,36 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .compare-view{display:none;padding:16px 20px 48px;max-width:1180px;margin:0 auto;width:100%}
 .readiness-view{display:none;padding:16px 20px 48px;max-width:1180px;margin:0 auto;width:100%}
 .ctd-view{display:none;padding:16px 20px 48px;max-width:1180px;margin:0 auto;width:100%}
+.storymap-view{display:none;padding:16px 20px 48px;max-width:1240px;margin:0 auto;width:100%}
+.sm-banner{font-size:11px;line-height:1.45;background:var(--amber-t);border:1px solid rgba(146,64,14,.2);border-radius:var(--r);padding:9px 11px;margin-bottom:12px;color:var(--ink2)}
+.sm-toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+.sm-toolbar select,.sm-toolbar input{font-size:11px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r);font-family:inherit;min-width:0}
+.sm-board{display:flex;gap:10px;overflow-x:auto;padding-bottom:8px;align-items:flex-start}
+.sm-column{min-width:220px;max-width:280px;flex:0 0 auto;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:8px}
+.sm-column-h{font-size:11px;font-weight:700;color:var(--ink);margin-bottom:6px;text-transform:uppercase;letter-spacing:.3px}
+.sm-cap{margin-bottom:8px;border:1px dashed var(--border);border-radius:var(--r);padding:6px;background:#fff}
+.sm-cap-t{font-size:10px;font-weight:700;color:var(--teal);margin-bottom:4px}
+.sm-story{border:1px solid var(--border);border-radius:var(--r);background:#fff;padding:7px;margin-bottom:6px;cursor:grab;font-size:10px;line-height:1.35}
+.sm-story.dragging{opacity:.45}
+.sm-story.over{outline:2px dashed var(--blue)}
+.sm-story-t{font-weight:700;color:var(--ink);margin-bottom:3px}
+.sm-story-meta{font-size:9px;color:var(--ink4)}
+.sm-story input,.sm-story textarea,.sm-story select{width:100%;box-sizing:border-box;font-size:10px;margin-top:4px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;font-family:inherit}
+.sm-story textarea{min-height:44px;resize:vertical}
+.sm-status-planned{border-left:3px solid var(--blue)}
+.sm-status-deferred{border-left:3px solid var(--ink4)}
+.sm-status-blocked{border-left:3px solid var(--red)}
+.sm-status-completed{border-left:3px solid var(--green)}
+.sm-trace-table{width:100%;border-collapse:collapse;font-size:10px}
+.sm-trace-table th,.sm-trace-table td{border:1px solid var(--border);padding:5px 7px;text-align:left;vertical-align:top}
+.sm-trace-table th{background:var(--bg);font-weight:700}
+.sm-intent-card{border:1px solid var(--border);border-radius:var(--r);background:#fff;padding:10px;margin-bottom:10px}
+.sm-intent-card input,.sm-intent-card textarea{width:100%;box-sizing:border-box;font-size:11px;padding:6px 8px;border:1px solid var(--border);border-radius:var(--r);font-family:inherit;margin-top:4px}
+.sm-hier-row{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 12px}
+.sm-hier-chip{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.35px;padding:4px 8px;border-radius:999px;background:var(--blue-t);color:var(--blue);border:1px solid rgba(37,99,235,.2)}
+.sm-integrate{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.sm-integrate button{font-size:10px;padding:5px 9px;border-radius:var(--r);border:1px solid var(--border);background:#fff;cursor:pointer;font-family:inherit}
+.sm-integrate button:hover{border-color:var(--blue);color:var(--blue)}
 .rd-gap-row{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--r);margin-bottom:6px;background:#fff}
 .rd-gap-row.warn{border-color:rgba(146,64,14,.35);background:var(--amber-t)}
 .rd-gap-row.fail{border-color:rgba(220,38,38,.35);background:var(--red-t)}
@@ -613,6 +643,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
     <button class="nav-tab" id="ntab-compare" onclick="goTab('compare',this)">Global Compare</button>
     <button class="nav-tab" id="ntab-readiness" onclick="goTab('readiness',this)">Readiness</button>
     <button class="nav-tab" id="ntab-ctd" onclick="goTab('ctd',this)">CTD/eCTD Engine</button>
+    <button class="nav-tab" id="ntab-storymap" onclick="goTab('storymap',this)">Story Map</button>
     <button class="nav-tab" id="ntab-saved" onclick="goTab('saved',this)">Saved Packages</button>
   </div>
   <div class="nav-right">
@@ -1163,6 +1194,32 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
   </div>
 </div>
 
+<!-- STORY MAP WORKSPACE — delivery backlog / requirements engineering -->
+<div id="view-storymap" class="storymap-view">
+  <div class="assurance-hero">
+    <div class="assurance-kicker">Delivery backlog · Requirements engineering</div>
+    <div class="assurance-title">Story Map workspace</div>
+    <div class="assurance-sub">Organise intent, backbone activities, capabilities, user stories, and acceptance evidence for programme delivery. Trace links to Assure PBIs, SOP mapper, inspection packs, compare deltas, CTD sections, and validation artefacts — without re-running those engines.</div>
+    <div class="cmp-graph">Intent → <b>Backbone</b> → Capability/Goal → User Story → Acceptance Evidence · Release slices · Trace links (DRAFT_NOT_CONTROLLED)</div>
+    <div id="story-map-draft-banner" class="sm-banner"><b>DRAFT_NOT_CONTROLLED</b> — Story map content is an internal delivery backlog aid only. SME/QA/RA review required before baselining; not submission-ready or a compliance decision.</div>
+    <div class="assurance-actions">
+      <button class="assurance-btn" type="button" onclick="exportStoryMapJson()">Export JSON</button>
+      <button class="assurance-btn secondary" type="button" onclick="exportStoryMapCsv()">Export CSV</button>
+      <button class="assurance-btn secondary" type="button" onclick="exportStoryMapPng()">Export PNG</button>
+      <button class="assurance-btn secondary" type="button" onclick="exportStoryMapPdf()">Export PDF</button>
+      <button class="assurance-btn secondary" type="button" onclick="storyMapResetSample()">Reset sample map</button>
+    </div>
+    <div class="metric-row" id="story-map-metrics"></div>
+  </div>
+  <div class="assurance-section">
+    <div class="assurance-section-h">
+      <div class="assurance-section-t">Workshop board</div>
+      <div class="assurance-section-s">Template · grouping · view · release meaning · drag to reorder</div>
+    </div>
+    <div class="assurance-body" id="story-map-root"></div>
+  </div>
+</div>
+
 </div><!-- rpanel -->
 </div><!-- layout -->
 
@@ -1604,7 +1661,7 @@ const compareMarketSel=new Set(['US','EU','UK','INT','HIPAA','GDPR']);
 let demoMode=true,selItems=new Set(),selCatsSet=new Set(),selDomain='',selApp='';
 let selFrameworks=new Set(['FDA']);
 let selJurisdictions=new Set(['United States']);
-let selModel='claude',apiKeys={},sbDocs=[],reqFiles=[],ctdHouseDocs=[],ctdEngineResult=null,allStories=[],running=false;
+let selModel='claude',apiKeys={},sbDocs=[],reqFiles=[],ctdHouseDocs=[],ctdEngineResult=null,allStories=[],running=false,storyMapState=null,storyMapDragId=null;
 const INGESTED_SOURCE_META={};
 const INGEST_MAX_BYTES=2*1024*1024;
 const INGEST_MAX_SOURCES=8;
@@ -1628,6 +1685,7 @@ function init(){
   ensureValidModel();
   initRagGraphFlag();
   updateRagGraphToggleUI();
+  ensureStoryMapState();
   // Auto-select FDA on first load
   applyFramework('FDA');
   updateMainApiKeyCard();
@@ -2163,7 +2221,7 @@ function restoreSessionKeys(){
 
 /* ─── TABS ──────────────────────────────────────────────────────── */
 function goTab(t,btn){
-  ['gen','results','saved','assurance','compare','readiness','ctd'].forEach(id=>{
+  ['gen','results','saved','assurance','compare','readiness','ctd','storymap'].forEach(id=>{
     const target=document.getElementById('view-'+id);
     if(target) target.style.display=id===t?'block':'none';
   });
@@ -2172,6 +2230,7 @@ function goTab(t,btn){
   if(t==='compare') refreshCompareView(true);
   if(t==='readiness') buildReadinessView();
   if(t==='ctd') buildCtdEngineView();
+  if(t==='storymap') buildStoryMapView();
 }
 
 /* ─── FILE UPLOAD ────────────────────────────────────────────────── */
@@ -5484,6 +5543,529 @@ function pushCompareToAssure(){
   setStatus('idle','Global compare gaps pushed to Assure — refine outcome and generate package');
 }
 
+/* STORY MAP — delivery backlog / requirements engineering workspace */
+const STORY_MAP_STORAGE_KEY='maras.story-map.v1';
+const STORY_MAP_TEMPLATES=[
+  {id:'regulatory-compliance',label:'Regulatory/Compliance'},
+  {id:'business-process',label:'Business Process'},
+  {id:'outcome-oriented',label:'Outcome-Oriented'},
+  {id:'classic-user-journey',label:'Classic User Journey'},
+  {id:'feature-breakdown',label:'Feature Breakdown'},
+  {id:'role-based',label:'Role-Based'},
+  {id:'component-technical',label:'Component/Technical Module'},
+  {id:'customer-value-stream',label:'Customer Value Stream'},
+  {id:'legacy-preservation',label:'Legacy Preservation'},
+  {id:'enterprise-migration',label:'Enterprise Migration'},
+  {id:'pi-planning',label:'PI Planning'}
+];
+const STORY_MAP_HIERARCHY=['Intent','Backbone','Capability/Goal','User Story','Acceptance Evidence'];
+const STORY_MAP_RELEASE_MEANINGS=[
+  {id:'regulatory-deadline',label:'Regulatory deadline'},
+  {id:'mvp-value-increment',label:'MVP/value increment'},
+  {id:'moscow',label:'MoSCoW'},
+  {id:'migration-wave',label:'Migration wave'},
+  {id:'technical-dependency',label:'Technical dependency'},
+  {id:'pi-objective',label:'PI objective'},
+  {id:'outcome-increment',label:'Outcome increment'}
+];
+const STORY_MAP_STATUSES=['planned','deferred','blocked','completed'];
+const STORY_MAP_GROUP_MODES=[
+  {id:'persona',label:'Persona'},
+  {id:'process',label:'Process'},
+  {id:'outcome',label:'Outcome'},
+  {id:'feature',label:'Feature'},
+  {id:'technical-module',label:'Technical module'}
+];
+const STORY_MAP_VIEW_MODES=[
+  {id:'workshop',label:'Workshop story-map'},
+  {id:'release',label:'Release slice'},
+  {id:'regulatory-trace',label:'Regulatory traceability'},
+  {id:'outcome-okr',label:'Outcome/OKR'},
+  {id:'migration-readiness',label:'Migration readiness'}
+];
+function storyMapUid(prefix='sm'){
+  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,7)}`;
+}
+function blankStory(overrides={}){
+  return {
+    id:storyMapUid('story'),
+    title:'New user story',
+    owner:'',
+    outcomeOrObligation:'',
+    acceptanceCriteria:'',
+    evidenceRequired:'',
+    acceptanceEvidence:'',
+    risk:'',
+    dependency:'',
+    sourceControlRef:'',
+    status:'planned',
+    persona:'',
+    process:'',
+    outcome:'',
+    feature:'',
+    technicalModule:'',
+    releaseSliceId:'',
+    order:0,
+    links:{
+      regulation:null,sop:null,gap:null,inspection:null,compare:null,ctd:null,readinessGate:null,pbi:null,evidenceRequest:null
+    },
+    ...overrides
+  };
+}
+function defaultStoryMapState(){
+  const bb1={id:storyMapUid('bb'),title:'Regulatory alignment',order:0,capabilities:[
+    {id:storyMapUid('cap'),title:'Scope & obligations',order:0,stories:[
+      blankStory({title:'Capture obligation in backlog',outcomeOrObligation:'Map authority clause to delivery item',acceptanceCriteria:'Story references traceable source id',sourceControlRef:'REQ-DRAFT',process:'Intake'})
+    ]},
+    {id:storyMapUid('cap'),title:'Evidence & acceptance',order:1,stories:[
+      blankStory({title:'Define acceptance evidence',acceptanceEvidence:'Draft evidence request linked from inspection pack',status:'planned',feature:'Assurance'})
+    ]}
+  ]};
+  return {
+    schema:'maras.story-map.v1',
+    schemaVersion:1,
+    packageStatus:'DRAFT_NOT_CONTROLLED',
+    updatedAt:new Date().toISOString(),
+    template:'regulatory-compliance',
+    groupBy:'process',
+    viewMode:'workshop',
+    intent:{title:'Programme intent',notes:'Describe outcome-focused delivery goal — not a regulatory knowledge archive.'},
+    backbones:[bb1],
+    releaseSlices:[{id:storyMapUid('rel'),name:'Slice 1',meaning:'mvp-value-increment',storyIds:[],notes:''}]
+  };
+}
+function normalizeStoryMapState(raw){
+  const base=defaultStoryMapState();
+  if(!raw||typeof raw!=='object') return base;
+  const out={...base,...raw,schema:'maras.story-map.v1'};
+  if(!Array.isArray(out.backbones)||!out.backbones.length) out.backbones=base.backbones;
+  if(!out.intent) out.intent=base.intent;
+  if(!Array.isArray(out.releaseSlices)) out.releaseSlices=base.releaseSlices;
+  out.backbones.forEach(bb=>{
+    bb.capabilities=bb.capabilities||[];
+    bb.capabilities.forEach(cap=>{
+      cap.stories=(cap.stories||[]).map(s=>({...blankStory(),...s,links:{...blankStory().links,...(s.links||{})}}));
+    });
+  });
+  return out;
+}
+function ensureStoryMapState(){
+  if(storyMapState) return storyMapState;
+  try{
+    const raw=JSON.parse(localStorage.getItem(STORY_MAP_STORAGE_KEY)||'null');
+    storyMapState=normalizeStoryMapState(raw);
+  }catch{
+    storyMapState=defaultStoryMapState();
+  }
+  return storyMapState;
+}
+function saveStoryMapState(){
+  ensureStoryMapState();
+  storyMapState.updatedAt=new Date().toISOString();
+  try{localStorage.setItem(STORY_MAP_STORAGE_KEY,JSON.stringify(storyMapState));}catch(_e){}
+}
+function allStoryMapStories(){
+  const stories=[];
+  ensureStoryMapState();
+  (storyMapState.backbones||[]).forEach(bb=>{
+    (bb.capabilities||[]).forEach(cap=>{
+      (cap.stories||[]).forEach(s=>stories.push({...s,backboneId:bb.id,capabilityId:cap.id,backboneTitle:bb.title,capabilityTitle:cap.title}));
+    });
+  });
+  return stories.sort((a,b)=>(a.order||0)-(b.order||0));
+}
+function findStoryLocation(storyId){
+  ensureStoryMapState();
+  for(const bb of storyMapState.backbones){
+    for(const cap of bb.capabilities||[]){
+      const idx=(cap.stories||[]).findIndex(s=>s.id===storyId);
+      if(idx>=0) return {backbone:bb,capability:cap,index:idx,story:cap.stories[idx]};
+    }
+  }
+  return null;
+}
+function buildStoryMapRecord(){
+  ensureStoryMapState();
+  return {...storyMapState,generatedAt:new Date().toISOString(),hierarchy:STORY_MAP_HIERARCHY,templates:STORY_MAP_TEMPLATES.map(t=>t.id)};
+}
+function storyMapIntegrationOptions(){
+  const opts={regulation:[],sop:[],gap:[],inspection:[],compare:[],ctd:[],readinessGate:[],pbi:[],evidenceRequest:[]};
+  try{
+    [...selItems].forEach(id=>opts.regulation.push({id,value:`reg:${id}`,label:`Library · ${LIB_ITEM_BY_ID[id]||id}`}));
+  }catch(_e){}
+  try{
+    const sop=mapSopToRegulations();
+    (sop.mappings||[]).slice(0,40).forEach((m,i)=>{
+      opts.sop.push({id:`sop-${i}`,value:`sop:${m.regulation}`,label:`SOP map · ${m.regulation} (${m.mapped?'mapped':'gap'})`});
+      if(!m.mapped) opts.gap.push({id:`gap-${i}`,value:`gap:${m.regulation}`,label:`Gap · ${m.title||m.regulation}`});
+    });
+  }catch(_e){}
+  try{
+    const insp=buildInspectionReadinessPack(mapSopToRegulations());
+    (insp.evidenceRequests||[]).slice(0,30).forEach((e,i)=>opts.evidenceRequest.push({id:`ev-${i}`,value:`evidence:${e.id||i}`,label:`Evidence · ${e.title||e.need||'request'}`}));
+    (insp.blockingGaps||[]).slice(0,20).forEach((g,i)=>opts.gap.push({id:`insp-gap-${i}`,value:`insp-gap:${g.id||i}`,label:`Inspection gap · ${g.title||g.gap||'item'}`}));
+    opts.inspection.push({id:'insp-pack',value:'insp:pack',label:'Inspection readiness pack (last snapshot)'});
+  }catch(_e){}
+  try{
+    buildCompareRows().filter(r=>r.diff?.deltas?.length).slice(0,15).forEach((r,i)=>{
+      opts.compare.push({id:`cmp-${i}`,value:`compare:${r.topic.id}`,label:`Compare · ${r.topic.label}`});
+    });
+  }catch(_e){}
+  try{
+    CTD_MODULE_32S.forEach(sec=>opts.ctd.push({id:sec.code,value:`ctd:${sec.code}`,label:`CTD ${sec.code} · ${sec.title}`}));
+  }catch(_e){}
+  if(typeof IMPLEMENTATION_READINESS_GATE_1110E!=='undefined'){
+    opts.readinessGate.push({id:'irg',value:'gate:1110e',label:'Implementation readiness gate · §11.10(e)'});
+  }
+  (allStories||[]).concat(H.stories||[]).slice(0,40).forEach(s=>{
+    opts.pbi.push({id:s.id||storyMapUid('pbi'),value:`pbi:${s.id}`,label:`PBI · ${s.id} · ${(s.title||'story').slice(0,48)}`});
+  });
+  if(!opts.pbi.length) opts.pbi.push({id:'assure-none',value:'',label:'(Run Assure to link PBIs)'});
+  return opts;
+}
+function storyMapLinkSelect(story,linkKey,opts){
+  const cur=story.links?.[linkKey]||'';
+  const list=opts[linkKey]||[];
+  const options=['<option value="">— link —</option>'].concat(list.map(o=>`<option value="${escapeHtml(o.value)}"${o.value===cur?' selected':''}>${escapeHtml(o.label)}</option>`));
+  return `<select onchange="storyMapSetLink('${story.id}','${linkKey}',this.value)">${options.join('')}</select>`;
+}
+function storyMapSetField(storyId,field,value){
+  const loc=findStoryLocation(storyId); if(!loc) return;
+  loc.story[field]=value;
+  saveStoryMapState();
+  if(['title','status','owner'].includes(field)) buildStoryMapView();
+}
+function storyMapSetLink(storyId,linkKey,value){
+  const loc=findStoryLocation(storyId); if(!loc) return;
+  loc.story.links=loc.story.links||{};
+  loc.story.links[linkKey]=value||null;
+  saveStoryMapState();
+}
+function storyMapAddBackbone(){
+  ensureStoryMapState();
+  storyMapState.backbones.push({id:storyMapUid('bb'),title:'New backbone',order:storyMapState.backbones.length,capabilities:[]});
+  saveStoryMapState(); buildStoryMapView();
+}
+function storyMapAddCapability(backboneId){
+  const bb=storyMapState.backbones.find(b=>b.id===backboneId); if(!bb) return;
+  bb.capabilities=bb.capabilities||[];
+  bb.capabilities.push({id:storyMapUid('cap'),title:'New capability',order:bb.capabilities.length,stories:[]});
+  saveStoryMapState(); buildStoryMapView();
+}
+function storyMapAddStory(capabilityId){
+  ensureStoryMapState();
+  for(const bb of storyMapState.backbones){
+    const cap=(bb.capabilities||[]).find(c=>c.id===capabilityId);
+    if(cap){
+      cap.stories=cap.stories||[];
+      const s=blankStory({order:cap.stories.length});
+      cap.stories.push(s);
+      saveStoryMapState(); buildStoryMapView(); return;
+    }
+  }
+}
+function storyMapDeleteStory(storyId){
+  const loc=findStoryLocation(storyId); if(!loc) return;
+  loc.capability.stories.splice(loc.index,1);
+  saveStoryMapState(); buildStoryMapView();
+}
+function storyMapRenameBackbone(id,value){
+  const bb=storyMapState.backbones.find(b=>b.id===id); if(bb){bb.title=value; saveStoryMapState();}
+}
+function storyMapRenameCapability(id,value){
+  for(const bb of storyMapState.backbones){
+    const cap=(bb.capabilities||[]).find(c=>c.id===id);
+    if(cap){cap.title=value; saveStoryMapState(); return;}
+  }
+}
+function storyMapSetMeta(field,value){
+  ensureStoryMapState();
+  storyMapState[field]=value;
+  saveStoryMapState();
+  buildStoryMapView();
+}
+function storyMapSetIntent(field,value){
+  ensureStoryMapState();
+  storyMapState.intent=storyMapState.intent||{};
+  storyMapState.intent[field]=value;
+  saveStoryMapState();
+}
+function storyMapAssignRelease(storyId,releaseId){
+  storyMapSetField(storyId,'releaseSliceId',releaseId);
+  const slice=storyMapState.releaseSlices.find(r=>r.id===releaseId);
+  if(slice&&!slice.storyIds.includes(storyId)) slice.storyIds.push(storyId);
+  saveStoryMapState();
+}
+function storyMapAddReleaseSlice(){
+  ensureStoryMapState();
+  storyMapState.releaseSlices.push({id:storyMapUid('rel'),name:`Slice ${storyMapState.releaseSlices.length+1}`,meaning:'mvp-value-increment',storyIds:[],notes:''});
+  saveStoryMapState(); buildStoryMapView();
+}
+function storyMapDragStart(ev,storyId){storyMapDragId=storyId; ev.dataTransfer.setData('text/plain',storyId); ev.currentTarget.classList.add('dragging');}
+function storyMapDragEnd(ev){ev.currentTarget.classList.remove('dragging'); storyMapDragId=null;}
+function storyMapDragOver(ev){ev.preventDefault(); ev.currentTarget.classList.add('over');}
+function storyMapDragLeave(ev){ev.currentTarget.classList.remove('over');}
+function storyMapDropOnStory(ev,targetId){
+  ev.preventDefault();
+  ev.currentTarget.classList.remove('over');
+  const srcId=storyMapDragId||ev.dataTransfer.getData('text/plain');
+  if(!srcId||srcId===targetId) return;
+  const src=findStoryLocation(srcId), tgt=findStoryLocation(targetId);
+  if(!src||!tgt) return;
+  const moved=src.capability.stories.splice(src.index,1)[0];
+  tgt.capability.stories.splice(tgt.index,0,moved);
+  tgt.capability.stories.forEach((s,i)=>{s.order=i;});
+  saveStoryMapState(); buildStoryMapView();
+}
+function storyMapDropOnCap(ev,capabilityId){
+  ev.preventDefault();
+  const srcId=storyMapDragId||ev.dataTransfer.getData('text/plain');
+  const src=findStoryLocation(srcId);
+  if(!src) return;
+  for(const bb of storyMapState.backbones){
+    const cap=(bb.capabilities||[]).find(c=>c.id===capabilityId);
+    if(cap){
+      const moved=src.capability.stories.splice(src.index,1)[0];
+      cap.stories=cap.stories||[];
+      cap.stories.push(moved);
+      cap.stories.forEach((s,i)=>{s.order=i;});
+      saveStoryMapState(); buildStoryMapView(); return;
+    }
+  }
+}
+function storyMapImportPbis(){
+  const pbis=(allStories||[]).concat(H.stories||[]);
+  if(!pbis.length){alert('No Assure PBIs in session — run Create Package on Assure tab first.'); return;}
+  ensureStoryMapState();
+  let bb=storyMapState.backbones[0];
+  if(!bb){bb={id:storyMapUid('bb'),title:'Assure import',order:0,capabilities:[]}; storyMapState.backbones.push(bb);}
+  let cap=bb.capabilities?.[0];
+  if(!cap){cap={id:storyMapUid('cap'),title:'Imported PBIs',order:0,stories:[]}; bb.capabilities=[cap];}
+  pbis.forEach((p,i)=>{
+    cap.stories.push(blankStory({
+      title:p.title||p.id,
+      owner:'',
+      outcomeOrObligation:p.businessOutcome||p.regulation||'',
+      acceptanceCriteria:p.accept?.pass_fail||'',
+      evidenceRequired:(p.evidence||[]).join('; '),
+      sourceControlRef:`${p.regulation||''} ${p.section||''}`.trim(),
+      links:{...blankStory().links,pbi:`pbi:${p.id}`}
+    }));
+  });
+  saveStoryMapState(); buildStoryMapView();
+  setStatus('idle',`Imported ${pbis.length} PBIs as draft story-map items — trace links preserved`);
+}
+function storyMapImportSopGaps(){
+  const sop=mapSopToRegulations();
+  const gaps=(sop.mappings||[]).filter(m=>!m.mapped).slice(0,12);
+  if(!gaps.length){alert('No SOP gaps detected — add library selection and SOP text on Readiness tab.'); return;}
+  ensureStoryMapState();
+  const capId=storyMapUid('cap');
+  storyMapState.backbones.push({id:storyMapUid('bb'),title:'SOP gap backlog',order:storyMapState.backbones.length,capabilities:[{
+    id:capId,title:'Readiness gaps',order:0,stories:gaps.map(m=>blankStory({
+      title:`Close SOP gap · ${m.title||m.regulation}`,
+      outcomeOrObligation:m.regulation,
+      acceptanceCriteria:m.suggestedSopLink||'Map internal SOP',
+      status:'blocked',
+      process:'SOP mapper',
+      links:{sop:`sop:${m.regulation}`,gap:`gap:${m.regulation}`,regulation:null}
+    }))
+  }]});
+  saveStoryMapState(); buildStoryMapView();
+}
+function storyMapImportCompareDeltas(){
+  const rows=buildCompareRows().filter(r=>r.diff?.highDivergence||r.diff?.deltas?.length).slice(0,8);
+  if(!rows.length){alert('No compare deltas — open Global Compare and select markets.'); return;}
+  ensureStoryMapState();
+  const stories=rows.map(r=>blankStory({
+    title:`Harmonise · ${r.topic.label}`,
+    outcomeOrObligation:r.topic.label,
+    acceptanceCriteria:strategicImplication(r),
+    process:'Global compare',
+    links:{compare:`compare:${r.topic.id}`}
+  }));
+  storyMapState.backbones.push({id:storyMapUid('bb'),title:'Cross-market deltas',order:storyMapState.backbones.length,capabilities:[{id:storyMapUid('cap'),title:'Compare backlog',order:0,stories}]});
+  saveStoryMapState(); buildStoryMapView();
+}
+function storyMapResetSample(){storyMapState=defaultStoryMapState(); saveStoryMapState(); buildStoryMapView();}
+function renderStoryCard(story,opts){
+  const relOpts=(storyMapState.releaseSlices||[]).map(r=>`<option value="${r.id}"${story.releaseSliceId===r.id?' selected':''}>${escapeHtml(r.name)}</option>`).join('');
+  return `<div class="sm-story sm-status-${escapeHtml(story.status||'planned')}" draggable="true" ondragstart="storyMapDragStart(event,'${story.id}')" ondragend="storyMapDragEnd(event)" ondragover="storyMapDragOver(event)" ondragleave="storyMapDragLeave(event)" ondrop="storyMapDropOnStory(event,'${story.id}')">
+    <div class="sm-story-t"><input value="${escapeHtml(story.title)}" onchange="storyMapSetField('${story.id}','title',this.value)" aria-label="Story title"></div>
+    <div class="sm-story-meta">Status <select onchange="storyMapSetField('${story.id}','status',this.value)">${STORY_MAP_STATUSES.map(s=>`<option${s===story.status?' selected':''}>${s}</option>`).join('')}</select>
+    Release <select onchange="storyMapAssignRelease('${story.id}',this.value)"><option value="">—</option>${relOpts}</select></div>
+    <label>Owner</label><input value="${escapeHtml(story.owner)}" onchange="storyMapSetField('${story.id}','owner',this.value)">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:4px">
+      <div><label>Persona</label><input value="${escapeHtml(story.persona)}" onchange="storyMapSetField('${story.id}','persona',this.value)"></div>
+      <div><label>Process</label><input value="${escapeHtml(story.process)}" onchange="storyMapSetField('${story.id}','process',this.value)"></div>
+      <div><label>Outcome</label><input value="${escapeHtml(story.outcome)}" onchange="storyMapSetField('${story.id}','outcome',this.value)"></div>
+      <div><label>Feature</label><input value="${escapeHtml(story.feature)}" onchange="storyMapSetField('${story.id}','feature',this.value)"></div>
+      <div style="grid-column:1/-1"><label>Technical module</label><input value="${escapeHtml(story.technicalModule)}" onchange="storyMapSetField('${story.id}','technicalModule',this.value)"></div>
+    </div>
+    <label>Outcome / obligation</label><textarea onchange="storyMapSetField('${story.id}','outcomeOrObligation',this.value)">${escapeHtml(story.outcomeOrObligation)}</textarea>
+    <label>Acceptance criteria</label><textarea onchange="storyMapSetField('${story.id}','acceptanceCriteria',this.value)">${escapeHtml(story.acceptanceCriteria)}</textarea>
+    <label>Evidence required</label><textarea onchange="storyMapSetField('${story.id}','evidenceRequired',this.value)">${escapeHtml(story.evidenceRequired)}</textarea>
+    <label>Acceptance evidence</label><textarea onchange="storyMapSetField('${story.id}','acceptanceEvidence',this.value)">${escapeHtml(story.acceptanceEvidence)}</textarea>
+    <label>Risk</label><input value="${escapeHtml(story.risk)}" onchange="storyMapSetField('${story.id}','risk',this.value)">
+    <label>Dependency</label><input value="${escapeHtml(story.dependency)}" onchange="storyMapSetField('${story.id}','dependency',this.value)">
+    <label>Source / control ref</label><input value="${escapeHtml(story.sourceControlRef)}" onchange="storyMapSetField('${story.id}','sourceControlRef',this.value)">
+    <label>Trace links</label>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:4px">
+      ${['regulation','sop','gap','inspection','compare','ctd','readinessGate','pbi','evidenceRequest'].map(k=>`<div>${k}: ${storyMapLinkSelect(story,k,opts)}</div>`).join('')}
+    </div>
+    <button type="button" style="margin-top:6px;font-size:9px" onclick="storyMapDeleteStory('${story.id}')">Remove story</button>
+  </div>`;
+}
+function storyMapGroupFieldKey(){
+  const map={persona:'persona',process:'process',outcome:'outcome',feature:'feature','technical-module':'technicalModule'};
+  return map[storyMapState.groupBy]||'process';
+}
+function renderStoryMapGroupedColumns(opts){
+  const field=storyMapGroupFieldKey();
+  const stories=allStoryMapStories();
+  const groups={};
+  stories.forEach(s=>{const k=(s[field]||'').trim()||'Unassigned'; (groups[k]=groups[k]||[]).push(s);});
+  return Object.entries(groups).map(([g,list])=>`
+    <div class="sm-column"><div class="sm-column-h">${escapeHtml(g)}</div>
+      ${list.map(s=>renderStoryCard(s,opts)).join('')}
+    </div>`).join('');
+}
+function renderStoryMapWorkshop(opts){
+  return (storyMapState.backbones||[]).sort((a,b)=>(a.order||0)-(b.order||0)).map(bb=>`
+    <div class="sm-column">
+      <div class="sm-column-h"><input value="${escapeHtml(bb.title)}" onchange="storyMapRenameBackbone('${bb.id}',this.value)" style="width:100%;font-weight:700;border:none;background:transparent;font-size:11px"></div>
+      <button type="button" class="assurance-btn secondary" style="font-size:9px;padding:4px 8px;margin-bottom:6px" onclick="storyMapAddCapability('${bb.id}')">+ Capability</button>
+      ${(bb.capabilities||[]).sort((a,b)=>(a.order||0)-(b.order||0)).map(cap=>`
+        <div class="sm-cap" ondragover="storyMapDragOver(event)" ondragleave="storyMapDragLeave(event)" ondrop="storyMapDropOnCap(event,'${cap.id}')">
+          <div class="sm-cap-t"><input value="${escapeHtml(cap.title)}" onchange="storyMapRenameCapability('${cap.id}',this.value)" style="width:100%;border:none;background:transparent;font-size:10px;font-weight:700"></div>
+          ${(cap.stories||[]).map(s=>renderStoryCard(s,opts)).join('')}
+          <button type="button" style="font-size:9px" onclick="storyMapAddStory('${cap.id}')">+ Story</button>
+        </div>`).join('')}
+    </div>`).join('');
+}
+function renderStoryMapRelease(){
+  const stories=allStoryMapStories();
+  return (storyMapState.releaseSlices||[]).map(sl=>{
+    const inSlice=stories.filter(s=>s.releaseSliceId===sl.id||sl.storyIds?.includes(s.id));
+    const meaning=STORY_MAP_RELEASE_MEANINGS.find(m=>m.id===sl.meaning)?.label||sl.meaning;
+    return `<div class="assurance-section" style="margin-bottom:10px"><div class="assurance-section-h"><div class="assurance-section-t">${escapeHtml(sl.name)}</div><div class="assurance-section-s">${escapeHtml(meaning)} · ${inSlice.length} stories</div></div><div class="assurance-body">${inSlice.map(s=>`<div class="rd-gap-row"><div><b>${escapeHtml(s.title)}</b><div class="cmp-req">${escapeHtml(s.outcomeOrObligation)} · ${escapeHtml(s.status)}</div></div></div>`).join('')||'<div class="assurance-note">No stories assigned — pick a release on each story card.</div>'}</div></div>`;
+  }).join('');
+}
+function renderStoryMapTraceTable(){
+  const stories=allStoryMapStories();
+  const rows=stories.map(s=>`<tr>
+    <td>${escapeHtml(s.title)}</td>
+    <td>${escapeHtml(s.sourceControlRef)}</td>
+    <td>${Object.entries(s.links||{}).filter(([,v])=>v).map(([k,v])=>`${k}:${escapeHtml(v)}`).join('<br>')||'—'}</td>
+    <td>${escapeHtml(s.evidenceRequired)}</td>
+    <td>${escapeHtml(s.status)}</td>
+  </tr>`).join('');
+  return `<table class="sm-trace-table"><thead><tr><th>User story</th><th>Source/control</th><th>Trace links</th><th>Evidence</th><th>Status</th></tr></thead><tbody>${rows||'<tr><td colspan="5">No stories</td></tr>'}</tbody></table>`;
+}
+function renderStoryMapOutcomeOkr(){
+  const stories=allStoryMapStories();
+  const groups={};
+  stories.forEach(s=>{const k=s.outcome||s.outcomeOrObligation||'Unassigned'; (groups[k]=groups[k]||[]).push(s);});
+  return Object.entries(groups).map(([k,list])=>`<div class="rd-gap-row"><div><b>${escapeHtml(k)}</b>${list.map(s=>`<div class="cmp-req">○ ${escapeHtml(s.title)} (${s.status})</div>`).join('')}</div></div>`).join('');
+}
+function renderStoryMapMigration(){
+  const stories=allStoryMapStories().filter(s=>/migrat|legacy|wave|cutover/i.test(`${s.title} ${s.process} ${s.dependency} ${s.outcomeOrObligation}`)||storyMapState.template==='enterprise-migration');
+  if(!stories.length) return '<div class="assurance-note">No migration-tagged stories yet — set template to Enterprise Migration or tag process/dependency text.</div>';
+  return stories.map(s=>`<div class="rd-gap-row warn"><div><b>${escapeHtml(s.title)}</b><div class="cmp-req">${escapeHtml(s.dependency)} · ${escapeHtml(s.risk)} · ${escapeHtml(s.status)}</div></div></div>`).join('');
+}
+function buildStoryMapView(){
+  ensureStoryMapState();
+  const root=document.getElementById('story-map-root');
+  if(!root) return;
+  const opts=storyMapIntegrationOptions();
+  const stories=allStoryMapStories();
+  const metricsEl=document.getElementById('story-map-metrics');
+  if(metricsEl){
+    metricsEl.innerHTML=[
+      {v:stories.length,l:'Stories'},
+      {v:stories.filter(s=>s.status==='completed').length,l:'Completed'},
+      {v:stories.filter(s=>s.status==='blocked').length,l:'Blocked'},
+      {v:(storyMapState.releaseSlices||[]).length,l:'Release slices'}
+    ].map(m=>`<div class="metric-card"><div class="metric-v">${m.v}</div><div class="metric-l">${m.l}</div></div>`).join('');
+  }
+  const tmplOpts=STORY_MAP_TEMPLATES.map(t=>`<option value="${t.id}"${storyMapState.template===t.id?' selected':''}>${escapeHtml(t.label)}</option>`).join('');
+  const groupOpts=STORY_MAP_GROUP_MODES.map(g=>`<option value="${g.id}"${storyMapState.groupBy===g.id?' selected':''}>${escapeHtml(g.label)}</option>`).join('');
+  const viewOpts=STORY_MAP_VIEW_MODES.map(v=>`<option value="${v.id}"${storyMapState.viewMode===v.id?' selected':''}>${escapeHtml(v.label)}</option>`).join('');
+  let body='';
+  if(storyMapState.viewMode==='release') body=renderStoryMapRelease();
+  else if(storyMapState.viewMode==='regulatory-trace') body=renderStoryMapTraceTable();
+  else if(storyMapState.viewMode==='outcome-okr') body=renderStoryMapOutcomeOkr();
+  else if(storyMapState.viewMode==='migration-readiness') body=renderStoryMapMigration();
+  else body=`<div class="sm-board">${storyMapState.groupBy==='process'?renderStoryMapWorkshop(opts):renderStoryMapGroupedColumns(opts)}</div>`;
+  root.innerHTML=`
+    <div class="sm-hier-row">${STORY_MAP_HIERARCHY.map(h=>`<span class="sm-hier-chip">${escapeHtml(h)}</span>`).join('')}</div>
+    <div class="sm-intent-card">
+      <div style="font-size:11px;font-weight:700">Intent</div>
+      <input value="${escapeHtml(storyMapState.intent?.title||'')}" placeholder="Programme intent" onchange="storyMapSetIntent('title',this.value)">
+      <textarea placeholder="Backlog notes — requirements engineering voice" onchange="storyMapSetIntent('notes',this.value)">${escapeHtml(storyMapState.intent?.notes||'')}</textarea>
+    </div>
+    <div class="sm-toolbar">
+      <label>Template <select id="story-map-template-select" onchange="storyMapSetMeta('template',this.value)">${tmplOpts}</select></label>
+      <label>Group by <select onchange="storyMapSetMeta('groupBy',this.value)">${groupOpts}</select></label>
+      <label>View <select onchange="storyMapSetMeta('viewMode',this.value)">${viewOpts}</select></label>
+      <button type="button" class="assurance-btn secondary" onclick="storyMapAddBackbone()">+ Backbone</button>
+      <button type="button" class="assurance-btn secondary" onclick="storyMapAddReleaseSlice()">+ Release slice</button>
+    </div>
+    <div class="sm-integrate">
+      <button type="button" onclick="storyMapImportPbis()">Import Assure PBIs</button>
+      <button type="button" onclick="storyMapImportSopGaps()">Import SOP gaps</button>
+      <button type="button" onclick="storyMapImportCompareDeltas()">Import compare deltas</button>
+      <button type="button" onclick="goTab('readiness',document.getElementById('ntab-readiness'))">Open Readiness</button>
+      <button type="button" onclick="goTab('compare',document.getElementById('ntab-compare'))">Open Global Compare</button>
+      <button type="button" onclick="goTab('ctd',document.getElementById('ntab-ctd'))">Open CTD/eCTD</button>
+      <button type="button" onclick="goTab('results',document.getElementById('ntab-results'))">Open Value Package</button>
+    </div>
+    ${body}`;
+}
+function exportStoryMapJson(){
+  const rec=buildStoryMapRecord();
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(rec,null,2)],{type:'application/json'}));
+  a.download='DRAFT-MARAS-Story-Map.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+function exportStoryMapCsv(){
+  const stories=allStoryMapStories();
+  const head=['id','title','owner','status','outcomeOrObligation','acceptanceCriteria','evidenceRequired','acceptanceEvidence','risk','dependency','sourceControlRef','releaseSliceId','backbone','capability','links'];
+  const esc=v=>`"${String(v??'').replace(/"/g,'""')}"`;
+  const rows=stories.map(s=>head.map(h=>{
+    if(h==='links') return esc(JSON.stringify(s.links||{}));
+    if(h==='backbone') return esc(s.backboneTitle);
+    if(h==='capability') return esc(s.capabilityTitle);
+    return esc(s[h]);
+  }).join(','));
+  dlCSV([head.join(',')].concat(rows).join('\n'),'DRAFT-MARAS-Story-Map.csv');
+}
+function exportStoryMapPng(){
+  const stories=allStoryMapStories();
+  const c=document.createElement('canvas');
+  const w=900,h=Math.min(1200,80+stories.length*28);
+  c.width=w; c.height=h;
+  const ctx=c.getContext('2d');
+  ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,w,h);
+  ctx.fillStyle='#0f172a'; ctx.font='bold 14px sans-serif'; ctx.fillText('MARAS Story Map (DRAFT_NOT_CONTROLLED)',16,24);
+  ctx.font='11px sans-serif'; ctx.fillStyle='#334155';
+  stories.slice(0,35).forEach((s,i)=>ctx.fillText(`${i+1}. [${s.status}] ${s.title} — ${(s.outcomeOrObligation||'').slice(0,70)}`,16,48+i*26));
+  const a=document.createElement('a');
+  a.href=c.toDataURL('image/png');
+  a.download='DRAFT-MARAS-Story-Map.png';
+  a.click();
+}
+function exportStoryMapPdf(){
+  const w=window.open('','_blank');
+  if(!w){alert('Pop-up blocked — allow pop-ups for PDF export.'); return;}
+  const stories=allStoryMapStories();
+  w.document.write(`<!DOCTYPE html><html><head><title>Story Map DRAFT</title></head><body style="font-family:sans-serif;padding:24px"><h1>MARAS Story Map</h1><p><b>DRAFT_NOT_CONTROLLED</b></p><ul>${stories.map(s=>`<li><b>${escapeHtml(s.title)}</b> — ${escapeHtml(s.status)} · ${escapeHtml(s.outcomeOrObligation)}</li>`).join('')}</ul></body></html>`);
+  w.document.close();
+  w.print();
+}
+
 /* READINESS — SOP mapper · inspection assistant · validation gaps */
 const LIB_ITEM_BY_ID=Object.fromEntries(TREE_DATA.flatMap(g=>g.items).map(it=>[it.id,it.name]));
 const SOP_CONFLICT_RULES=[
@@ -6248,8 +6830,11 @@ function sourceMetaFor(reg,sourceKey){
 
 init();
 // Legacy deep links to the retired mapper land in the existing Value Package tab.
-if (new URLSearchParams(window.location.search).get('tab') === 'results') {
+const qsTab = new URLSearchParams(window.location.search).get('tab');
+if (qsTab === 'results') {
   goTab('results', document.getElementById('ntab-results'));
+} else if (qsTab === 'storymap') {
+  goTab('storymap', document.getElementById('ntab-storymap'));
 }
 </script>
 </body>

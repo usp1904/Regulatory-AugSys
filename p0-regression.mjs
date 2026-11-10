@@ -87,5 +87,11 @@ check('Phase 3 quality gate rules and pipeline rubric', html.includes('function 
 check('Quality gate panel always under each PBI', html.includes('renderQualityGatePanel(i, s)') && html.includes('_qgOriginalStory') && html.includes('_qgImprovedDraft') && html.includes('Regenerate improved version') && !html.includes('ragGraphEnabled ? `<div class="qg-panel"'));
 check('Phase 4 legacy fallback and export pipeline metadata', html.includes('fallbackUsed') && html.includes('pipelineMode:ragGraphEnabled') && html.includes('legacy fallback active'));
 check('Phase 5 RAG graph fixtures on disk', fs.existsSync('scripts/fixtures/rag-graph/generic-it.json') && fs.existsSync('scripts/fixtures/rag-graph/fda-clinical.json'));
+check('Story Map tab is present', html.includes('id="view-storymap"') && html.includes('ntab-storymap') && html.includes('Story Map'));
+check('Story Map templates list', html.includes('STORY_MAP_TEMPLATES') && html.includes('Enterprise Migration') && html.includes('PI Planning'));
+check('Story Map hierarchy labels', html.includes('STORY_MAP_HIERARCHY') && html.includes('Capability/Goal') && html.includes('Acceptance Evidence'));
+check('Story Map state object', html.includes('storyMapState') && html.includes('maras.story-map.v1') && html.includes('function ensureStoryMapState'));
+check('Story Map export functions exist', html.includes('function exportStoryMapJson') && html.includes('function exportStoryMapCsv') && html.includes('function exportStoryMapPng'));
+check('Story Map draft banner text', html.includes('id="story-map-draft-banner"') && html.includes('DRAFT_NOT_CONTROLLED') && html.includes('SME/QA/RA review required'));
 
 export const result = { status: 'PASS', checks: checks.length, systemsValidated: 15, names: checks };
