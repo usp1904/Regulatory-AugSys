@@ -13,4 +13,6 @@ Six non-overlapping **persona lenses** filter the Story Map workspace so each ro
 
 **Export:** JSON exports include `personaLens`, `personaLensLabel`, and `personaLensPrimaryPanel`. Scrum Master lens can export `DRAFT-MARAS-Story-Map-Ceremony.json`.
 
+**PBI cards:** Story cards surface **Product Owner understands**, **Developer builds**, and **QA validates** (see `docs/pbi-output-format.md`). Regulatory trace links collapse under **Compliance Details**. CSV/JSON export `pbi.*` fields.
+
 SME/QA/RA review required before baselining; not a compliance decision.

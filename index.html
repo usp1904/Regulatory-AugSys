@@ -304,6 +304,21 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .t-phase{background:var(--teal-t);color:var(--teal)}
 .t-gamp{background:var(--bg2);color:var(--ink3)}
 .sc-story{font-size:12px;color:var(--ink2);line-height:1.65}
+.pbi-body{margin:8px 0 4px;padding:10px 12px;background:#f8fafc;border-radius:6px;border:1px solid var(--border)}
+.pbi-card-title{font-size:12px;font-weight:700;color:var(--ink);margin-bottom:8px}
+.pbi-h{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.35px;color:#0e7a62;margin:10px 0 4px}
+.pbi-h:first-of-type{margin-top:0}
+.pbi-sec{font-size:11px;color:var(--ink2);line-height:1.55}
+.pbi-sec ul{margin:4px 0 0;padding-left:18px}
+.pbi-sec li{margin-bottom:3px}
+.pbi-incomplete{font-size:10px;color:#b45309;background:#fffbeb;border:1px solid #fde68a;border-radius:5px;padding:6px 8px;margin-top:8px}
+.pbi-compliance-details{margin-top:8px;border-top:1px solid var(--bg2)}
+.pbi-compliance-details>summary{font-size:10px;font-weight:600;color:var(--ink4);cursor:pointer;padding:8px 0;list-style:none}
+.pbi-compliance-details>summary::-webkit-details-marker{display:none}
+.pbi-compliance-panel{padding:0 0 10px;font-size:10px;color:var(--ink3);line-height:1.5}
+.sm-pbi{margin:6px 0;padding:8px;border-radius:5px;background:#f8fafc;border:1px solid var(--border)}
+.sm-pbi .pbi-h{font-size:9px;margin-top:6px}
+.sm-pbi textarea{width:100%;min-height:44px;font-size:10px;margin-top:2px}
 .sc-expand{width:100%;padding:6px 14px;background:none;border:none;border-top:1px solid var(--bg2);display:flex;justify-content:space-between;align-items:center;font-size:11px;font-weight:500;color:var(--ink4);cursor:pointer;font-family:inherit;text-align:left;transition:background .12s}
 .sc-expand:hover{background:var(--bg)}
 .sc-ac{padding:10px 14px 12px;background:var(--bg);display:none;border-top:1px solid var(--bg2)}
@@ -3639,7 +3654,7 @@ function normalizeStoryOutput(s, idx, pfx, qcMeta) {
   Object.keys(invest).forEach(k => {
     if (typeof invest[k] === 'string') invest[k] = invest[k].trim();
   });
-  return {
+  const out = {
     ...s,
     num: idx + 1,
     id,
@@ -3660,6 +3675,8 @@ function normalizeStoryOutput(s, idx, pfx, qcMeta) {
     schemaVersion: FDA_CLINICAL_DATA_SCHEMA.schemaVersion,
     qc: qcMeta || s.qc || {}
   };
+  out.pbi = buildAssureStoryPbi(out);
+  return out;
 }
 
 function scoreValidationRubric(story, scope) {
@@ -3771,6 +3788,7 @@ function toFdaClinicalStandardPackage(stories, pipelineResult, scope, qcReport) 
       evidence: { stage: s.phase || '', gamp: s.gamp || '' },
       relevance: s.qc?.relevanceScore ?? null,
       validationRubric: s.validationRubric || null,
+      pbi: ensureStoryPbi({...s}).pbi,
       review: { status:s.reviewStatus || 'DRAFT_UNREVIEWED', reviewerName:s.reviewerName||'', reviewerRole:s.reviewerRole||'', comment:s.reviewComment||'', reviewedAt:s.reviewedAt || null, history:s.reviewHistory||[] },
       clinicalCoding: {
         domain: s.labels?.[0] || s.type,
@@ -3822,6 +3840,7 @@ function applyQualityControls(rawStories, rankedChunks, req, pipelineExtras) {
     const normalized = normalizeStoryOutput(s, i, pfx, qcMeta);
     // Preserve original story shape fields used by render/export
     normalized.validationRubric = scoreValidationRubric(normalized, scope);
+    ensureStoryPbi(normalized);
     return normalized;
   });
 
@@ -4963,6 +4982,137 @@ function escapeHtml(value){
 function safeExternalUrl(value){
   try{const u=new URL(String(value||''));return (u.protocol==='https:'||u.protocol==='http:')?u.href:'';}catch{return '';}
 }
+function pbiLines(value){
+  if(value==null||value==='') return [];
+  if(Array.isArray(value)) return value.map(x=>String(x).trim()).filter(Boolean);
+  return String(value).split(/\n/).map(x=>x.replace(/^[-•]\s*/,'').trim()).filter(Boolean);
+}
+function isPbiSectionFilled(value){
+  const lines=pbiLines(value);
+  return lines.length>0&&lines.some(l=>l.replace(/\s/g,'').length>=6);
+}
+function computePbiComplete(pbi){
+  if(!pbi||typeof pbi!=='object') return false;
+  return isPbiSectionFilled(pbi.poUnderstands)&&isPbiSectionFilled(pbi.devBuilds)&&isPbiSectionFilled(pbi.qaValidates);
+}
+function buildAssureStoryPbi(s){
+  const existing=(s&&s.pbi&&typeof s.pbi==='object')?s.pbi:{};
+  const keep=(k,v)=>existing[k]!=null&&String(existing[k]).trim()?existing[k]:v;
+  const po=[];
+  if(s.boi){
+    if(s.boi.business_area) po.push(`Business area: ${s.boi.business_area}`);
+    if(s.boi.outcome) po.push(`Outcome: ${s.boi.outcome}`);
+    if(s.boi.impact) po.push(`Impact: ${s.boi.impact}`);
+    if(s.boi.client_context) po.push(`Client fit: ${s.boi.client_context}`);
+  }
+  if(s.regulatoryCriticality) po.push(`Priority: ${s.regulatoryCriticality} regulatory criticality`);
+  if(s.phase&&s.phase!=='N/A') po.push(`Delivery slice / evidence stage: ${s.phase}`);
+  if(s.type) po.push(`Backlog item type: ${s.type}`);
+  const slice=String(s.story||s.userStory||s.sourceRequirement||'').trim();
+  if(slice) po.push(slice.length>320?`${slice.slice(0,317)}…`:slice);
+  const dev=[];
+  if(s.accept?.action) dev.push(s.accept.action);
+  const narrative=String(s.story||s.userStory||'').trim();
+  if(narrative&&narrative!==slice) dev.push(narrative);
+  else if(narrative&&!dev.length) dev.push(`Build: ${narrative}`);
+  if(s.gamp&&s.gamp!=='N/A') dev.push(`GAMP category / system context: ${s.gamp}`);
+  if(s.labels?.length) dev.push(`Tagged components: ${s.labels.join(', ')}`);
+  if(s.type) dev.push(`Control / integration class: ${s.type}`);
+  const qa=[];
+  (s.ac||s.acceptanceCriteria||[]).forEach(a=>qa.push(a));
+  if(s.accept?.expected) qa.push(`Expected result: ${s.accept.expected}`);
+  if(s.accept?.pass_fail) qa.push(`Pass/fail check: ${s.accept.pass_fail}`);
+  if(s.testEvidence) qa.push(`Test evidence: ${s.testEvidence}`);
+  if(s.traceabilityTestEvidence) qa.push(s.traceabilityTestEvidence);
+  const pbi={
+    poUnderstands:keep('poUnderstands',po.length?po.join('\n'):''),
+    devBuilds:keep('devBuilds',dev.length?dev.join('\n'):''),
+    qaValidates:keep('qaValidates',qa.length?qa.join('\n'):'')
+  };
+  pbi.complete=computePbiComplete(pbi);
+  return pbi;
+}
+function buildMapStoryPbi(s){
+  const existing=(s&&s.pbi&&typeof s.pbi==='object')?s.pbi:{};
+  const keep=(k,v)=>existing[k]!=null&&String(existing[k]).trim()?existing[k]:v;
+  const po=[];
+  if(s.outcomeOrObligation) po.push(s.outcomeOrObligation);
+  if(s.outcome) po.push(`Outcome: ${s.outcome}`);
+  if(s.process) po.push(`Process slice: ${s.process}`);
+  if(s.status) po.push(`Backlog state: ${s.status}`);
+  if(s.risk) po.push(`Risk note: ${s.risk}`);
+  const dev=[];
+  if(s.technicalModule) dev.push(`Module/service: ${s.technicalModule}`);
+  if(s.feature) dev.push(`Feature area: ${s.feature}`);
+  if(s.dependency) dev.push(`Dependency: ${s.dependency}`);
+  if(s.acceptanceCriteria) dev.push(`Acceptance (dev): ${s.acceptanceCriteria}`);
+  const qa=[];
+  if(s.acceptanceCriteria) qa.push(`Functional checks: ${s.acceptanceCriteria}`);
+  if(s.evidenceRequired) qa.push(`Evidence required: ${s.evidenceRequired}`);
+  if(s.acceptanceEvidence) qa.push(`Acceptance evidence: ${s.acceptanceEvidence}`);
+  const pbi={
+    poUnderstands:keep('poUnderstands',po.length?po.join('\n'):''),
+    devBuilds:keep('devBuilds',dev.length?dev.join('\n'):''),
+    qaValidates:keep('qaValidates',qa.length?qa.join('\n'):'')
+  };
+  pbi.complete=computePbiComplete(pbi);
+  return pbi;
+}
+function ensureStoryPbi(s){
+  if(!s||typeof s!=='object') return {poUnderstands:'',devBuilds:'',qaValidates:'',complete:false};
+  const isAssure=!!(s.regulation||s.regRef||s.sourceAuthority!=null||s.regulatoryCriticality);
+  s.pbi=isAssure?buildAssureStoryPbi(s):buildMapStoryPbi(s);
+  return s.pbi;
+}
+function renderPbiSectionBody(value,emptyLabel){
+  const lines=pbiLines(value);
+  if(!lines.length) return `<div class="pbi-sec pbi-sec-empty" data-pbi-empty="1"><em>${escapeHtml(emptyLabel)}</em></div>`;
+  return `<div class="pbi-sec"><ul>${lines.map(l=>`<li>${escapeHtml(l)}</li>`).join('')}</ul></div>`;
+}
+function renderPbiThreeQuestions(pbi,opts={}){
+  const incomplete=!computePbiComplete(pbi);
+  const missing=[];
+  if(!isPbiSectionFilled(pbi?.poUnderstands)) missing.push('Product Owner understands');
+  if(!isPbiSectionFilled(pbi?.devBuilds)) missing.push('Developer builds');
+  if(!isPbiSectionFilled(pbi?.qaValidates)) missing.push('QA validates');
+  const badge=incomplete?`<div class="pbi-incomplete" data-pbi-incomplete="1">⚠ Incomplete requirement — ${missing.join(', ')||'one or more sections'} need elaboration before baselining.</div>`:'';
+  return `<div class="pbi-body" data-pbi-complete="${incomplete?'false':'true'}">
+    ${opts.showTitle!==false?`<div class="pbi-card-title">Product Backlog Item</div>`:''}
+    <div class="pbi-h">Product Owner understands</div>
+    ${renderPbiSectionBody(pbi?.poUnderstands,'Incomplete — PO business value, slice, and acceptance from business lens not recorded.')}
+  <div class="pbi-h">Developer builds</div>
+    ${renderPbiSectionBody(pbi?.devBuilds,'Incomplete — concrete screens, services, APIs, data, or behaviors not specified.')}
+    <div class="pbi-h">QA validates</div>
+    ${renderPbiSectionBody(pbi?.qaValidates,'Incomplete — test themes, pass/fail checks, or negative paths not defined.')}
+    ${badge}
+  </div>`;
+}
+function renderPbiComplianceDetailsAssure(s,i,bil,qgHtml,ragPipeHtml,boiHtml,investHtml,rubHtml,sourceUrl){
+  const ac=(s.ac||s.acceptanceCriteria||[]);
+  return `<details class="pbi-compliance-details sc-compliance-collapsed"><summary>Compliance Details</summary><div class="pbi-compliance-panel">
+    <div class="sc-tags" style="margin-bottom:8px">
+      <span class="tag t-reg">${escapeHtml(s.regulation)} ${escapeHtml(s.section)}</span>
+      ${s.applicableNation?`<span class="tag" style="background:#ecfeff;color:#0e7490">${escapeHtml(s.applicableNation)}</span>`:''}
+      ${s.sourceType?`<span class="tag" style="background:#f8fafc;color:#475569">${escapeHtml(s.sourceType)}</span>`:''}
+      <span class="tag" style="background:#fff7ed;color:#9a3412">SME review required</span>
+      ${s.type?`<span class="tag" style="background:#f3f4f6;color:#374151">${escapeHtml(s.type)}</span>`:''}
+      ${s.phase&&s.phase!='N/A'?`<span class="tag t-phase">${escapeHtml(s.phase)}</span>`:''}
+      ${s.gamp?`<span class="tag t-gamp">${escapeHtml(s.gamp)}</span>`:''}
+      ${(s.frameworks_applied||[]).map(fw=>`<span class="tag" style="background:#f3f0ff;color:#5b21b6;font-size:9px">${escapeHtml(fw)}</span>`).join('')}
+    </div>
+    ${s.regRef?`<div><b>Regulatory reference</b>: ${escapeHtml(s.regRef)}</div>`:''}
+    ${s.id?`<div><b>Requirement id</b>: ${escapeHtml(s.id)}</div>`:''}
+    <p class="sc-story" style="margin-top:6px">${escapeHtml(s._qgOriginalStory||s.story||s.userStory)}</p>
+    ${sourceUrl?`<div style="margin-top:4px"><a href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">Open authoritative source ↗</a> · ${s.sourceExcerptVerified?'Exact excerpt captured':'Curated summary'} · ${escapeHtml(s.sourceApprovalStatus||'SME_PENDING')}</div>`:`<div style="color:#b45309">No authoritative source URL mapped — clarification required</div>`}
+    ${s.sourceExcerpt?`<div style="margin-top:6px;padding:7px 9px;background:#f8fafc;border-left:2px solid #94a3b8"><b>Source excerpt:</b> ${escapeHtml(s.sourceExcerpt)}<br><b>Version:</b> ${escapeHtml(s.sourceVersion||'')} · <b>Captured:</b> ${escapeHtml(s.sourceCapturedAt||'')} · <b>License:</b> ${escapeHtml(s.sourceLicenseTag||'')}</div>`:''}
+    ${s.organisationInterpretation?`<div style="margin-top:6px"><b>Organisation interpretation (draft):</b> ${escapeHtml(s.organisationInterpretation)}</div>`:''}
+    ${boiHtml}${investHtml}${rubHtml}${qgHtml}
+    ${ragPipeHtml}
+    ${ac.length?`<div style="margin-top:8px"><b>Acceptance criteria (trace)</b>${ac.map((a,j)=>`<div class="ac-item" style="margin-top:4px"><span class="ac-n">${j+1}</span><span class="ac-t">${escapeHtml(a)}</span></div>`).join('')}</div>`:''}
+    ${s.accept?`<div style="margin-top:8px;padding:8px;background:#fefce8;border-radius:5px"><b>ACCEPT</b> · Action: ${escapeHtml(s.accept.action)} · Expected: ${escapeHtml(s.accept.expected)} · Pass/Fail: ${escapeHtml(s.accept.pass_fail)} · Trace: ${escapeHtml(s.accept.traceable||s.regRef)}</div>`:''}
+    <div style="margin-top:8px;font-size:9px;color:var(--ink4)">RTM row ${i+1} · interpretation logs · evidence package links — Value Package trace matrix (DRAFT_NOT_CONTROLLED)</div>
+  </div></details>`;
+}
 function renderStories(stories, pipelineResult) {
   if (!stories?.length) return;
   const bil   = needsBilingual();
@@ -5003,8 +5153,6 @@ function renderStories(stories, pipelineResult) {
   renderTraceabilityMatrix(stories);
   document.getElementById('stories-list').innerHTML = ragBanner + qcBanner + stories.map((s,i) => {
     const sourceUrl=safeExternalUrl(s.sourceUrl);
-    const fwBadges = (s.frameworks_applied||[]).map(fw=>
-      `<span class="tag" style="background:#f3f0ff;color:#5b21b6;font-size:9px">${escapeHtml(fw)}</span>`).join('');
     const bilBadge = bil.japanese?'<span class="sc-num-badge" style="background:#fef3c7;color:#92400e">🇯🇵 EN+日本語</span>':
                      bil.chinese ?'<span class="sc-num-badge" style="background:#fee2e2;color:#991b1b">🇨🇳 EN+中文</span>':
                      bil.russian ?'<span class="sc-num-badge" style="background:#ede9fe;color:#5b21b6">🇷🇺 EN+Русский</span>':'';
@@ -5031,46 +5179,17 @@ function renderStories(stories, pipelineResult) {
     const ragPipeHtml = ragGraphEnabled ? `<button type="button" class="sc-expand rag-pipe-btn" onclick="toggleRagPipeline(this)">
       <span>Pipeline replay (optional)</span><span style="transition:transform .14s">▼</span>
     </button><div class="rag-pipe-panel">${ragReplayDetailHtml()}</div>` : '';
-    return `<div class="story-card" data-story-index="${i}">
+    const pbi=ensureStoryPbi(s);
+    return `<div class="story-card" data-story-index="${i}" data-pbi-complete="${pbi.complete?'true':'false'}">
       <div class="sc-top">
         <div class="sc-num">
           PBI ${s.num||i+1} ${bilBadge}
           ${rub?`<span class="sc-num-badge" style="background:${rub.pass?'#ecfdf5':'#fffbeb'};color:${rub.pass?'#166534':'#92400e'}">${rub.totalScore}/100</span>`:''}
+          ${!pbi.complete?'<span class="sc-num-badge" style="background:#fffbeb;color:#b45309">incomplete</span>':''}
         </div>
-        <div class="sc-title">${escapeHtml(s.title)}</div>
-        <div class="sc-tags">
-          <span class="tag t-reg">${escapeHtml(s.regulation)} ${escapeHtml(s.section)}</span>
-          ${s.applicableNation?`<span class="tag" style="background:#ecfeff;color:#0e7490">${escapeHtml(s.applicableNation)}</span>`:''}
-          ${s.sourceType?`<span class="tag" style="background:#f8fafc;color:#475569">${escapeHtml(s.sourceType)}</span>`:''}
-          <span class="tag" style="background:#fff7ed;color:#9a3412">SME review required</span>
-          ${s.type?`<span class="tag" style="background:#f3f4f6;color:#374151">${escapeHtml(s.type)}</span>`:''}
-          ${s.phase&&s.phase!='N/A'?`<span class="tag t-phase">${escapeHtml(s.phase)}</span>`:''}
-          ${s.gamp?`<span class="tag t-gamp">${escapeHtml(s.gamp)}</span>`:''}
-          ${fwBadges}
-        </div>
-        <p class="sc-story">${escapeHtml(s._qgOriginalStory || s.story || s.userStory)}</p>
-        ${qgHtml}
-        ${sourceUrl?`<div style="font-size:10px;margin:4px 0 8px"><a href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">Open authoritative source ↗</a> · ${s.sourceExcerptVerified?'Exact excerpt captured':'Curated summary'} · ${escapeHtml(s.sourceApprovalStatus||'SME_PENDING')}</div>`:`<div style="font-size:10px;color:#b45309;margin:4px 0 8px">No authoritative source URL mapped — clarification required</div>`}
-        ${s.sourceExcerpt?`<div style="font-size:10px;color:#475569;margin:0 0 8px;padding:7px 9px;background:#f8fafc;border-left:2px solid #94a3b8"><b>Source excerpt:</b> ${escapeHtml(s.sourceExcerpt)}<br><b>Version:</b> ${escapeHtml(s.sourceVersion||'')} · <b>Captured:</b> ${escapeHtml(s.sourceCapturedAt||'')} · <b>License:</b> ${escapeHtml(s.sourceLicenseTag||'')}</div>`:''}
-        ${boiHtml}${investHtml}${rubHtml}
-      </div>
-      ${ragPipeHtml}
-      <button class="sc-expand" onclick="toggleAC(this)">
-        <span>Acceptance criteria &nbsp;(${(s.ac||s.acceptanceCriteria||[]).length})</span>
-        <span style="transition:transform .14s">▼</span>
-      </button>
-      <div class="sc-ac">
-        ${(s.ac||s.acceptanceCriteria||[]).map((a,j)=>`<div class="ac-item"><span class="ac-n">${j+1}</span><span class="ac-t">${escapeHtml(a)}</span></div>`).join('')}
-        ${s.accept?`<div style="margin-top:8px;padding:8px 10px;background:#fefce8;border-radius:5px;border-left:3px solid #ca8a04">
-          <div style="font-size:9px;font-weight:700;color:#92400e;text-transform:uppercase;margin-bottom:4px">ACCEPT</div>
-          <div style="font-size:10px;color:#78350f;line-height:1.6">
-            <b>Action:</b> ${escapeHtml(s.accept.action)}<br>
-            <b>Expected:</b> ${escapeHtml(s.accept.expected)}<br>
-            <b>Pass/Fail:</b> ${escapeHtml(s.accept.pass_fail)}<br>
-            <b>Traceable:</b> <span style="font-family:monospace">${escapeHtml(s.accept.traceable||s.regRef)}</span>
-          </div>
-        </div>`:''}
-        ${s.regRef?`<div class="ac-ref">📖 ${escapeHtml(s.regRef)}</div>`:''}
+        <div class="sc-title">${escapeHtml(s.title)} — PBI</div>
+        ${renderPbiThreeQuestions(pbi,{showTitle:false})}
+        ${renderPbiComplianceDetailsAssure(s,i,bil,qgHtml,ragPipeHtml,boiHtml,investHtml,rubHtml,sourceUrl)}
       </div>
       <div class="sc-footer">
         <button class="ftr-btn ${s.reviewStatus==='SME_REVIEW_ATTESTED_DRAFT'?'v':''}" onclick="markFtr(this,'v',${i})">✓ SME review attested (draft)</button>
@@ -5629,7 +5748,7 @@ const STORY_MAP_PERSONA_LENSES=[
   {id:'product-owner',label:'Product Owner',primaryPanelId:'story-map-panel-product-owner',blurb:'Backlog priority, MoSCoW slices, slice value, story ordering for delivery.',
     toolbar:{template:true,groupBy:true,view:true,backbone:true,releaseSlice:true},viewModes:['workshop','release'],defaultView:'workshop',defaultGroupBy:'process',
     integrate:['pbis','sop','compare'],showIntent:true,showHierarchy:true,draggable:true,
-    fields:['title','status','release','owner','outcomeOrObligation','dependency'],linkKeys:[]},
+    fields:['title','status','release','owner','outcomeOrObligation','dependency','pbi-three','pbi-editable'],linkKeys:[]},
   {id:'product-manager',label:'Product Manager',primaryPanelId:'story-map-panel-product-manager',blurb:'Outcomes/OKR, market-journey template, stakeholder narrative — not sprint execution.',
     toolbar:{template:true,groupBy:false,view:true,backbone:false,releaseSlice:false},viewModes:['outcome-okr','migration-readiness'],defaultView:'outcome-okr',defaultGroupBy:'outcome',
     integrate:['compare','results'],showIntent:true,showHierarchy:true,draggable:false,
@@ -5637,11 +5756,11 @@ const STORY_MAP_PERSONA_LENSES=[
   {id:'developer',label:'Developer',primaryPanelId:'story-map-panel-developer',blurb:'Implementation package: AC, deps, modules/APIs, technical grouping, blocked/planned status.',
     toolbar:{template:false,groupBy:true,view:true,backbone:true,releaseSlice:false},viewModes:['workshop','regulatory-trace'],defaultView:'workshop',defaultGroupBy:'technical-module',
     integrate:['pbis','ctd','results'],showIntent:false,showHierarchy:false,draggable:true,
-    fields:['title','status','grid-technical','grid-feature','dependency','acceptanceCriteria','traceLinks'],linkKeys:['regulation','pbi','ctd']},
+    fields:['title','status','grid-technical','grid-feature','dependency','acceptanceCriteria','traceLinks','pbi-three'],linkKeys:['regulation','pbi','ctd']},
   {id:'tester',label:'Tester',primaryPanelId:'story-map-panel-tester',blurb:'Evidence required, test themes, trace to gap/compare, OQ-style acceptance criteria visibility.',
     toolbar:{template:false,groupBy:false,view:true,backbone:false,releaseSlice:false},viewModes:['regulatory-trace','workshop'],defaultView:'regulatory-trace',defaultGroupBy:'process',
     integrate:['sop','compare','readiness'],showIntent:false,showHierarchy:false,draggable:false,
-    fields:['title','acceptanceCriteria','evidenceRequired','acceptanceEvidence','traceLinks'],linkKeys:['gap','compare','sop','inspection','evidenceRequest']},
+    fields:['title','acceptanceCriteria','evidenceRequired','acceptanceEvidence','traceLinks','pbi-three'],linkKeys:['gap','compare','sop','inspection','evidenceRequest']},
   {id:'scrum-master',label:'Scrum Master',primaryPanelId:'story-map-panel-scrum-master',blurb:'Flow health: WIP, blockers, deferred, PI slice cadence, ceremony exports — not PO prioritization.',
     toolbar:{template:true,groupBy:false,view:true,backbone:false,releaseSlice:true},viewModes:['release','workshop'],defaultView:'release',defaultGroupBy:'process',
     integrate:[],showIntent:false,showHierarchy:false,draggable:true,
@@ -5689,6 +5808,7 @@ function blankStory(overrides={}){
     links:{
       regulation:null,sop:null,gap:null,inspection:null,compare:null,ctd:null,readinessGate:null,pbi:null,evidenceRequest:null
     },
+    pbi:{poUnderstands:'',devBuilds:'',qaValidates:'',complete:false},
     ...overrides
   };
 }
@@ -5726,7 +5846,11 @@ function normalizeStoryMapState(raw){
   out.backbones.forEach(bb=>{
     bb.capabilities=bb.capabilities||[];
     bb.capabilities.forEach(cap=>{
-      cap.stories=(cap.stories||[]).map(s=>({...blankStory(),...s,links:{...blankStory().links,...(s.links||{})}}));
+      cap.stories=(cap.stories||[]).map(s=>{
+        const merged={...blankStory(),...s,links:{...blankStory().links,...(s.links||{})}};
+        ensureStoryPbi(merged);
+        return merged;
+      });
     });
   });
   return out;
@@ -5815,8 +5939,16 @@ function storyMapLinkSelect(story,linkKey,opts){
 function storyMapSetField(storyId,field,value){
   const loc=findStoryLocation(storyId); if(!loc) return;
   loc.story[field]=value;
+  ensureStoryPbi(loc.story);
   saveStoryMapState();
-  if(['title','status','owner'].includes(field)) buildStoryMapView();
+  if(['title','status','owner','outcomeOrObligation','acceptanceCriteria','technicalModule','evidenceRequired'].includes(field)) buildStoryMapView();
+}
+function storyMapSetPbiField(storyId,field,value){
+  const loc=findStoryLocation(storyId); if(!loc) return;
+  loc.story.pbi=loc.story.pbi||{poUnderstands:'',devBuilds:'',qaValidates:'',complete:false};
+  loc.story.pbi[field]=value;
+  loc.story.pbi.complete=computePbiComplete(loc.story.pbi);
+  saveStoryMapState();
 }
 function storyMapSetLink(storyId,linkKey,value){
   const loc=findStoryLocation(storyId); if(!loc) return;
@@ -5925,13 +6057,15 @@ function storyMapImportPbis(){
   let cap=bb.capabilities?.[0];
   if(!cap){cap={id:storyMapUid('cap'),title:'Imported PBIs',order:0,stories:[]}; bb.capabilities=[cap];}
   pbis.forEach((p,i)=>{
+    const ap=ensureStoryPbi(p);
     cap.stories.push(blankStory({
       title:p.title||p.id,
       owner:'',
       outcomeOrObligation:p.businessOutcome||p.regulation||'',
       acceptanceCriteria:p.accept?.pass_fail||'',
       evidenceRequired:(p.evidence||[]).join('; '),
-      sourceControlRef:`${p.regulation||''} ${p.section||''}`.trim(),
+      sourceControlRef:`${p.regulation||''} ${p.section||''}`.trim()||p.regRef||'',
+      pbi:{poUnderstands:ap.poUnderstands,devBuilds:ap.devBuilds,qaValidates:ap.qaValidates,complete:ap.complete},
       links:{...blankStory().links,pbi:`pbi:${p.id}`}
     }));
   });
@@ -5985,8 +6119,24 @@ function renderStoryCard(story,opts){
   if(storyMapLensHasField('grid-feature')) grid.push(`<div><label>Feature</label><input value="${escapeHtml(story.feature)}" onchange="storyMapSetField('${story.id}','feature',this.value)"></div>`);
   if(storyMapLensHasField('grid-technical')) grid.push(`<div style="grid-column:1/-1"><label>Technical module</label><input value="${escapeHtml(story.technicalModule)}" onchange="storyMapSetField('${story.id}','technicalModule',this.value)"></div>`);
   const gridHtml=grid.length?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:4px">${grid.join('')}</div>`:'';
-  return `<div class="sm-story sm-status-${escapeHtml(story.status||'planned')}" draggable="${drag}"${dragHandlers}>
-    ${storyMapLensHasField('title')?`<div class="sm-story-t"><input value="${escapeHtml(story.title)}" onchange="storyMapSetField('${story.id}','title',this.value)" aria-label="Story title"></div>`:''}
+  const pbi=ensureStoryPbi(story);
+  const pbiEditable=storyMapLensHasField('pbi-editable');
+  const pbiBlock=pbiEditable?`<div class="sm-pbi" data-pbi-complete="${pbi.complete?'true':'false'}">
+    <div class="pbi-h">Product Owner understands</div>
+    <textarea onchange="storyMapSetPbiField('${story.id}','poUnderstands',this.value)">${escapeHtml(pbi.poUnderstands||'')}</textarea>
+    <div class="pbi-h">Developer builds</div>
+    <textarea onchange="storyMapSetPbiField('${story.id}','devBuilds',this.value)">${escapeHtml(pbi.devBuilds||'')}</textarea>
+    <div class="pbi-h">QA validates</div>
+    <textarea onchange="storyMapSetPbiField('${story.id}','qaValidates',this.value)">${escapeHtml(pbi.qaValidates||'')}</textarea>
+    ${!pbi.complete?'<div class="pbi-incomplete" data-pbi-incomplete="1">⚠ Incomplete requirement</div>':''}
+  </div>`:`<div class="sm-pbi">${renderPbiThreeQuestions(pbi,{showTitle:false})}</div>`;
+  const complianceSm=`<details class="pbi-compliance-details sc-compliance-collapsed"><summary>Compliance Details</summary><div class="pbi-compliance-panel">
+    ${storyMapLensHasField('sourceControlRef')?`<div><b>Source / control</b>: ${escapeHtml(story.sourceControlRef||'—')}</div>`:''}
+    ${traceLinks}
+  </div></details>`;
+  return `<div class="sm-story sm-status-${escapeHtml(story.status||'planned')}" draggable="${drag}"${dragHandlers} data-pbi-complete="${pbi.complete?'true':'false'}">
+    ${storyMapLensHasField('title')?`<div class="sm-story-t"><input value="${escapeHtml(story.title)}" onchange="storyMapSetField('${story.id}','title',this.value)" aria-label="Story title"> — PBI</div>`:''}
+    ${storyMapLensHasField('pbi-three')?pbiBlock:''}
     ${(storyMapLensHasField('status')||storyMapLensHasField('release'))?`<div class="sm-story-meta">${storyMapLensHasField('status')?`Status <select onchange="storyMapSetField('${story.id}','status',this.value)">${STORY_MAP_STATUSES.map(s=>`<option${s===story.status?' selected':''}>${s}</option>`).join('')}</select>`:''}
     ${storyMapLensHasField('release')?` Release <select onchange="storyMapAssignRelease('${story.id}',this.value)"><option value="">—</option>${relOpts}</select>`:''}</div>`:''}
     ${storyMapLensHasField('owner')?`<label>Owner</label><input value="${escapeHtml(story.owner)}" onchange="storyMapSetField('${story.id}','owner',this.value)">`:''}
@@ -5998,7 +6148,7 @@ function renderStoryCard(story,opts){
     ${storyMapLensHasField('risk')?`<label>Risk appetite / impact</label><input value="${escapeHtml(story.risk)}" onchange="storyMapSetField('${story.id}','risk',this.value)">`:''}
     ${storyMapLensHasField('dependency')?`<label>Dependency</label><input value="${escapeHtml(story.dependency)}" onchange="storyMapSetField('${story.id}','dependency',this.value)">`:''}
     ${storyMapLensHasField('sourceControlRef')?`<label>Source / control ref</label><input value="${escapeHtml(story.sourceControlRef)}" onchange="storyMapSetField('${story.id}','sourceControlRef',this.value)">`:''}
-    ${traceLinks}
+    ${!storyMapLensHasField('pbi-three')?traceLinks:complianceSm}
     <button type="button" style="margin-top:6px;font-size:9px" onclick="storyMapDeleteStory('${story.id}')">Remove story</button>
   </div>`;
 }
@@ -6156,14 +6306,21 @@ function exportStoryMapJson(){
 }
 function exportStoryMapCsv(){
   const stories=allStoryMapStories();
-  const head=['id','title','owner','status','outcomeOrObligation','acceptanceCriteria','evidenceRequired','acceptanceEvidence','risk','dependency','sourceControlRef','releaseSliceId','backbone','capability','links'];
+  const head=['id','title','owner','status','outcomeOrObligation','acceptanceCriteria','evidenceRequired','acceptanceEvidence','risk','dependency','sourceControlRef','releaseSliceId','backbone','capability','links','pbi.poUnderstands','pbi.devBuilds','pbi.qaValidates','pbi.complete'];
   const esc=v=>`"${String(v??'').replace(/"/g,'""')}"`;
-  const rows=stories.map(s=>head.map(h=>{
-    if(h==='links') return esc(JSON.stringify(s.links||{}));
-    if(h==='backbone') return esc(s.backboneTitle);
-    if(h==='capability') return esc(s.capabilityTitle);
-    return esc(s[h]);
-  }).join(','));
+  const rows=stories.map(s=>{
+    const pb=ensureStoryPbi(s);
+    return head.map(h=>{
+      if(h==='links') return esc(JSON.stringify(s.links||{}));
+      if(h==='backbone') return esc(s.backboneTitle);
+      if(h==='capability') return esc(s.capabilityTitle);
+      if(h==='pbi.poUnderstands') return esc(pb.poUnderstands);
+      if(h==='pbi.devBuilds') return esc(pb.devBuilds);
+      if(h==='pbi.qaValidates') return esc(pb.qaValidates);
+      if(h==='pbi.complete') return esc(pb.complete?'true':'false');
+      return esc(s[h]);
+    }).join(',');
+  });
   dlCSV([head.join(',')].concat(rows).join('\n'),'DRAFT-MARAS-Story-Map.csv');
 }
 function exportStoryMapPng(){

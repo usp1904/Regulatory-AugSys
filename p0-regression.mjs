@@ -101,5 +101,11 @@ check('Story Map persona field scoping', html.includes('function storyMapLensHas
 check('Implementation Readiness Gate UI for §11.10(e)', html.includes('id="implementation-readiness-gate-panel"') && html.includes('IMPLEMENTATION_READINESS_GATE_1110E') && html.includes('REQ-001 · 21 CFR Part 11 §11.10(e)') && html.includes('renderImplementationReadinessGate'));
 check('Implementation Readiness Gate export schema', html.includes('maras.implementation-readiness-gate.v1') && html.includes('implementationReadinessGate:buildImplementationReadinessGateRecord()'));
 check('Implementation Readiness Gate doc artifact', fs.existsSync('docs/implementation-readiness-gate-11.10e.md') && fs.readFileSync('docs/implementation-readiness-gate-11.10e.md','utf8').includes('DRAFT_NOT_CONTROLLED'));
+check('PBI three-question output helpers', html.includes('function ensureStoryPbi') && html.includes('function buildAssureStoryPbi') && html.includes('function renderPbiThreeQuestions') && html.includes('function computePbiComplete'));
+check('PBI section headings in rendered output', html.includes('Product Owner understands') && html.includes('Developer builds') && html.includes('QA validates'));
+check('PBI compliance details collapsed by default', html.includes('class="pbi-compliance-details sc-compliance-collapsed"') && html.includes('<summary>Compliance Details</summary>'));
+check('PBI incomplete requirement flag', html.includes('data-pbi-incomplete="1"') && html.includes('pbi.complete') && html.includes('⚠ Incomplete requirement'));
+check('Story Map export includes pbi JSON fields', html.includes("'pbi.poUnderstands'") && html.includes("'pbi.devBuilds'") && html.includes("'pbi.qaValidates'") && html.includes("'pbi.complete'"));
+check('PBI output format doc', fs.existsSync('docs/pbi-output-format.md') && fs.readFileSync('docs/pbi-output-format.md','utf8').includes('DRAFT_NOT_CONTROLLED'));
 
 export const result = { status: 'PASS', checks: checks.length, systemsValidated: 15, names: checks };
