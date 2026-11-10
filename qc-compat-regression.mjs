@@ -25,6 +25,11 @@ const qcEnd = html.indexOf('/* ─── AUTO PREFIX');
 if (qcStart < 0 || qcEnd < 0) throw new Error('QC block bounds not found');
 const qcSrc = html.slice(qcStart, qcEnd);
 
+const pbiFnsStart = html.indexOf('function pbiLines(value)');
+const pbiFnsEnd = html.indexOf('function renderPbiSectionBody');
+if (pbiFnsStart < 0 || pbiFnsEnd < 0) throw new Error('PBI helper block bounds not found');
+const pbiHelpersSrc = html.slice(pbiFnsStart, pbiFnsEnd);
+
 const sm = html.match(/function sourceMetaFor\(reg,sourceKey\)\{[\s\S]*?\n\}/);
 if (!sm) throw new Error('sourceMetaFor not found');
 
@@ -69,6 +74,7 @@ function boot(values = {}, cats = [], items = []) {
   vm.runInContext(`TREE_DATA = ${treeDataSrc};`, sandbox);
   vm.runInContext(`GXP_CHUNKS = ${gxpChunksSrc};`, sandbox);
   vm.runInContext(`CONTROLLED_SOURCES = ${controlledSourcesSrc};`, sandbox);
+  vm.runInContext(pbiHelpersSrc, sandbox);
   vm.runInContext(qcSrc, sandbox);
   vm.runInContext(sm[0], sandbox);
   vm.runInContext(`function autoPrefix(){ return 'GXP'; }`, sandbox);
