@@ -366,6 +366,32 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .qg-improved{border-left:3px solid #3b82f6}
 .qg-regen{margin-top:6px;font-size:10px;padding:4px 10px;border:1px solid var(--border);border-radius:var(--r);background:#fff;cursor:pointer;font-family:inherit;color:var(--ink2)}
 .qg-regen:hover{border-color:var(--blue);color:var(--blue)}
+.irg-banner{background:#fffbeb;border:1px solid rgba(202,138,4,.45);border-radius:var(--r2);padding:11px 14px;margin-bottom:12px;font-size:11px;line-height:1.5;color:#78350f}
+.irg-banner b{color:#92400e}
+.irg-trace{font-size:10px;color:var(--ink4);margin-top:6px}
+.irg-trace a{color:var(--blue);text-decoration:none}
+.irg-trace a:hover{text-decoration:underline}
+.irg-overall{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:12px}
+.irg-overall-lbl{font-size:11px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.35px}
+.irg-q-row{border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;margin-bottom:8px;background:#fff}
+.irg-q-top{display:flex;flex-wrap:wrap;align-items:flex-start;gap:8px}
+.irg-q-title{flex:1;min-width:180px;font-size:12px;font-weight:600;color:var(--ink)}
+.irg-ans{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.35px;border-radius:999px;padding:4px 9px;white-space:nowrap}
+.irg-ans.yes{background:var(--green-t);color:var(--green)}
+.irg-ans.no{background:var(--red-t);color:var(--red)}
+.irg-ans.partial{background:var(--amber-t);color:var(--amber)}
+.irg-rationale{font-size:11px;color:var(--ink3);margin-top:6px;line-height:1.45}
+.irg-validate{display:none;margin-top:8px;padding:8px 10px;background:var(--bg);border-radius:var(--r);border:1px solid var(--border)}
+.irg-validate.show{display:block}
+.irg-validate-t{font-size:10px;font-weight:700;color:var(--ink2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.3px}
+.irg-toggle{font-size:10px;padding:0;border:0;background:0;cursor:pointer;color:var(--blue);font-family:inherit;margin-top:4px}
+.irg-toggle:hover{text-decoration:underline}
+.irg-lists{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+@media(max-width:720px){.irg-lists{grid-template-columns:1fr}}
+.irg-list-card{border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;background:#fff}
+.irg-list-h{font-size:11px;font-weight:700;color:var(--ink);margin-bottom:8px}
+.irg-chk{display:flex;align-items:flex-start;gap:6px;font-size:11px;color:var(--ink2);line-height:1.4;margin-bottom:5px}
+.irg-chk input{margin-top:2px;accent-color:var(--teal)}
 .rag-stage{margin:8px 0 0;padding:6px 0 0;border-top:1px dashed var(--border)}
 .rag-stage:first-child{border-top:none;margin-top:0;padding-top:0}
 .rag-stage-hdr{font-size:9px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.35px;margin-bottom:5px}
@@ -1096,6 +1122,13 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
       <button class="assurance-btn secondary" onclick="dlInspectionPackJson()">Download inspection pack</button>
     </div>
     <div class="metric-row" id="readiness-metrics"></div>
+  </div>
+  <div class="assurance-section" id="irg-section">
+    <div class="assurance-section-h">
+      <div class="assurance-section-t">Implementation Readiness Gate</div>
+      <div class="assurance-section-s">§11.10(e) package · REQ-001 · pipeline steps 1–10 · DRAFT_NOT_CONTROLLED</div>
+    </div>
+    <div class="assurance-body" id="implementation-readiness-gate-panel"></div>
   </div>
   <div class="assurance-section">
     <div class="assurance-section-h">
@@ -5485,6 +5518,100 @@ function pushCompareToAssure(){
 }
 
 /* READINESS — SOP mapper · inspection assistant · validation gaps */
+const IMPLEMENTATION_READINESS_GATE_1110E={
+  schema:'maras.implementation-readiness-gate.v1',
+  packageStatus:'DRAFT_NOT_CONTROLLED',
+  reqId:'REQ-001',
+  trace:'REQ-001 · 21 CFR Part 11 §11.10(e)',
+  chunkId:'c3',
+  pipelineNote:'Regulatory→software pipeline steps 1–10 — gate assesses whether draft package may enter delivery planning (not compliance approval).',
+  questions:[
+    {id:'dev_sme_free',role:'Dev',label:'Can implementation proceed SME-free?',answer:'NO',
+      rationale:'Layer 2 interpretation and system boundary for §11.10(e) audit trails still needs RA/QA SME review; demo PBIs are draft suggestions only.',
+      validate:['Confirm applicability of §11.10(e) to the named GxP system and record boundary (open vs closed).','Resolve whether vendor OOTB audit trail meets “independent” and non-obscuring change rules.','Align retention period with subject electronic record retention — SME sign-off on excerpt from chunk c3.','No autonomous “compliant” claim — attested interpretation only.']},
+    {id:'po_estimate',role:'PO',label:'Is a credible delivery estimate available?',answer:'NO',
+      rationale:'Harness marks effort ESTIMATION_PENDING; PO has not recorded sprint-level sizing with assumptions.',
+      validate:['Replace ESTIMATION_PENDING on each traceable PBI with PO-owned estimate and assumptions.','Document dependency on CSV/OQ environment and integration interfaces.','Identify blocking external work (vendor config, IAM, clock sync).','Gate remains NO until estimate is linked in backlog export — still draft watermarked.']},
+    {id:'qa_tests',role:'QA',label:'Are test obligations defined and reviewable?',answer:'YES',
+      rationale:'Draft acceptance criteria and inspection checklist items exist for audit-trail scope; negative and environment evidence gaps remain.',
+      validate:['Confirm Given/When/Then AC covers create/read/retain audit events — not only happy path.','Add negative tests: operator cannot disable trail; prior values not obscured.','Map tests to REQ-001 and GXP chunk c3 excerpts in RTM.','BAR / dual sign-off evidence still pending — YES is conditional on SME review.']}
+  ],
+  missingInfo:[
+    'SME-attested interpretation record for REQ-001 / §11.10(e) vs target system boundary',
+    'PO delivery estimate replacing ESTIMATION_PENDING on traceable PBIs',
+    'Negative test protocol for audit-trail disable, tamper, and obscured-change attempts',
+    'IT/QA environment and configuration record for OQ evidence capture',
+    'Client SOP or policy excerpt mapped to audit trail control (library chunk c3)',
+    'Official source excerpt with sourceApprovalStatus beyond draft ingestion'
+  ],
+  improvements:[
+    'Select Regulatory Library Part 11 + chunk c3 and run Assure quick demo for REQ-001 trace',
+    'Extend AC with operator-disable and record-obscuration negative scenarios',
+    'Document retention aligned to subject electronic records per c3 excerpts',
+    'Link Layer 1 excerpt and Layer 2 interpretation in Value Package RTM',
+    'Run validation-test-generator workflow for P0 audit-trail cases',
+    'Record PO estimation workshop output and attach to backlog export'
+  ]
+};
+function irgAnsClass(ans){
+  const a=String(ans||'').toUpperCase();
+  if(a==='YES') return 'yes';
+  if(a==='NO') return 'no';
+  return 'partial';
+}
+function toggleIrgValidate(id){
+  const el=document.getElementById('irg-val-'+id);
+  if(el) el.classList.toggle('show');
+}
+function buildImplementationReadinessGateRecord(){
+  const gate=JSON.parse(JSON.stringify(IMPLEMENTATION_READINESS_GATE_1110E));
+  const chunk=GXP_CHUNKS.find(c=>c.id===gate.chunkId);
+  const stories=H.stories?.length?H.stories:(allStories?.length?allStories:[]);
+  const hasC3=selItems.has('p11')||stories.some(s=>/§11\.10\(e\)|REQ-001/i.test((s.regRef||'')+(s.section||'')));
+  const estPending=stories.some(s=>/ESTIMATION_PENDING/i.test(JSON.stringify(s)))||!stories.length;
+  const acReady=stories.length&&stories.some(s=>(s.ac||[]).length>=1);
+  if(hasC3&&stories.length) gate.questions[0].rationale+=' Curated source c3 active in scope.';
+  if(!estPending&&stories.length) gate.questions[1]={...gate.questions[1],answer:'PARTIAL',rationale:'Some PBIs may carry estimates after PO review — default package still ESTIMATION_PENDING.'};
+  if(!acReady) gate.questions[2]={...gate.questions[2],answer:'PARTIAL',rationale:'Run Assure to populate draft AC before QA sign-off.'};
+  gate.overall=gate.questions.every(q=>q.answer==='YES')?'READY_FOR_PLANNING_DRAFT':
+    gate.questions.some(q=>q.answer==='NO')?'BLOCKED_FOR_IMPLEMENTATION_PLANNING':'NEEDS_SME_REVIEW';
+  gate.sourceChunk=chunk?{id:chunk.id,reg:chunk.reg,sec:chunk.sec,title:chunk.title}:null;
+  gate.assessedAt=new Date().toISOString();
+  gate.storyCount=stories.length;
+  return gate;
+}
+function renderImplementationReadinessGate(){
+  const el=document.getElementById('implementation-readiness-gate-panel');
+  if(!el) return;
+  const g=buildImplementationReadinessGateRecord();
+  const qHtml=g.questions.map(q=>`
+    <div class="irg-q-row">
+      <div class="irg-q-top">
+        <div class="irg-q-title"><span style="font-size:10px;color:var(--ink4);font-weight:700">${escapeHtml(q.role)} · </span>${escapeHtml(q.label)}</div>
+        <span class="irg-ans ${irgAnsClass(q.answer)}">${escapeHtml(q.answer)}</span>
+      </div>
+      <div class="irg-rationale">${escapeHtml(q.rationale)}</div>
+      <button type="button" class="irg-toggle" onclick="toggleIrgValidate('${q.id}')">What to validate ▾</button>
+      <div class="irg-validate" id="irg-val-${q.id}">
+        <div class="irg-validate-t">SME / QA review prompts (draft)</div>
+        <div class="bullet-list">${(q.validate||[]).map(v=>`<div class="bullet-item">${escapeHtml(v)}</div>`).join('')}</div>
+      </div>
+    </div>`).join('');
+  const miss=g.missingInfo.map(m=>`<div class="bullet-item">${escapeHtml(m)}</div>`).join('');
+  const imp=g.improvements.map((t,i)=>`<label class="irg-chk"><input type="checkbox" disabled aria-label="Recommended improvement ${i+1}"><span>${escapeHtml(t)}</span></label>`).join('');
+  const cite=g.sourceChunk?`${g.sourceChunk.reg} ${g.sourceChunk.sec} — ${g.sourceChunk.title}`:g.trace;
+  el.innerHTML=`
+    <div class="irg-banner"><b>DRAFT_NOT_CONTROLLED</b> — Implementation Readiness Gate is an internal planning aid only. Evidence indicates gaps require SME/QA/RA review; this is not a compliance or validation decision.</div>
+    <div class="irg-overall"><span class="irg-overall-lbl">Gate posture</span><span class="status-pill ${g.overall.includes('BLOCKED')?'status-gate':g.overall.includes('READY')?'status-pass':'status-partial'}">${escapeHtml(g.overall.replace(/_/g,' '))}</span>
+      <span class="cmp-gap-meta">${g.storyCount} assurance PBIs in session · assessed ${escapeHtml(g.assessedAt.slice(0,19))}Z</span></div>
+    ${qHtml}
+    <div class="irg-lists">
+      <div class="irg-list-card"><div class="irg-list-h">Missing information</div><div class="bullet-list">${miss}</div></div>
+      <div class="irg-list-card"><div class="irg-list-h">Recommended improvements (checklist)</div>${imp}</div>
+    </div>
+    <div class="irg-trace">Trace: <b>${escapeHtml(g.trace)}</b> · Curated chunk <b>${escapeHtml(g.chunkId)}</b> (${escapeHtml(cite)}) · <a href="#" onclick="event.preventDefault();goTab('gen',document.getElementById('ntab-gen'));return false;">Open Assure</a> · <a href="#" onclick="event.preventDefault();goTab('results',document.getElementById('ntab-results'));return false;">Value Package / RTM</a></div>
+    <div class="assurance-note" style="margin-top:12px;margin-bottom:0">${escapeHtml(g.pipelineNote)}</div>`;
+}
 const LIB_ITEM_BY_ID=Object.fromEntries(TREE_DATA.flatMap(g=>g.items).map(it=>[it.id,it.name]));
 const SOP_CONFLICT_RULES=[
   {reg:/audit trail|independent|cannot be disabled/i,sop:/shared login|shared account|disable audit|bypass audit/i,msg:'Shared or bypass login may conflict with independent audit trail controls'},
@@ -5729,10 +5856,12 @@ function buildReadinessExport(){
       sources:(sbDocs||[]).map(d=>({name:d.name,decision:d.gate?.decision,reason:d.gate?.reason||''})),
       requirements:(reqFiles||[]).map(f=>({name:f.name,decision:f.gate?.decision,passed:f.gate?.passed}))
     },
-    mvpValidations:MVP_VALIDATION_ROWS.map(r=>({id:r.id,label:r.label,pass:!!r.check()}))
+    mvpValidations:MVP_VALIDATION_ROWS.map(r=>({id:r.id,label:r.label,pass:!!r.check()})),
+    implementationReadinessGate:buildImplementationReadinessGateRecord()
   };
 }
 function buildReadinessView(){
+  renderImplementationReadinessGate();
   const {sop,insp}=buildReadinessSnapshot();
   const metricsEl=document.getElementById('readiness-metrics');
   if(metricsEl){

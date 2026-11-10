@@ -87,5 +87,8 @@ check('Phase 3 quality gate rules and pipeline rubric', html.includes('function 
 check('Quality gate panel always under each PBI', html.includes('renderQualityGatePanel(i, s)') && html.includes('_qgOriginalStory') && html.includes('_qgImprovedDraft') && html.includes('Regenerate improved version') && !html.includes('ragGraphEnabled ? `<div class="qg-panel"'));
 check('Phase 4 legacy fallback and export pipeline metadata', html.includes('fallbackUsed') && html.includes('pipelineMode:ragGraphEnabled') && html.includes('legacy fallback active'));
 check('Phase 5 RAG graph fixtures on disk', fs.existsSync('scripts/fixtures/rag-graph/generic-it.json') && fs.existsSync('scripts/fixtures/rag-graph/fda-clinical.json'));
+check('Implementation Readiness Gate UI for §11.10(e)', html.includes('id="implementation-readiness-gate-panel"') && html.includes('IMPLEMENTATION_READINESS_GATE_1110E') && html.includes('REQ-001 · 21 CFR Part 11 §11.10(e)') && html.includes('renderImplementationReadinessGate'));
+check('Implementation Readiness Gate export schema', html.includes('maras.implementation-readiness-gate.v1') && html.includes('implementationReadinessGate:buildImplementationReadinessGateRecord()'));
+check('Implementation Readiness Gate doc artifact', fs.existsSync('docs/implementation-readiness-gate-11.10e.md') && fs.readFileSync('docs/implementation-readiness-gate-11.10e.md','utf8').includes('DRAFT_NOT_CONTROLLED'));
 
 export const result = { status: 'PASS', checks: checks.length, systemsValidated: 15, names: checks };
