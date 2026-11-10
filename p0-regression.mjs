@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import vm from 'node:vm';
 
 const html = fs.readFileSync(new URL('./index.html', import.meta.url), 'utf8');
 const checks = [];
@@ -116,5 +117,32 @@ check('backlog JSON includes trace pipeline', html.includes('regulatoryTracePipe
 check('decomposition prompts include regulatoryTraceHints', html.includes('regulatoryTraceHints'));
 check('regulatory trace pipeline doc', fs.existsSync('docs/regulatory-trace-pipeline.md') && fs.readFileSync('docs/regulatory-trace-pipeline.md','utf8').includes('maras.trace-pipeline.v1'));
 check('regulatory trace pipeline json schema', fs.existsSync('docs/schemas/regulatory-trace-pipeline-record.schema.json') && fs.readFileSync('docs/schemas/regulatory-trace-pipeline-record.schema.json','utf8').includes('HUMAN_REVIEW_PACKAGE'));
+check('structured obligation schema constant', html.includes("STRUCTURED_OBLIGATION_SCHEMA = 'maras.structured-obligation.v1'"));
+check('normalize regulatory obligations function', html.includes('function normalizeRegulatoryObligationsForStory') && html.includes('function buildStructuredObligationImpactBundle') && html.includes('function deriveComplianceOutcomeForObligation'));
+check('structured obligation UI cards', html.includes('function renderStructuredObligationCards') && html.includes('obl-wrap') && html.includes('renderStructuredObligationCards(s.structuredObligations'));
+check('human review package structured export', html.includes('structuredObligationSchema:STRUCTURED_OBLIGATION_SCHEMA') && html.includes('structuredObligations'));
+check('structured obligation doc', fs.existsSync('docs/structured-obligation-normalization.md') && fs.readFileSync('docs/structured-obligation-normalization.md','utf8').includes('maras.structured-obligation.v1'));
+check('structured obligation json schema', fs.existsSync('docs/schemas/structured-obligation-record.schema.json'));
+
+function extractBlock(label, startMarker, endMarker) {
+  const start = html.indexOf(startMarker);
+  const end = html.indexOf(endMarker, start);
+  if (start < 0 || end < 0) throw new Error(`Could not extract ${label}`);
+  return html.slice(start, end);
+}
+
+const gxpMatch = html.match(/const GXP_CHUNKS=(\[[\s\S]*?\]);\s*\nconst /);
+if (!gxpMatch) throw new Error('Could not extract GXP_CHUNKS for obligation test');
+const oblFnSrc = extractBlock('obligation fns', "const STRUCTURED_OBLIGATION_SCHEMA = 'maras.structured-obligation.v1'", 'function computeStoryDefinitionOfReady(story){');
+const sandbox = { console, Set, Map, Array, Object, String, Math, Date, JSON, document: { getElementById: () => ({ value: '' }) }, H: { ragReplay: null }, GXP_CHUNKS: [] };
+vm.createContext(sandbox);
+vm.runInContext(`GXP_CHUNKS = ${gxpMatch[1]};`, sandbox);
+vm.runInContext(oblFnSrc, sandbox);
+const c3 = sandbox.GXP_CHUNKS.find(c => c.id === 'c3');
+const bundle = sandbox.normalizeRegulatoryObligationsForStory({ regRef: 'REQ-001 · 21 CFR Part 11 §11.10(e)' }, c3, null);
+check('sample chunk c3 yields structured obligations', bundle.obligations?.length >= 1);
+const full = sandbox.buildStructuredObligationImpactBundle({ regRef: 'REQ-001' }, c3, null, {});
+const hasSourceSupport = (full.impacts || []).some(i => Array.isArray(i.complianceOutcome?.sourceSupport) && i.complianceOutcome.sourceSupport.length > 0);
+check('compliance outcomes include sourceSupport', hasSourceSupport);
 
 export const result = { status: 'PASS', checks: checks.length, systemsValidated: 15, names: checks };

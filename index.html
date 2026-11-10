@@ -686,6 +686,17 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .rtp-id{font-size:9px;color:var(--ink4);font-weight:500}
 .rtp-nr{display:inline-block;margin-top:4px;font-size:9px;font-weight:700;color:#b45309;background:#fffbeb;padding:2px 6px;border-radius:4px}
 .rtp-parent{font-size:9px;color:var(--ink4);margin-top:4px}
+.obl-wrap{margin:10px 0 0;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;overflow:hidden}
+.obl-head{padding:8px 10px;background:#eef2ff;font-size:10px;font-weight:700;color:#3730a3;text-transform:uppercase;letter-spacing:.35px}
+.obl-card{margin:8px 10px 10px;padding:8px 10px;background:#fff;border:1px solid #e2e8f0;border-radius:6px;font-size:10px;line-height:1.5;color:var(--ink3)}
+.obl-card:last-child{margin-bottom:10px}
+.obl-mod{display:inline-block;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;margin-right:6px}
+.obl-mod-MUST,.obl-mod-SHALL{background:#ecfdf5;color:#166534}
+.obl-mod-REQUIRED_TO{background:#eff6ff;color:#1d4ed8}
+.obl-mod-PROHIBITED{background:#fef2f2;color:#b91c1c}
+.obl-nr{display:inline-block;margin-top:4px;font-size:9px;font-weight:700;color:#b45309;background:#fffbeb;padding:2px 6px;border-radius:4px}
+.obl-infer{font-size:9px;color:#6b7280;font-style:italic}
+.obl-src{margin-top:5px;padding:5px 7px;background:#f1f5f9;border-left:2px solid #94a3b8;font-size:9px;color:#475569}
 </style>
 </head>
 <body>
@@ -3708,6 +3719,236 @@ function storyObligationsFromRag(story){
   const hint = String(story.sourceRequirement||story.title||'').toLowerCase();
   return obls.find(o => hint && String(o.text||'').toLowerCase().slice(0,30) && hint.includes(String(o.text||'').toLowerCase().slice(0,20))) || obls[0];
 }
+const STRUCTURED_OBLIGATION_SCHEMA = 'maras.structured-obligation.v1';
+const OBLIGATION_MODALITY_ENUM = ['MUST','SHALL','REQUIRED_TO','PROHIBITED'];
+function splitRegulatorySentences(text){
+  return String(text||'').split(/(?<=[.!?])\s+|\n+/).map(s=>s.trim()).filter(s=>s.length>12);
+}
+function detectObligationModality(sentence){
+  const s = String(sentence||'');
+  if(/\b(shall|must)\s+not\b/i.test(s) || /\b(prohibited|prohibition)\b/i.test(s)) return 'PROHIBITED';
+  if(/\bshall\b/i.test(s)) return 'SHALL';
+  if(/\bmust\b/i.test(s)) return 'MUST';
+  if(/\brequired\s+to\b/i.test(s)) return 'REQUIRED_TO';
+  return null;
+}
+function obligationModalRegex(modality){
+  if(modality==='PROHIBITED') return /\b(?:shall|must)\s+not\b|\bprohibited\b|\bprohibition\b/i;
+  if(modality==='SHALL') return /\bshall\b/i;
+  if(modality==='MUST') return /\bmust\b/i;
+  return /\brequired\s+to\b/i;
+}
+function parseStructuredObligationClause(sentence, meta){
+  const modality = detectObligationModality(sentence);
+  if(!modality) return null;
+  const modRe = obligationModalRegex(modality);
+  const idx = sentence.search(modRe);
+  if(idx<0) return null;
+  const spanText = sentence;
+  let subject = sentence.slice(0, idx).replace(/^[\s,.-]+/,'').replace(/\s+$/,'');
+  const after = sentence.slice(idx);
+  let action = '', object = '';
+  const modMatch = after.match(modRe);
+  const tail = after.slice((modMatch?.index||0)+(modMatch?.[0]?.length||0)).replace(/^\s+/,'').replace(/[.;]+$/,'');
+  if(modality==='PROHIBITED'){
+    action = (modMatch?.[0]||'prohibited').trim();
+    object = tail || sentence;
+  } else if(modality==='REQUIRED_TO'){
+    const m = after.match(/\brequired\s+to\b/i);
+    action = 'be required to';
+    object = after.slice((m?.index||0)+(m?.[0]?.length||0)).replace(/^\s+/,'').replace(/[.;]+$/,'');
+  } else {
+    const parts = tail.split(/\bso that\b|\bin order to\b/i);
+    action = parts[0].trim();
+    object = (parts[1]||'').trim() || action;
+  }
+  if(!subject) subject = meta.defaultSubject || 'Unspecified subject';
+  if(!action) action = tail || sentence;
+  const needsReview = !subject || subject==='Unspecified subject' || action.length<4 || /\b(etc|tbd|pending)\b/i.test(sentence);
+  const confidence = needsReview ? 'low' : (action.length>8 && object.length>3 ? 'medium' : 'low');
+  return {
+    schema:STRUCTURED_OBLIGATION_SCHEMA,
+    id:`SOB-${meta.seq||1}-${String(modality).slice(0,3)}`,
+    modality,
+    subject:subject.slice(0,200),
+    action:action.slice(0,280),
+    object:(object||action).slice(0,280),
+    sourceSpan:{text:spanText,chunkId:meta.chunkId||null,regRef:meta.regRef||null,sourceKind:meta.sourceKind||'excerpt'},
+    confidence,
+    needsReview,
+    packageStatus:'DRAFT_NOT_CONTROLLED'
+  };
+}
+function collectObligationSourceTexts(story, chunk, oblRag){
+  const items = [];
+  const regRef = story.regRef || `${story.regulation||''} ${story.section||''}`.trim();
+  const push = (text, sourceKind, chunkId) => {
+    const t = String(text||'').trim();
+    if(t.length>8) items.push({text:t, sourceKind, chunkId:chunkId||chunk?.id||null, regRef});
+  };
+  (chunk?.excerpts||[]).forEach(ex => push(ex,'gxp_excerpt',chunk?.id));
+  (chunk?.reqs||[]).forEach(rq => push(rq,'gxp_req',chunk?.id));
+  if(oblRag?.text) push(oblRag.text,'rag_obligation',chunk?.id);
+  push(story.sourceExcerpt,'story_sourceExcerpt',chunk?.id);
+  push(story.sourceRequirement,'story_sourceRequirement',chunk?.id);
+  const seen = new Set();
+  return items.filter(it => {
+    const k = it.text.slice(0,80).toLowerCase();
+    if(seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+}
+function normalizeRegulatoryObligationsForStory(story, chunk, oblRag){
+  const sources = collectObligationSourceTexts(story, chunk, oblRag);
+  const defaultSubject = story.regulation ? `${story.regulation} regulated system` : (chunk?.reg ? `${chunk.reg} system` : 'Regulated system');
+  const obligations = [];
+  let seq = 0;
+  sources.forEach(src => {
+    splitRegulatorySentences(src.text).forEach(sent => {
+      const obl = parseStructuredObligationClause(sent, {seq:++seq, chunkId:src.chunkId, regRef:src.regRef, sourceKind:src.sourceKind, defaultSubject});
+      if(obl) obligations.push(obl);
+    });
+    if(!splitRegulatorySentences(src.text).length){
+      const obl = parseStructuredObligationClause(src.text, {seq:++seq, chunkId:src.chunkId, regRef:src.regRef, sourceKind:src.sourceKind, defaultSubject});
+      if(obl) obligations.push(obl);
+    }
+  });
+  const dedup = [];
+  const fp = new Set();
+  obligations.forEach(o => {
+    const k = `${o.modality}|${o.sourceSpan.text.slice(0,60).toLowerCase()}`;
+    if(fp.has(k)) return;
+    fp.add(k);
+    dedup.push(o);
+  });
+  return {schema:STRUCTURED_OBLIGATION_SCHEMA, packageStatus:'DRAFT_NOT_CONTROLLED', obligations:dedup, sourceCount:sources.length};
+}
+function observableCueFromText(text){
+  const cues = [];
+  const patterns = [
+    {re:/\brecord(?:ed|ing)?\b/i, observable:'Recorded evidence exists for the cited events or data'},
+    {re:/\bretain(?:ed|ing)?\b/i, observable:'Retained records meet the cited retention rule'},
+    {re:/\bindependent(?:ly)?\b/i, observable:'Control or record operates independently per source wording'},
+    {re:/\btime[- ]?stamp(?:ed|ing)?\b/i, observable:'Events carry defensible date/time stamps'},
+    {re:/\bcannot disable|not obscure|shall not obscure/i, observable:'Prohibited operator actions are prevented or detectable'},
+    {re:/\baudit trail/i, observable:'Audit trail events are generated and available for review'}
+  ];
+  patterns.forEach(p => { if(p.re.test(text)) cues.push(p.observable); });
+  return [...new Set(cues)];
+}
+function deriveComplianceOutcomeForObligation(obligation, story){
+  const span = obligation.sourceSpan?.text||'';
+  const cues = observableCueFromText(span);
+  const acceptExp = String(story?.accept?.expected||'').trim();
+  const boiOut = String(story?.boi?.outcome||'').trim();
+  const observable = cues[0] || (acceptExp && span.toLowerCase().includes(acceptExp.toLowerCase().slice(0,24)) ? acceptExp : '') || (boiOut ? `Evidence indicates outcome aligned to: ${boiOut}` : '');
+  const measurementHintMatch = span.match(/\bat least\b[^.]{0,80}|for a period[^.]{0,80}/i);
+  const measurementHint = measurementHintMatch ? measurementHintMatch[0].trim() : (/\bretain\b/i.test(span) ? 'Retention period per source excerpt — SME review of equivalence' : '');
+  const sourceSupport = [];
+  if(span) sourceSupport.push({quote:span, chunkId:obligation.sourceSpan?.chunkId, regRef:obligation.sourceSpan?.regRef});
+  if(acceptExp && cues.length) sourceSupport.push({quote:acceptExp, sourceKind:'accept.expected'});
+  const needsReview = !observable || !sourceSupport.length;
+  return {
+    obligationId:obligation.id,
+    complianceOutcome:{
+      observable: observable || 'Observable outcome not parsed — SME review required',
+      measurementHint: measurementHint || (needsReview ? 'Gap requires review against authoritative text' : ''),
+      sourceSupport,
+      needsReview
+    },
+    packageStatus:'DRAFT_NOT_CONTROLLED'
+  };
+}
+function capabilityLabelFromObligation(obligation, story, ctx){
+  const span = (obligation.sourceSpan?.text||'').toLowerCase();
+  if(/audit trail|operator entr/i.test(span)) return 'Audit trail and operator-action logging';
+  if(/retention|retain/i.test(span)) return 'Records retention and archival control';
+  if(/signature|part 11/i.test(span)) return 'Electronic records and signature control';
+  if(story?.boi?.business_area) return String(story.boi.business_area);
+  if(ctx?.system) return `${ctx.system} compliance capability`;
+  return 'Regulated operations capability — needs-review';
+}
+function deriveBusinessCapabilityImpact(complianceOutcome, obligation, story, ctx){
+  const explicit = String(story?.boi?.business_area||story?.regulatoryTraceHints?.capability||'').trim();
+  const name = explicit || capabilityLabelFromObligation(obligation, story, ctx);
+  const changeType = explicit ? 'enhance' : (/must exist|new capability/i.test(name) ? 'new' : 'enhance');
+  const rationale = `Evidence indicates capability "${name}" supports compliance outcome: ${(complianceOutcome.observable||'').slice(0,160)}`;
+  const inferential = !explicit;
+  return {
+    obligationId:obligation.id,
+    businessCapabilityImpact:{
+      capability:name.slice(0,160),
+      changeType,
+      rationale,
+      inferential,
+      needsReview: inferential,
+      packageStatus:'DRAFT_NOT_CONTROLLED'
+    }
+  };
+}
+function deriveValueStreamImpact(complianceOutcome, obligation, story, ctx){
+  const span = (obligation.sourceSpan?.text||'').toLowerCase();
+  let stream = '', phase = '', touchpoints = [];
+  if(/operator entr|operator action/i.test(span)){
+    stream = 'GxP operational journey';
+    phase = 'Operator interaction with electronic records';
+    touchpoints = ['Operator UI', 'Audit trail service'];
+  } else if(/retain|retention/i.test(span)){
+    stream = 'Records lifecycle';
+    phase = 'Retention and archival';
+    touchpoints = ['Records repository', 'Retention policy'];
+  }
+  const explicit = String(story?.regulatoryTraceHints?.valueStream||ctx?.businessOutcome||'').trim();
+  const sourceSupport = [];
+  if(stream) sourceSupport.push({quote:obligation.sourceSpan?.text, note:'Journey phase derived from obligation wording — SME review required'});
+  const needsReview = !stream || !explicit;
+  return {
+    obligationId:obligation.id,
+    valueStreamImpact:{
+      stream: stream || explicit || 'Regulated delivery value stream — needs-review',
+      journeyPhase: phase || 'Unspecified phase — needs-review',
+      touchpoints,
+      lifecycleStage: /retain/i.test(span) ? 'Operate / Retain' : 'Operate',
+      sourceSupport,
+      needsReview,
+      inferential: !explicit,
+      packageStatus:'DRAFT_NOT_CONTROLLED'
+    }
+  };
+}
+function buildStructuredObligationImpactBundle(story, chunk, oblRag, ctx){
+  const normalized = normalizeRegulatoryObligationsForStory(story, chunk, oblRag);
+  const impacts = (normalized.obligations||[]).map(obl => {
+    const co = deriveComplianceOutcomeForObligation(obl, story);
+    const cap = deriveBusinessCapabilityImpact(co.complianceOutcome, obl, story, ctx);
+    const vs = deriveValueStreamImpact(co.complianceOutcome, obl, story, ctx);
+    return {obligation:obl, complianceOutcome:co.complianceOutcome, businessCapabilityImpact:cap.businessCapabilityImpact, valueStreamImpact:vs.valueStreamImpact};
+  });
+  return {...normalized, impacts, generatedAt:new Date().toISOString()};
+}
+function summarizeStructuredObligations(bundle){
+  const first = bundle?.obligations?.[0];
+  if(!first) return 'No modal shall/must/required/prohibited phrasing parsed — needs-review';
+  return `${first.modality}: ${first.subject} — ${first.action}`.slice(0, 220);
+}
+function renderStructuredObligationCards(bundle){
+  const items = bundle?.impacts||[];
+  if(!items.length) return `<div class="obl-wrap"><div class="obl-head">${STRUCTURED_OBLIGATION_SCHEMA} · normalized obligations</div><div class="obl-card"><span class="obl-nr">needs-review</span> No structured obligations parsed from ingested excerpts for this item.</div></div>`;
+  const cards = items.map(({obligation:obl, complianceOutcome:co, businessCapabilityImpact:cap, valueStreamImpact:vs}) => `
+    <div class="obl-card">
+      <span class="obl-mod obl-mod-${escapeHtml(obl.modality)}">${escapeHtml(obl.modality)}</span>
+      <b>${escapeHtml(obl.subject)}</b> — ${escapeHtml(obl.action)}
+      ${obl.object?`<div style="margin-top:3px"><b>Object:</b> ${escapeHtml(obl.object)}</div>`:''}
+      ${obl.sourceSpan?.text?`<div class="obl-src"><b>Source span</b> (${escapeHtml(obl.sourceSpan.sourceKind||'excerpt')}${obl.sourceSpan.chunkId?` · ${escapeHtml(obl.sourceSpan.chunkId)}`:''}): ${escapeHtml(obl.sourceSpan.text)}</div>`:''}
+      <div style="margin-top:5px"><b>Compliance outcome</b>: ${escapeHtml(co.observable)}${co.measurementHint?` · <i>${escapeHtml(co.measurementHint)}</i>`:''}</div>
+      <div style="margin-top:3px"><b>Capability impact</b> (${escapeHtml(cap.changeType)}${cap.inferential?' · inferential':''}): ${escapeHtml(cap.capability)}</div>
+      <div style="margin-top:3px"><b>Value stream</b>: ${escapeHtml(vs.stream)} — ${escapeHtml(vs.journeyPhase)}${vs.touchpoints?.length?` · ${escapeHtml(vs.touchpoints.join(', '))}`:''}</div>
+      ${(obl.needsReview||co.needsReview||cap.needsReview||vs.needsReview)?'<span class="obl-nr">needs-review</span>':''}
+      ${(cap.inferential||vs.inferential)?'<div class="obl-infer">Capability/value stream fields are inferential — SME/QA review required.</div>':''}
+    </div>`).join('');
+  return `<div class="obl-wrap"><div class="obl-head">${STRUCTURED_OBLIGATION_SCHEMA} · ${items.length} structured obligation(s)</div>${cards}</div>`;
+}
 function computeStoryDefinitionOfReady(story){
   const inv = story.invest||{};
   const invKeys = ['independent','negotiable','valuable','estimable','small','testable'];
@@ -3760,6 +4001,9 @@ function buildRegulatoryTraceChainForStory(story, index){
     system: document.getElementById('f-system')?.value||'',
     businessOutcome: document.getElementById('f-outcome')?.value||''
   };
+  const structuredBundle = buildStructuredObligationImpactBundle(story, chunk, oblRag, ctx);
+  story.structuredObligations = structuredBundle;
+  const firstImpact = structuredBundle.impacts?.[0];
   const ownerId = story.id || story.req_id || `PBI-${(index??0)+1}`;
   const stageIndex = (stage) => REGULATORY_TRACE_PIPELINE_STAGES.indexOf(stage) + 1;
   const mk = (stage, label, summary, payload, needsReview) => ({
@@ -3772,16 +4016,25 @@ function buildRegulatoryTraceChainForStory(story, index){
     needsReview: !!needsReview,
     packageStatus:'DRAFT_NOT_CONTROLLED'
   });
+  const obligationSummary = structuredBundle.obligations?.length
+    ? summarizeStructuredObligations(structuredBundle)
+    : (hints.obligation || oblRag?.text || story.sourceRequirement || story.title);
+  const complianceSummary = firstImpact?.complianceOutcome?.observable
+    || hints.complianceOutcome || story.boi?.outcome || story.accept?.expected;
+  const capabilitySummary = firstImpact?.businessCapabilityImpact?.capability
+    || hints.capability || story.boi?.business_area || ctx.system || 'Capability mapping pending';
+  const valueStreamSummary = firstImpact?.valueStreamImpact?.stream
+    || hints.valueStream || ctx.businessOutcome || 'Regulated delivery value stream — needs-review';
   const raw = [
     mk('DOCUMENT', 'Source document', chunk ? `${chunk.reg} ${chunk.sec}` : (story.sourceAuthority||story.regulation||'Curated library / ingestion'), {chunkId:chunk?.id, sourceUrl:story.sourceUrl, sourceVersion:story.sourceVersion, excerpt:story.sourceExcerpt}, !story.sourceExcerpt),
     mk('REGULATORY_INTENT', 'Regulatory intent', hints.regulatoryIntent || chunk?.reqs?.[0] || `${story.regulation||''} ${story.section||''}`.trim(), {regulation:story.regulation, section:story.section}),
-    mk('OBLIGATION', 'Obligation', hints.obligation || oblRag?.text || story.sourceRequirement || story.title, {obligationId: oblRag?.id}),
+    mk('OBLIGATION', 'Obligation', obligationSummary, {obligationId: oblRag?.id, structuredObligations:structuredBundle}, !structuredBundle.obligations?.length),
     mk('CONDITIONS', 'Conditions', hints.conditions || (story.constraints ? Object.values(story.constraints).filter(Boolean).join(' · ') : (chunk?.reqs?.slice(1,3).join(' · ')||'Needs-review — conditions not sourced')), {constraints:story.constraints}, !hints.conditions && !story.constraints),
     mk('EXCEPTIONS', 'Exceptions', hints.exceptions || (story.organisationApplicability === 'NOT_APPLICABLE' ? 'Recorded not-applicable scope' : 'Unresolved exceptions — SME/QA review required'), {}, !hints.exceptions && story.organisationApplicability !== 'NOT_APPLICABLE'),
     mk('BUSINESS_RULES', 'Business rule', hints.businessRule || story.accept?.action || story.story, {accept:story.accept}),
-    mk('COMPLIANCE_OUTCOMES', 'Compliance outcome', hints.complianceOutcome || story.boi?.outcome || story.accept?.expected, {boi:story.boi}),
-    mk('BUSINESS_CAPABILITIES', 'Business capability', hints.capability || story.boi?.business_area || ctx.system || 'Capability mapping pending', {}, !(hints.capability||story.boi?.business_area)),
-    mk('VALUE_STREAMS', 'Value stream', hints.valueStream || ctx.businessOutcome || 'Regulated delivery value stream — needs-review', {}, !ctx.businessOutcome && !hints.valueStream),
+    mk('COMPLIANCE_OUTCOMES', 'Compliance outcome', complianceSummary, {boi:story.boi, complianceOutcomes:(structuredBundle.impacts||[]).map(i=>i.complianceOutcome)}, !!(firstImpact?.complianceOutcome?.needsReview)),
+    mk('BUSINESS_CAPABILITIES', 'Business capability', capabilitySummary, {businessCapabilityImpacts:(structuredBundle.impacts||[]).map(i=>i.businessCapabilityImpact)}, !!(firstImpact?.businessCapabilityImpact?.needsReview && !(hints.capability||story.boi?.business_area))),
+    mk('VALUE_STREAMS', 'Value stream', valueStreamSummary, {valueStreamImpacts:(structuredBundle.impacts||[]).map(i=>i.valueStreamImpact)}, !!(firstImpact?.valueStreamImpact?.needsReview && !ctx.businessOutcome && !hints.valueStream)),
     mk('AGILE_GOALS', 'Agile goal', hints.agileGoal || ctx.businessOutcome || ctx.project || 'Programme goal — needs-review', {}, !ctx.businessOutcome && !hints.agileGoal),
     mk('EPICS', 'Epic', hints.epic || story.epic || 'Epic not named — needs-review', {}, !story.epic && !hints.epic),
     mk('FEATURES', 'Feature', hints.feature || story.title, {}),
@@ -3791,7 +4044,7 @@ function buildRegulatoryTraceChainForStory(story, index){
     mk('DEFINITION_OF_READY', 'Definition of Ready', '', {}, false),
     mk('DEFINITION_OF_DONE', 'Definition of Done', '', {}, false),
     mk('TRACEABILITY_MATRIX', 'Traceability matrix', `RTM row ${(index??0)+1} · ${story.regRef||'reg trace pending'}`, {rtmRow:(index??0)+1}),
-    mk('HUMAN_REVIEW_PACKAGE', 'Human review package', 'SME/QA checklist bundle — draft attestation only', {reviewStatus:story.reviewStatus||'DRAFT_UNREVIEWED'}, true)
+    mk('HUMAN_REVIEW_PACKAGE', 'Human review package', 'SME/QA checklist bundle — draft attestation only', {reviewStatus:story.reviewStatus||'DRAFT_UNREVIEWED', structuredObligationSchema:STRUCTURED_OBLIGATION_SCHEMA, structuredObligations:structuredBundle}, true)
   ];
   const dor = computeStoryDefinitionOfReady(story);
   const dod = computeStoryDefinitionOfDone(story, index);
@@ -3807,6 +4060,7 @@ function buildRegulatoryTraceChainForStory(story, index){
     ownerId,
     stageEnum:regulatoryTracePipelineStages(),
     nodes,
+    structuredObligations:structuredBundle,
     definitionOfReady:dor,
     definitionOfDone:dod,
     rootTraceId:nodes[0]?.traceId||null,
@@ -3839,11 +4093,14 @@ function ensurePackageTracePipeline(stories){
 }
 function buildHumanReviewPackageRecord(){
   const pipeline = ensurePackageTracePipeline(allStories);
+  const structuredObligations = (allStories||[]).map(s => s.structuredObligations || s.regulatoryTracePipeline?.structuredObligations).filter(Boolean);
   return {
     schema:'maras.human-review-package.v1',
     schemaVersion:1,
     packageStatus:'DRAFT_NOT_CONTROLLED',
     generatedAt:new Date().toISOString(),
+    structuredObligationSchema:STRUCTURED_OBLIGATION_SCHEMA,
+    structuredObligations,
     regulatoryTracePipeline:pipeline,
     traceStageEnum:regulatoryTracePipelineStages(),
     rtm:(allStories||[]).map((s,i)=>({pbiId:s.id,rtmRow:i+1,regRef:s.regRef,sourceTruth:s.sourceTruthStatus||'UNVERIFIED',interpretation:s.organisationInterpretationStatus||'DRAFT',traceId:s.traceId,parentTraceId:s.parentTraceId})),
@@ -4449,6 +4706,7 @@ GUARDRAILS:
   · PBIs only from explicit regulatory/source requirements — no filler
   · Every PBI: req_id + regulatory source traceability; INVEST pass; effort ESTIMATION_PENDING
   · Populate regulatoryTraceHints where source supports pipeline stages (else needs-review stub): regulatoryIntent, obligation, conditions, exceptions, businessRule, complianceOutcome, capability, valueStream, agileGoal, epic, feature, complianceTestScenarios
+  · Requirements-engineer output: preserve source excerpts with modal shall/must/required/prohibited phrasing so ${STRUCTURED_OBLIGATION_SCHEMA} normalization can derive obligation, complianceOutcome, businessCapabilityImpact, valueStreamImpact without inventing text
 OUTPUT (strict JSON in \`\`\`json\`\`\` block):
 [{"id":"${autoPrefix()}-001","num":1,"title":"...","type":"business-control|compliance-control|integration-control|evidence-enabler","frameworks_applied":["BOI","ACCEPT","INVEST","3C"],"regulation":"21 CFR Part 11","section":"§11.10(e)","regRef":"REQ-001 · 21 CFR Part 11 §11.10(e)","epic":"...","regulatoryTraceHints":{"regulatoryIntent":"...","obligation":"...","conditions":"...","exceptions":"needs-review","businessRule":"...","complianceOutcome":"...","capability":"...","valueStream":"...","agileGoal":"...","epic":"...","feature":"...","complianceTestScenarios":"Given/When/Then ..."},"boi":{"business_area":"...","outcome":"...","impact":"..."},"story":"For [business process/system], the business must [control/action] so that [measurable regulatory or operational outcome].","invest":{"independent":"yes|no","negotiable":"yes","valuable":"...","estimable":"yes","small":"yes","testable":"yes"},"ac":["Given [...] When [...] Then [...]"],"accept":{"action":"...","criteria":["..."],"expected":"...","pass_fail":"...","traceable":"REQ-001 · 21 CFR Part 11 §11.10(e)"},"constraints":{"security":"...","performance":"...","permissions":"..."},"gamp":"Cat.4 — Configured Software","phase":"Evidence Stage: Operational Qualification","labels":["audit-trail","cfr-11"]}]`
       : `You are the Business Assurance Decomposition Agent in MARAS.
@@ -4471,6 +4729,7 @@ GUARDRAILS:
   · Estimation always marked ESTIMATION_PENDING — never finalised by agent
   · P0 requirements must produce at least one business PBI, but delivery ranking is left to the team
   · Populate regulatoryTraceHints for maras.trace-pipeline.v1 stages where feasible; use "needs-review" when source is silent
+  · Requirements-engineer: quote authoritative excerpts with shall/must/required/prohibited language; do not paraphrase modal verbs — supports maras.structured-obligation.v1 pipeline normalization
 OUTPUT (strict JSON in \`\`\`json\`\`\` block):
 [{
   "id":"${autoPrefix()}-001","num":1,"title":"...",
@@ -5364,6 +5623,7 @@ function renderPbiComplianceDetailsAssure(s,i,bil,qgHtml,ragPipeHtml,boiHtml,inv
     ${ac.length?`<div style="margin-top:8px"><b>Acceptance criteria (trace)</b>${ac.map((a,j)=>`<div class="ac-item" style="margin-top:4px"><span class="ac-n">${j+1}</span><span class="ac-t">${escapeHtml(a)}</span></div>`).join('')}</div>`:''}
     ${s.accept?`<div style="margin-top:8px;padding:8px;background:#fefce8;border-radius:5px"><b>ACCEPT</b> · Action: ${escapeHtml(s.accept.action)} · Expected: ${escapeHtml(s.accept.expected)} · Pass/Fail: ${escapeHtml(s.accept.pass_fail)} · Trace: ${escapeHtml(s.accept.traceable||s.regRef)}</div>`:''}
     <div style="margin-top:8px;font-size:9px;color:var(--ink4)">RTM row ${i+1} · DoR ${escapeHtml(s.definitionOfReady?.ready||'NOT_READY')} · DoD ${escapeHtml(s.definitionOfDone?.done||'NOT_DONE')} · interpretation logs — Value Package trace matrix (DRAFT_NOT_CONTROLLED)</div>
+    ${renderStructuredObligationCards(s.structuredObligations||s.regulatoryTracePipeline?.structuredObligations)}
     ${renderStoryTracePipelineDetail(s,i)}
   </div></details>`;
 }
