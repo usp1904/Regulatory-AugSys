@@ -158,6 +158,8 @@ check('hard-fail governance doc', fs.existsSync('docs/hard-fail-output-governanc
 check('FINAL_OUTPUT_ORDER schema constant', html.includes("FINAL_OUTPUT_ORDER_SCHEMA = 'maras.final-output-order.v1'"));
 check('FINAL_OUTPUT_ORDER has 23 sections', FINAL_OUTPUT_ORDER_LEN_OK(html));
 check('validateRegulatoryOutputHardFail function', html.includes('function validateRegulatoryOutputHardFail(story, chain, structuredObligations)'));
+check('MARAS_ALLOWED_DERIVATION_PREFIXES', html.includes('MARAS_ALLOWED_DERIVATION_PREFIXES') && html.includes("'Priority:'") && html.includes("'Given'"));
+check('hard-fail blocking vs warn severities', html.includes('HARD_FAIL_BLOCKING_CODES') && html.includes('WARN_NEEDS_REVIEW') && html.includes('dedupeHardFailFailures'));
 check('assembleFinalOutputPackage function', html.includes('function assembleFinalOutputPackage(story, index)'));
 check('HARD_FAIL_CODE_ENUM present', html.includes('SOURCE_MISSING') && html.includes('TECHNOLOGY_INVENTED') && html.includes('DESIGN_INVENTED'));
 check('Delivery Package panel HTML', html.includes('id="delivery-package-wrap"') && html.includes('function renderPackageDeliveryPanel'));
@@ -176,8 +178,10 @@ const hfSandbox = { console, Set, Map, Array, Object, String, Math, Date, JSON,
   FINAL_OUTPUT_ORDER: [], HARD_FAIL_CODE_ENUM: [], tracePipelineNode: () => null,
   findGxpChunkForStory: () => null, buildRegulatoryTraceChainForStory: () => ({nodes:[]}),
   HUMAN_REVIEW_SME_CHECKLIST: [], storyStableId: (s) => s.id, computePipelineCoveragePercent: () => 0,
-  buildRegulatoryKnowledgeGraph: () => ({nodes:[],edges:[]}), REGULATORY_HARD_FAIL_POLICY: 'ZERO_UNSUPPORTED_STATEMENTS'
+  buildRegulatoryKnowledgeGraph: () => ({nodes:[],edges:[]}), REGULATORY_HARD_FAIL_POLICY: 'ZERO_UNSUPPORTED_STATEMENTS',
+  GXP_CHUNKS: sandbox.GXP_CHUNKS
 };
+hfSandbox.findGxpChunkForStory = (s) => hfSandbox.GXP_CHUNKS.find(c => c.id === 'c3' || (s?.regRef && /REQ-001|§11\.10\(e\)/i.test(s.regRef)));
 vm.createContext(hfSandbox);
 vm.runInContext(`const REGULATORY_TRACE_PIPELINE_STAGES = []; function tracePipelineNode(c,s){return (c?.nodes||[]).find(n=>n.stage===s)||null;} ${hfSrc}`, hfSandbox);
 const failStory = { id: 'HF-1', story: 'We use kubernetes mesh for compliance certified operations', sourceExcerpt: 'Systems shall retain audit trails.', regRef: 'REQ-001', regulation: '21 CFR Part 11', section: '§11.10(e)', traceId: 'TRC-1' };
@@ -195,6 +199,28 @@ function REGULATORY_TRACE_OK_NODES() {
 }
 const vfOk = hfSandbox.validateRegulatoryOutputHardFail(okStory, okChain, okChain.structuredObligations);
 check('hard fail may still flag condition when source has if', typeof vfOk.passed === 'boolean');
+check('anchored ok story passes without blocking failures', vfOk.passed === true && !(vfOk.blockingFailures||[]).length);
+const c3Excerpt = c3.excerpts?.[0] || '';
+const c3Bundle = sandbox.normalizeRegulatoryObligationsForStory({ regRef: 'REQ-001 · 21 CFR Part 11 §11.10(e)' }, c3, null);
+const c3Story = {
+  id: 'REQ-001', title: 'Audit Trail Requirements', regulation: '21 CFR Part 11', section: '§11.10(e)',
+  regRef: 'REQ-001 · 21 CFR Part 11 §11.10(e)', traceId: 'TRC-C3-OK', sourceExcerpt: c3Excerpt,
+  story: 'As QA I need computer-generated audit trails so operator entries are independently recorded per the source excerpt.',
+  ac: ['Given operator entry When action is recorded Then date and time are stamped', 'Given record change When applied Then prior values are not obscured'],
+  pbi: {
+    poUnderstands: 'Priority: P0 regulatory criticality\nEvidence stage: OQ',
+    devBuilds: 'Implement: audit trail microservice hooks',
+    qaValidates: 'Given operator action When export Then trail is retained'
+  }
+};
+const c3Chain = {
+  nodes: REGULATORY_TRACE_OK_NODES().concat([{ stage: 'DOCUMENT', needsReview: false, summary: 'c3', traceId: 'T-DOC', payload: { chunkId: 'c3' } }]),
+  structuredObligations: c3Bundle
+};
+const vfC3 = hfSandbox.validateRegulatoryOutputHardFail(c3Story, c3Chain, c3Bundle);
+const unsupportedSpam = (vfC3.failures || []).filter(f => f.code === 'UNSUPPORTED_STATEMENT').length;
+check('c3 sample story not spammed with UNSUPPORTED_STATEMENT', unsupportedSpam <= 1);
+check('c3 sample story passes hard-fail blocking gate', vfC3.passed === true);
 const pkg = hfSandbox.assembleFinalOutputPackage({ ...okStory, regulatoryTracePipeline: okChain }, 0);
 check('assembleFinalOutputPackage has 23 sections', pkg.sections?.length === 23 && pkg.schema === 'maras.final-output-order.v1');
 check('assemble includes prohibitions section', pkg.sections?.some(s => s.key === 'PROHIBITIONS'));

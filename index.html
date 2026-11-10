@@ -288,9 +288,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .exp-btns{display:flex;gap:5px}
 .exp-btn{padding:6px 12px;font-size:11px;font-weight:600;border:none;border-radius:var(--r);cursor:pointer;color:#fff;font-family:inherit;transition:opacity .14s}
 .exp-btn:hover{opacity:.85}
-.story-card{background:#fff;border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;margin-bottom:8px;box-shadow:var(--shadow);transition:box-shadow .14s}
+.story-card{background:#fff;border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;margin-bottom:8px;box-shadow:var(--shadow);transition:box-shadow .14s;max-width:100%;overflow-wrap:anywhere;word-break:break-word}
 .story-card:hover{box-shadow:var(--shadow2)}
-.sc-top{padding:12px 14px}
+.sc-top{padding:12px 14px;max-width:100%;overflow-wrap:anywhere;word-break:break-word}
 .sc-num{font-size:10px;font-weight:600;color:var(--ink4);margin-bottom:4px;display:flex;align-items:center;gap:6px}
 .sc-num-badge{font-size:9px;padding:1px 6px;border-radius:8px;background:var(--bg2);color:var(--ink4)}
 .sc-title{font-size:13px;font-weight:600;color:var(--ink);line-height:1.35;margin-bottom:7px}
@@ -303,7 +303,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .t-reg{background:var(--blue-t);color:var(--blue)}
 .t-phase{background:var(--teal-t);color:var(--teal)}
 .t-gamp{background:var(--bg2);color:var(--ink3)}
-.sc-story{font-size:12px;color:var(--ink2);line-height:1.65}
+.sc-story{font-size:12px;color:var(--ink2);line-height:1.65;overflow-wrap:anywhere;word-break:break-word;max-width:100%}
 .pbi-body{margin:8px 0 4px;padding:10px 12px;background:#f8fafc;border-radius:6px;border:1px solid var(--border)}
 .pbi-card-title{font-size:12px;font-weight:700;color:var(--ink);margin-bottom:8px}
 .pbi-h{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.35px;color:#0e7a62;margin:10px 0 4px}
@@ -315,7 +315,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .pbi-compliance-details{margin-top:8px;border-top:1px solid var(--bg2)}
 .pbi-compliance-details>summary{font-size:10px;font-weight:600;color:var(--ink4);cursor:pointer;padding:8px 0;list-style:none}
 .pbi-compliance-details>summary::-webkit-details-marker{display:none}
-.pbi-compliance-panel{padding:0 0 10px;font-size:10px;color:var(--ink3);line-height:1.5}
+.pbi-compliance-panel{padding:0 0 10px;font-size:10px;color:var(--ink3);line-height:1.5;max-height:min(70vh,520px);overflow-y:auto;overflow-x:hidden;overflow-wrap:anywhere;word-break:break-word;max-width:100%}
 .sm-pbi{margin:6px 0;padding:8px;border-radius:5px;background:#f8fafc;border:1px solid var(--border)}
 .sm-pbi .pbi-h{font-size:9px;margin-top:6px}
 .sm-pbi textarea{width:100%;min-height:44px;font-size:10px;margin-top:2px}
@@ -708,17 +708,21 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .obl-infer{font-size:9px;color:#6b7280;font-style:italic}
 .obl-src{margin-top:5px;padding:5px 7px;background:#f1f5f9;border-left:2px solid #94a3b8;font-size:9px;color:#475569}
 /* Delivery Package · Final Output Order (23 sections) */
-.delivery-pkg-wrap{margin:14px 0 18px;border:1px solid var(--border);border-radius:10px;background:#fff;overflow:hidden;max-width:100%}
+.delivery-pkg-wrap{margin:14px 0 18px;border:1px solid var(--border);border-radius:10px;background:#fff;overflow:hidden;max-width:100%;overflow-wrap:anywhere;word-break:break-word}
 .delivery-pkg-head{padding:12px 14px;background:var(--bg);border-bottom:1px solid var(--border)}
 .delivery-pkg-title{font-size:14px;font-weight:700;color:var(--ink)}
 .delivery-pkg-sub{font-size:11px;line-height:1.5;color:var(--ink3);margin-top:3px;overflow-wrap:anywhere;word-wrap:break-word}
-.hard-fail-banner{margin:10px 14px 0;padding:10px 12px;border-radius:8px;font-size:11px;line-height:1.45;display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;overflow-wrap:anywhere}
+.hard-fail-banner{margin:10px 14px 0;padding:10px 12px;border-radius:8px;font-size:11px;line-height:1.45;display:flex;flex-direction:column;gap:6px;align-items:flex-start;overflow-wrap:anywhere;word-break:break-word;max-width:100%}
 .hard-fail-banner.fail{background:linear-gradient(135deg,#fef2f2,#fff7ed);border:1px solid #f97316;color:#9a3412}
+.hard-fail-banner.warn{background:#fffbeb;border:1px solid #fcd34d;color:#92400e}
 .hard-fail-banner.pass{background:#ecfdf5;border:1px solid #86efac;color:#166534}
 .hard-fail-banner b{font-weight:700}
-.hard-fail-codes{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.hard-fail-codes{display:flex;flex-wrap:wrap;gap:4px;margin-top:2px}
 .hard-fail-code{font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;background:#fff;border:1px solid #fdba74;color:#c2410c}
-.delivery-pkg-essentials{padding:10px 14px 12px;display:flex;flex-direction:column;gap:8px}
+.hard-fail-code.warn-code{border-color:#fcd34d;color:#a16207;background:#fffbeb}
+.hard-fail-story-hint{margin:6px 0 0;padding:6px 8px;font-size:10px;border-radius:6px;background:#fffbeb;border:1px solid #fde68a;color:#92400e;max-width:100%;overflow-wrap:anywhere}
+.delivery-pkg-essentials{padding:10px 14px 12px;display:flex;flex-direction:column;gap:8px;max-width:100%}
+.fop-all-scroll{max-height:min(65vh,480px);overflow-y:auto;overflow-x:hidden}
 .delivery-ess-block{border:1px solid var(--bg2);border-radius:8px;padding:8px 10px;background:#fafafa}
 .delivery-ess-k{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.35px;color:#475569;margin-bottom:4px}
 .delivery-ess-body{font-size:10px;color:var(--ink3);line-height:1.45;overflow-wrap:anywhere;word-wrap:break-word}
@@ -4351,7 +4355,7 @@ function renderPackagePipelineTrace(stories){
     const gaps = (c.nodes||[]).filter(n => n.needsReview).length;
     const dorBrief = s.definitionOfReady?.poReadiness;
     const poN = dorBrief ? `${(dorBrief.items||[]).filter(x=>x.met).length}/${(dorBrief.items||[]).length} PO-ready` : '';
-    return `<details class="rtp-story"${i===0?' open':''}><summary><b>${escapeHtml(s.id||`PBI-${i+1}`)}</b> · ${escapeHtml(s.title||'')} · ${(c.nodes||[]).length} stages · ${gaps} needs-review · ${poN} · trace ${escapeHtml(s.traceId||'')}</summary>
+    return `<details class="rtp-story sc-compliance-collapsed"><summary><b>${escapeHtml(s.id||`PBI-${i+1}`)}</b> · ${escapeHtml(s.title||'')} · ${(c.nodes||[]).length} stages · ${gaps} needs-review · ${poN} · trace ${escapeHtml(s.traceId||'')}</summary>
       ${renderPoReadinessAndRecommendedDoD(s,i)}
       <div class="rtp-chain compact">${(c.nodes||[]).map(n=>`<div class="rtp-row"><span class="rtp-stage">${escapeHtml(n.stage)}</span><span>${escapeHtml((n.summary||n.label).slice(0,140))}${n.needsReview?' · needs-review':''}</span></div>`).join('')}</div></details>`;
   }).join('');
@@ -4366,6 +4370,23 @@ const HARD_FAIL_CODE_ENUM = [
   'THRESHOLD_OMITTED','DEFINITION_OMITTED','TABLE_IGNORED','REFERENCE_IGNORED','UNSUPPORTED_STATEMENT',
   'TECHNOLOGY_INVENTED','ARCHITECTURE_INVENTED','VENDOR_INVENTED','DESIGN_INVENTED','OBLIGATION_MISSING'
 ];
+const HARD_FAIL_BLOCKING_CODES = new Set([
+  'SOURCE_MISSING','CLAUSE_MISSING','TRACEABILITY_MISSING','OBLIGATION_MISSING',
+  'TECHNOLOGY_INVENTED','ARCHITECTURE_INVENTED','VENDOR_INVENTED','DESIGN_INVENTED'
+]);
+const HARD_FAIL_WARN_CODES = new Set([
+  'UNSUPPORTED_STATEMENT','CONDITION_OMITTED','EXCEPTION_OMITTED','THRESHOLD_OMITTED',
+  'DEFINITION_OMITTED','TABLE_IGNORED','REFERENCE_IGNORED'
+]);
+const MARAS_ALLOWED_DERIVATION_PREFIXES = [
+  'Implement:','Given','When','Then','Priority:','Evidence stage:','Delivery slice','Business area:',
+  'Outcome:','Impact:','Client fit:','Backlog item type:','Build:','GAMP category','Tagged components:',
+  'Control / integration class:','Expected result:','Pass/fail check:','Test evidence:','Functional checks:',
+  'Evidence required:','Acceptance evidence:','Acceptance (dev):','Module/service:','Feature area:',
+  'Dependency:','Process slice:','Backlog state:','Risk note:','Outcome/obligation:','PO readiness'
+];
+const COMPLIANCE_APPROVAL_CLAIM_RE = /\b(compliant|compliance certified|fda approved|validated system|inspection.?ready|fully compliant)\b/i;
+const SPECIFIC_NUMERIC_CLAIM_RE = /\b(?:at least|no more than|within)\s+\d+|\b\d+(?:\.\d+)?\s*%|\b\d+\s*(?:days|years|months|hours|minutes)\b/i;
 const FINAL_OUTPUT_ORDER = [
   {num:1, key:'REGULATORY_INTENT_SUMMARY', label:'Regulatory Intent Summary'},
   {num:2, key:'REGULATORY_KNOWLEDGE_GRAPH', label:'Regulatory Knowledge Graph'},
@@ -4422,15 +4443,67 @@ function narrativeInventedTermHits(text, terms, corpus){
   terms.forEach(t => { if(low.includes(t) && !corpusHasTerm(corpus, t)) hits.push(t); });
   return hits;
 }
+function lineHasAllowedDerivationPrefix(line){
+  const t = String(line||'').trim();
+  if(!t) return true;
+  return MARAS_ALLOWED_DERIVATION_PREFIXES.some(p => t.startsWith(p));
+}
+function textOutsideAllowedDerivation(text){
+  return String(text||'').split(/\n/).filter(l => !lineHasAllowedDerivationPrefix(l)).join('\n');
+}
+function pbiDerivedNarrative(story){
+  const pbi = story?.pbi || {};
+  return [pbi.poUnderstands, pbi.devBuilds, pbi.qaValidates].filter(v => String(v||'').trim()).join('\n');
+}
+function storyHasTraceAnchoring(story, chain, bundle){
+  const doc = tracePipelineNode(chain, 'DOCUMENT');
+  const hasSource = !!(String(story?.sourceExcerpt||'').trim() || String(story?.regRef||'').trim() || String(story?.regulation||'').trim() || doc?.payload?.chunkId);
+  const anchoredObl = (bundle?.obligations||[]).some(o => o.sourceSpan?.text || o.sourceSpan?.chunkId || o.sourceSpan?.regRef);
+  return hasSource && !!String(story?.regRef||'').trim() && !!String(story?.traceId||story?.parentTraceId||'').trim()
+    && (chain?.nodes||[]).length >= 3 && (anchoredObl || story?.derivedFromSource === true);
+}
+function specificClaimUnsupported(text, corpus){
+  const scope = textOutsideAllowedDerivation(text);
+  if(!String(scope||'').trim()) return null;
+  if(COMPLIANCE_APPROVAL_CLAIM_RE.test(scope)) return 'approval/compliance claim';
+  const nums = scope.match(SPECIFIC_NUMERIC_CLAIM_RE);
+  if(nums){
+    const hit = nums.find(n => !corpus.toLowerCase().includes(String(n).toLowerCase()));
+    if(hit) return `numeric threshold "${hit}"`;
+  }
+  return null;
+}
+function narrativeForInventionCheck(story, chain, bundle){
+  const traceAnchored = storyHasTraceAnchoring(story, chain, bundle);
+  const core = [story?.title, story?.story, story?.userStory, story?.organisationInterpretation, (story?.labels||[]).join(' '), story?.gamp]
+    .filter(Boolean).join('\n');
+  if(!traceAnchored) return textOutsideAllowedDerivation(`${core}\n${pbiDerivedNarrative(story)}`);
+  return textOutsideAllowedDerivation(core);
+}
+function dedupeHardFailFailures(failures){
+  const seen = new Set();
+  return (failures||[]).filter(f => {
+    const key = `${f.code}::${f.severity||'FAILED'}`;
+    if(seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
 function validateRegulatoryOutputHardFail(story, chain, structuredObligations){
   const failures = [];
-  const add = (code, message) => {
-    if(HARD_FAIL_CODE_ENUM.includes(code)) failures.push({code, message, policy:REGULATORY_HARD_FAIL_POLICY, packageStatus:'FAILED'});
+  const add = (code, message, forceSeverity) => {
+    if(!HARD_FAIL_CODE_ENUM.includes(code)) return;
+    const severity = forceSeverity || (HARD_FAIL_BLOCKING_CODES.has(code) ? 'FAILED' : 'WARN_NEEDS_REVIEW');
+    failures.push({
+      code, message, policy:REGULATORY_HARD_FAIL_POLICY,
+      severity,
+      packageStatus: severity === 'FAILED' ? 'FAILED' : 'WARN_NEEDS_REVIEW'
+    });
   };
   chain = chain || story?.regulatoryTracePipeline || null;
   const bundle = structuredObligations || story?.structuredObligations || chain?.structuredObligations || null;
   const corpus = regulatoryCorpusText(story||{}, chain, bundle);
-  const corpusLow = corpus.toLowerCase();
+  const traceAnchored = storyHasTraceAnchoring(story, chain, bundle);
   const doc = tracePipelineNode(chain, 'DOCUMENT');
   const hasSource = !!(String(story?.sourceExcerpt||'').trim() || String(story?.regRef||'').trim() || String(story?.regulation||'').trim() || doc?.payload?.chunkId);
   if(!hasSource) add('SOURCE_MISSING', 'Source missing — excerpt, regRef, regulation, or library chunk required');
@@ -4443,45 +4516,54 @@ function validateRegulatoryOutputHardFail(story, chain, structuredObligations){
     add('OBLIGATION_MISSING', 'Modal obligation language present in source corpus but no structured obligations parsed');
   if(/\b(if|when|where|provided that|subject to)\b/i.test(corpus)){
     const cond = tracePipelineNode(chain, 'CONDITIONS');
-    if(!cond || cond.needsReview || /needs-review|not sourced/i.test(String(cond.summary||'')))
-      add('CONDITION_OMITTED', 'Source implies conditions — CONDITIONS stage empty or needs-review');
+    const condWeak = !cond || cond.needsReview || /needs-review|not sourced/i.test(String(cond.summary||''));
+    if(condWeak) add('CONDITION_OMITTED', traceAnchored ? 'Conditions stage needs SME review — non-blocking' : 'Source implies conditions — CONDITIONS stage empty or needs-review', traceAnchored ? 'WARN_NEEDS_REVIEW' : undefined);
   }
   if(/\b(unless|except|does not apply|exemption)\b/i.test(corpus)){
     const exc = tracePipelineNode(chain, 'EXCEPTIONS');
-    if(!exc || exc.needsReview || /unresolved|needs-review/i.test(String(exc.summary||'')))
-      add('EXCEPTION_OMITTED', 'Source implies exceptions — EXCEPTIONS stage unresolved');
+    const excWeak = !exc || exc.needsReview || /unresolved|needs-review/i.test(String(exc.summary||''));
+    if(excWeak) add('EXCEPTION_OMITTED', traceAnchored ? 'Exceptions unresolved — SME review recommended' : 'Source implies exceptions — EXCEPTIONS stage unresolved', traceAnchored ? 'WARN_NEEDS_REVIEW' : undefined);
   }
   if(/\b(at least|no more than|within\s+\d|\d+\s*percent|%|minimum of|maximum of)\b/i.test(corpus)){
     const impacts = bundle?.impacts || [];
-    const hintOk = impacts.some(i => /\bat least\b|percent|%|\d/i.test(`${i.complianceOutcome?.measurementHint||''}${i.complianceOutcome?.observable||''}`));
-  if(!hintOk) add('THRESHOLD_OMITTED', 'Threshold language in source modal obligations not carried to compliance outcomes');
+    const oblSpans = (bundle?.obligations||[]).some(o => o.sourceSpan?.text && /\bat least\b|percent|%|\d/i.test(o.sourceSpan.text));
+    const hintOk = oblSpans || impacts.some(i => /\bat least\b|percent|%|\d/i.test(`${i.complianceOutcome?.measurementHint||''}${i.complianceOutcome?.observable||''}`));
+    if(!hintOk) add('THRESHOLD_OMITTED', 'Threshold language in source modal obligations not carried to compliance outcomes', traceAnchored ? 'WARN_NEEDS_REVIEW' : undefined);
   }
   if(/\b(means|defined as|definition of)\b/i.test(corpus)){
     const defs = bundle?.definitions;
     const hints = story?.regulatoryTraceHints?.definitions;
-    if(!defs?.length && !hints) add('DEFINITION_OMITTED', 'Definition terms in source — definitions section not populated');
+    if(!defs?.length && !hints) add('DEFINITION_OMITTED', 'Definition terms in source — definitions section not populated', 'WARN_NEEDS_REVIEW');
   }
   if(/\|[^|]{2,}\|/m.test(corpus) || /\btable\s+\d/i.test(corpus))
-    add('TABLE_IGNORED', 'Table markers in source excerpt context — structured table capture missing');
+    add('TABLE_IGNORED', 'Table markers in source excerpt context — structured table capture missing', 'WARN_NEEDS_REVIEW');
   if(/\b(?:see|refer to)\s+(?:section|§)\s*[\w().-]+/i.test(corpus)){
     const xref = story?.regulatoryTraceHints?.crossReferences || doc?.payload?.crossReferences;
-    if(!xref) add('REFERENCE_IGNORED', 'Cross-reference in source not mapped in trace payload');
+    if(!xref) add('REFERENCE_IGNORED', 'Cross-reference in source not mapped in trace payload', 'WARN_NEEDS_REVIEW');
   }
-  const narrative = `${story?.title||''} ${story?.story||''} ${story?.userStory||''} ${story?.organisationInterpretation||''}`;
-  if(/\b(compliant|compliance certified|fda approved|validated system|inspection.?ready|fully compliant)\b/i.test(narrative) && story?.sourceApprovalStatus !== 'SME_APPROVED')
-    add('UNSUPPORTED_STATEMENT', 'Unsupported approval/compliance statement — DRAFT_NOT_CONTROLLED; SME-approved citation required');
-  const labeled = `${narrative} ${(story?.labels||[]).join(' ')} ${story?.gamp||''}`;
-  narrativeInventedTermHits(labeled, INVENTED_TECH_TERMS, corpus).forEach(t => add('TECHNOLOGY_INVENTED', `Technology "${t}" not evidenced in sourceExcerpt corpus`));
-  narrativeInventedTermHits(labeled, INVENTED_ARCH_TERMS, corpus).forEach(t => add('ARCHITECTURE_INVENTED', `Architecture "${t}" not evidenced in sourceExcerpt corpus`));
-  narrativeInventedTermHits(labeled, INVENTED_VENDOR_TERMS, corpus).forEach(t => add('VENDOR_INVENTED', `Vendor/product "${t}" not evidenced in sourceExcerpt corpus`));
-  narrativeInventedTermHits(labeled, INVENTED_DESIGN_TERMS, corpus).forEach(t => add('DESIGN_INVENTED', `Design artifact "${t}" not evidenced in sourceExcerpt corpus`));
+  const claimNarrative = `${story?.title||''} ${story?.story||''} ${story?.userStory||''} ${story?.organisationInterpretation||''}`;
+  const claim = specificClaimUnsupported(claimNarrative, corpus);
+  if(claim && story?.sourceApprovalStatus !== 'SME_APPROVED'){
+    add('UNSUPPORTED_STATEMENT', `Unsupported ${claim} — DRAFT_NOT_CONTROLLED; SME-approved citation required`, traceAnchored ? 'WARN_NEEDS_REVIEW' : undefined);
+  }
+  const inventionScope = narrativeForInventionCheck(story, chain, bundle);
+  narrativeInventedTermHits(inventionScope, INVENTED_TECH_TERMS, corpus).forEach(t => add('TECHNOLOGY_INVENTED', `Technology "${t}" not evidenced in sourceExcerpt corpus`));
+  narrativeInventedTermHits(inventionScope, INVENTED_ARCH_TERMS, corpus).forEach(t => add('ARCHITECTURE_INVENTED', `Architecture "${t}" not evidenced in sourceExcerpt corpus`));
+  narrativeInventedTermHits(inventionScope, INVENTED_VENDOR_TERMS, corpus).forEach(t => add('VENDOR_INVENTED', `Vendor/product "${t}" not evidenced in sourceExcerpt corpus`));
+  narrativeInventedTermHits(inventionScope, INVENTED_DESIGN_TERMS, corpus).forEach(t => add('DESIGN_INVENTED', `Design artifact "${t}" not evidenced in sourceExcerpt corpus`));
+  const deduped = dedupeHardFailFailures(failures);
+  const blocking = deduped.filter(f => f.severity === 'FAILED');
+  const warnings = deduped.filter(f => f.severity === 'WARN_NEEDS_REVIEW');
   return {
-    passed: failures.length === 0,
-    failures,
-    codes: failures.map(f => f.code),
+    passed: blocking.length === 0,
+    failures: deduped,
+    blockingFailures: blocking,
+    warnings,
+    codes: deduped.map(f => f.code),
     validatedAt: new Date().toISOString(),
     policy: REGULATORY_HARD_FAIL_POLICY,
-    packageStatus: failures.length ? 'FAILED' : 'DRAFT_NOT_CONTROLLED'
+    packageStatus: blocking.length ? 'FAILED' : 'DRAFT_NOT_CONTROLLED',
+    traceAnchored
   };
 }
 function computePipelineCoveragePercent(chain){
@@ -4579,14 +4661,28 @@ function validatePackageRegulatoryHardFail(stories){
     const vf = validateRegulatoryOutputHardFail(s, chain, s.structuredObligations);
     return {storyId:storyStableId(s,i), index:i, ...vf};
   });
-  const failures = perStory.flatMap(r => (r.failures||[]).map(f => ({...f, storyId:r.storyId})));
+  const allFailures = perStory.flatMap(r => (r.failures||[]).map(f => ({...f, storyId:r.storyId})));
+  const seenCodes = new Set();
+  const aggregated = [];
+  allFailures.forEach(f => {
+    if(seenCodes.has(f.code)) return;
+    seenCodes.add(f.code);
+    aggregated.push({code:f.code, message:f.message, severity:f.severity, policy:f.policy, packageStatus:f.packageStatus});
+  });
+  const blocking = aggregated.filter(f => f.severity === 'FAILED');
+  const warnings = aggregated.filter(f => f.severity === 'WARN_NEEDS_REVIEW');
   return {
-    passed: failures.length === 0,
+    passed: blocking.length === 0,
     policy:REGULATORY_HARD_FAIL_POLICY,
     stories:perStory,
-    failures,
-    failureCount:failures.length,
-    packageStatus:failures.length ? 'FAILED' : 'DRAFT_NOT_CONTROLLED',
+    failures: aggregated,
+    blockingFailures: blocking,
+    warnings,
+    failureCount: allFailures.length,
+    uniqueFailureCount: aggregated.length,
+    blockingCount: blocking.length,
+    warningCount: warnings.length,
+    packageStatus: blocking.length ? 'FAILED' : 'DRAFT_NOT_CONTROLLED',
     validatedAt:new Date().toISOString()
   };
 }
@@ -4601,16 +4697,34 @@ function refreshStoryDeliveryArtifacts(story, index){
   story.finalOutputPackage = assembleFinalOutputPackage(story, index);
   return story;
 }
-function renderHardFailBannerHtml(hardFail, compact){
+function renderHardFailBannerHtml(hardFail, opts){
   if(!hardFail) return '';
-  const cls = hardFail.passed ? 'hard-fail-banner pass' : 'hard-fail-banner fail';
-  const title = hardFail.passed
-    ? '<b>Regulatory output hard-fail:</b> PASS — trace pipeline fields sourced; DRAFT_NOT_CONTROLLED'
-    : '<b>Regulatory output hard-fail:</b> FAILED — generation/export watermarked; SME/QA review required before reliance';
-  const codes = (hardFail.failures||[]).slice(0, compact ? 8 : 40).map(f =>
-    `<span class="hard-fail-code" title="${escapeHtml(f.message)}">${escapeHtml(f.code)}</span>`).join('');
-  const more = (hardFail.failures||[]).length > 8 && compact ? `<span class="hard-fail-code">+${hardFail.failures.length - 8} more</span>` : '';
-  return `<div class="${cls}" data-hard-fail="${hardFail.passed?'pass':'fail'}">${title}<div class="hard-fail-codes">${codes}${more}</div></div>`;
+  const cap = (opts && opts.maxCodes) || 5;
+  const list = (hardFail.failures||hardFail.blockingFailures||[]).slice(0, cap);
+  const totalUnique = hardFail.uniqueFailureCount ?? (hardFail.failures||[]).length;
+  const blocking = hardFail.blockingCount ?? (hardFail.blockingFailures||[]).length;
+  const warnings = hardFail.warningCount ?? (hardFail.warnings||[]).length;
+  let cls = 'hard-fail-banner pass';
+  let mode = 'pass';
+  if(blocking > 0){ cls = 'hard-fail-banner fail'; mode = 'fail'; }
+  else if(warnings > 0 || (hardFail.failures||[]).some(f => f.severity === 'WARN_NEEDS_REVIEW')){ cls = 'hard-fail-banner warn'; mode = 'warn'; }
+  const title = blocking > 0
+    ? `<b>Regulatory hard-fail (package):</b> ${blocking} blocking code(s) — exports watermarked FAILED; SME/QA review required`
+    : warnings > 0
+      ? `<b>Regulatory hard-fail (package):</b> PASS with ${warnings} review warning(s) — DRAFT_NOT_CONTROLLED`
+      : '<b>Regulatory hard-fail (package):</b> PASS — trace pipeline fields sourced; DRAFT_NOT_CONTROLLED';
+  const codes = list.map(f =>
+    `<span class="hard-fail-code${f.severity==='WARN_NEEDS_REVIEW'?' warn-code':''}" title="${escapeHtml(f.message)}">${escapeHtml(f.code)}</span>`).join('');
+  const more = totalUnique > cap ? `<span class="hard-fail-code">+${totalUnique - cap} more</span>` : '';
+  const meta = totalUnique ? `<span style="font-size:10px;opacity:.9">${hardFail.failureCount||totalUnique} occurrence(s) across ${(hardFail.stories||[]).length||'—'} PBI(s) · ${totalUnique} unique</span>` : '';
+  return `<div class="${cls}" data-hard-fail="${mode}">${title}${meta}<div class="hard-fail-codes">${codes}${more}</div></div>`;
+}
+function renderStoryHardFailHint(hardFail){
+  if(!hardFail || hardFail.passed) return '';
+  const blocking = (hardFail.blockingFailures||[]).filter(f => f.severity==='FAILED');
+  if(!blocking.length) return '';
+  const codes = blocking.slice(0,3).map(f => f.code).join(', ');
+  return `<div class="hard-fail-story-hint" data-story-hard-fail="block">Blocking: ${escapeHtml(codes)}${blocking.length>3?` +${blocking.length-3}`:''} — see package summary above</div>`;
 }
 function formatDeliverySectionBody(sec){
   if(sec.graph) return `Nodes ${sec.graph.nodeCount||0} · Edges ${sec.graph.edgeCount||0} (traceIds, reg refs, chunk ids only)`;
@@ -4640,9 +4754,12 @@ function renderDeliveryPersonaEssentials(pkg, persona){
 function renderFinalOutputOrderAccordion(pkg, opts){
   const rows = (pkg.sections||[]).map(sec => {
     const nr = sec.status === 'needs-review' ? ' <span class="fop-nr">needs-review</span>' : '';
-    return `<details class="fop-section"><summary><span class="fop-num">${sec.num}.</span> ${escapeHtml(sec.label)}${nr}</summary><div class="fop-body">${escapeHtml(formatDeliverySectionBody(sec))}</div></details>`;
+    return `<details class="fop-section sc-compliance-collapsed"><summary><span class="fop-num">${sec.num}.</span> ${escapeHtml(sec.label)}${nr}</summary><div class="fop-body">${escapeHtml(formatDeliverySectionBody(sec))}</div></details>`;
   }).join('');
-  return `<details class="pbi-compliance-details sc-compliance-collapsed delivery-pkg-story"${opts?.open?' open':''}><summary>Delivery Package · Final output order (${pkg.sectionCount||23} sections · ${FINAL_OUTPUT_ORDER_SCHEMA})</summary><div class="fop-all">${rows}</div></details>`;
+  const essentials = (opts?.personaBlocks||'');
+  return `<details class="pbi-compliance-details sc-compliance-collapsed delivery-pkg-story"><summary>Delivery Package · Show all ${pkg.sectionCount||23} sections (${FINAL_OUTPUT_ORDER_SCHEMA})</summary>
+    ${essentials?`<div class="delivery-pkg-essentials">${essentials}</div>`:''}
+    <div class="fop-all fop-all-scroll">${rows}</div></details>`;
 }
 function renderStoryDeliveryPackagePanel(story, index){
   const pkg = story.finalOutputPackage || assembleFinalOutputPackage(story, index);
@@ -4655,7 +4772,8 @@ function renderStoryDeliveryPackagePanel(story, index){
     renderDeliveryPersonaEssentials(pkg, 'system-owner'),
     renderDeliveryPersonaEssentials(pkg, 'rte-project-manager')
   ].join('');
-  return `${renderHardFailBannerHtml(hf, true)}<div class="delivery-pkg-essentials">${personaBlocks}</div>${renderFinalOutputOrderAccordion(pkg)}`;
+  const essentialsWrap = `<details class="pbi-compliance-details sc-compliance-collapsed" style="margin:6px 0"><summary>Persona essentials (PO · Dev · QA · PM · System Owner · RTE)</summary><div class="delivery-pkg-essentials">${personaBlocks}</div></details>`;
+  return `${renderStoryHardFailHint(hf)}${essentialsWrap}${renderFinalOutputOrderAccordion(pkg)}`;
 }
 function renderPackageDeliveryPanel(stories){
   const wrap = document.getElementById('delivery-package-wrap');
@@ -4664,15 +4782,17 @@ function renderPackageDeliveryPanel(stories){
   wrap.style.display = 'block';
   const pkgFail = validatePackageRegulatoryHardFail(stories);
   H.regulatoryOutputHardFail = pkgFail;
-  const banner = renderHardFailBannerHtml(pkgFail, false);
+  const banner = renderHardFailBannerHtml(pkgFail, {maxCodes:5});
   const avgCov = stories.reduce((a,s,i) => a + (s.finalOutputPackage?.coverageReport?.rtmCoveragePercent ?? computePipelineCoveragePercent(s.regulatoryTracePipeline)), 0) / stories.length;
-  wrap.innerHTML = `<div class="delivery-pkg-head"><div class="delivery-pkg-title">Delivery Package</div><div class="delivery-pkg-sub">${FINAL_OUTPUT_ORDER_SCHEMA} · ${FINAL_OUTPUT_ORDER.length} sections per PBI · avg RTM coverage ${Math.round(avgCov * 10) / 10}% · ${REGULATORY_HARD_FAIL_POLICY}</div></div>${banner}<div class="delivery-pkg-sub" style="padding:0 14px 10px">Persona essentials appear on each PBI card; expand numbered sections 1–23 below Compliance Details. Hard-fail blocks automatic pass — exports carry FAILED watermark when any code fires.</div>`;
+  wrap.innerHTML = `<div class="delivery-pkg-head"><div class="delivery-pkg-title">Delivery Package</div><div class="delivery-pkg-sub">${FINAL_OUTPUT_ORDER_SCHEMA} · ${FINAL_OUTPUT_ORDER.length} sections per PBI · avg RTM coverage ${Math.round(avgCov * 10) / 10}% · ${REGULATORY_HARD_FAIL_POLICY} · blocking vs review-warn severities</div></div>${banner}<div class="delivery-pkg-sub" style="padding:0 14px 10px">One package-level hard-fail summary (max 5 codes). Each PBI card keeps persona essentials collapsed; expand “Show all 23 sections” per item. FAILED watermark applies only to blocking codes.</div>`;
 }
 function surfaceHardFailOnGenerationComplete(stories){
   const vf = validatePackageRegulatoryHardFail(stories);
   H.regulatoryOutputHardFail = vf;
   if(vf.passed === false){
-    setStatus('block', `Regulatory hard-fail: ${vf.failureCount} issue(s) — review Delivery Package before export (FAILED watermark)`);
+  setStatus('block', `Regulatory hard-fail: ${vf.blockingCount||0} blocking code(s) (${vf.failureCount||0} total) — review Delivery Package before export (FAILED watermark)`);
+  } else if((vf.warningCount||0) > 0){
+    setStatus('done', `Regulatory hard-fail: PASS with ${vf.warningCount} review warning(s) — DRAFT_NOT_CONTROLLED`);
   }
 }
 
@@ -6159,8 +6279,7 @@ function renderPbiComplianceDetailsAssure(s,i,bil,qgHtml,ragPipeHtml,boiHtml,inv
     ${s.accept?`<div style="margin-top:8px;padding:8px;background:#fefce8;border-radius:5px"><b>ACCEPT</b> · Action: ${escapeHtml(s.accept.action)} · Expected: ${escapeHtml(s.accept.expected)} · Pass/Fail: ${escapeHtml(s.accept.pass_fail)} · Trace: ${escapeHtml(s.accept.traceable||s.regRef)}</div>`:''}
     ${(()=>{const pr=s.definitionOfReady?.poReadiness;const rd=s.definitionOfDone?.recommendedDoD;if(!pr&&!rd)return'';const rows=[...(pr?.items||[]),...(rd?.items||[])].map(x=>`<div class="dor-dod-hint"><b>${escapeHtml(x.label)}</b>: ${escapeHtml(x.autoHint||x.dataHint||'')}</div>`).join('');return rows?`<details class="pbi-compliance-details sc-compliance-collapsed" style="margin-top:8px"><summary>PO readiness & DoD derivation hints</summary><div style="padding:6px 0">${rows}</div></details>`:'';})()}
     <div style="margin-top:8px;font-size:9px;color:var(--ink4)">RTM row ${i+1} · DoR ${escapeHtml(s.definitionOfReady?.ready||'NOT_READY')} · DoD ${escapeHtml(s.definitionOfDone?.done||'NOT_DONE')} · interpretation logs — Value Package trace matrix (DRAFT_NOT_CONTROLLED)</div>
-    ${renderStructuredObligationCards(s.structuredObligations||s.regulatoryTracePipeline?.structuredObligations)}
-    ${renderStoryTracePipelineDetail(s,i)}
+    ${(s.finalOutputPackage||s.regulatoryOutputHardFail)?'<div style="margin-top:8px;font-size:9px;color:var(--ink4)">Structured obligations and full trace pipeline are in the Delivery Package panel above (deduplicated).</div>':`${renderStructuredObligationCards(s.structuredObligations||s.regulatoryTracePipeline?.structuredObligations)}${renderStoryTracePipelineDetail(s,i)}`}
   </div></details>`;
 }
 function renderStories(stories, pipelineResult) {
