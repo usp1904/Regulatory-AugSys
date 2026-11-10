@@ -6,7 +6,7 @@
 
 - **OUTPUT ONLY SOURCE SUPPORTED** — delivery sections populate from `maras.trace-pipeline.v1`, ingested excerpts, and existing story fields only.
 - **DRAFT_NOT_CONTROLLED** — all exports retain draft watermarks; SME/QA/RA review is still required when hard-fail passes.
-- **ZERO_UNSUPPORTED_STATEMENTS** — `validateRegulatoryOutputHardFail` flags invented technology, architecture, vendor, or design tokens that do not appear in the regulatory source corpus (source excerpt, chunk text, obligation spans).
+- **ZERO_UNSUPPORTED_STATEMENTS** — `validateRegulatoryOutputHardFail` separates **blocking** failures (missing source/trace, invented technology/architecture/vendor/design) from **review warnings** (minor unsupported narrative, conditions/exceptions needs-review when trace is otherwise anchored). PBI fields derived via `MARAS_ALLOWED_DERIVATION_PREFIXES` (e.g. `Priority:`, `Given`, `Evidence stage:`) are not treated as unsupported claims.
 
 ## Hard-fail codes
 
@@ -22,13 +22,13 @@
 | `DEFINITION_OMITTED` | Definition language in source; definitions not captured |
 | `TABLE_IGNORED` | Table markers in excerpt context |
 | `REFERENCE_IGNORED` | Cross-reference in source not mapped |
-| `UNSUPPORTED_STATEMENT` | Compliance/approval claim without SME-approved citation |
+| `UNSUPPORTED_STATEMENT` | Specific compliance/approval or numeric claim without SME-approved citation — **warning** when source, clause, and trace anchor present |
 | `TECHNOLOGY_INVENTED` | Technology term absent from source corpus |
 | `ARCHITECTURE_INVENTED` | Architecture pattern absent from source corpus |
 | `VENDOR_INVENTED` | Vendor/product absent from source corpus |
 | `DESIGN_INVENTED` | Design artifact absent from source corpus |
 
-When any code fires, `regulatoryOutputHardFail.passed` is **false**, UI shows an orange/red banner, and exports use a **FAILED** package status prefix. This is not a false pass: empty stub sections remain `needs-review`, not invented filler.
+Package-level UI shows one banner (max **5** unique codes, `+N more`). Per-PBI cards do not repeat the full banner. **Blocking** codes set `regulatoryOutputHardFail.passed` to **false** and exports use a **FAILED** package status prefix. **WARN_NEEDS_REVIEW** codes alone keep `passed` true with DRAFT_NOT_CONTROLLED watermark. Empty stub sections remain `needs-review`, not invented filler.
 
 ## Final output order (`maras.final-output-order.v1`)
 
