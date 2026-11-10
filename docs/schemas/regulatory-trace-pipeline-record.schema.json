@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "maras.trace-pipeline.v1",
+  "title": "MARAS regulatory trace pipeline record",
+  "description": "Draft trace chain from document to human review package. DRAFT_NOT_CONTROLLED — not a compliance record.",
+  "type": "object",
+  "required": ["schema", "schemaVersion", "packageStatus", "stageEnum", "stories"],
+  "properties": {
+    "schema": { "const": "maras.trace-pipeline.v1" },
+    "schemaVersion": { "type": "integer", "minimum": 1 },
+    "packageStatus": { "const": "DRAFT_NOT_CONTROLLED" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "stageEnum": {
+      "type": "array",
+      "minItems": 19,
+      "maxItems": 19,
+      "items": {
+        "type": "string",
+        "enum": [
+          "DOCUMENT",
+          "REGULATORY_INTENT",
+          "OBLIGATION",
+          "CONDITIONS",
+          "EXCEPTIONS",
+          "BUSINESS_RULES",
+          "COMPLIANCE_OUTCOMES",
+          "BUSINESS_CAPABILITIES",
+          "VALUE_STREAMS",
+          "AGILE_GOALS",
+          "EPICS",
+          "FEATURES",
+          "USER_STORIES",
+          "ACCEPTANCE_CRITERIA",
+          "COMPLIANCE_TEST_SCENARIOS",
+          "DEFINITION_OF_READY",
+          "DEFINITION_OF_DONE",
+          "TRACEABILITY_MATRIX",
+          "HUMAN_REVIEW_PACKAGE"
+        ]
+      }
+    },
+    "stories": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/storyPipeline" }
+    }
+  },
+  "$defs": {
+    "traceNode": {
+      "type": "object",
+      "required": ["stage", "traceId", "parentTraceId", "artifactId", "packageStatus"],
+      "properties": {
+        "stage": { "type": "string" },
+        "traceId": { "type": "string" },
+        "parentTraceId": { "type": ["string", "null"] },
+        "artifactId": { "type": "string" },
+        "ordinal": { "type": "integer" },
+        "label": { "type": "string" },
+        "summary": { "type": "string" },
+        "payload": { "type": "object" },
+        "needsReview": { "type": "boolean" },
+        "packageStatus": { "const": "DRAFT_NOT_CONTROLLED" }
+      }
+    },
+    "storyPipeline": {
+      "type": "object",
+      "required": ["schema", "ownerId", "nodes", "rootTraceId", "leafTraceId"],
+      "properties": {
+        "schema": { "const": "maras.trace-pipeline.v1" },
+        "ownerId": { "type": "string" },
+        "nodes": {
+          "type": "array",
+          "minItems": 19,
+          "items": { "$ref": "#/$defs/traceNode" }
+        },
+        "definitionOfReady": { "type": "object" },
+        "definitionOfDone": { "type": "object" },
+        "rootTraceId": { "type": "string" },
+        "leafTraceId": { "type": "string" }
+      }
+    }
+  }
+}

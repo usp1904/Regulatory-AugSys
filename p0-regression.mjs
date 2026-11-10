@@ -107,5 +107,14 @@ check('PBI compliance details collapsed by default', html.includes('class="pbi-c
 check('PBI incomplete requirement flag', html.includes('data-pbi-incomplete="1"') && html.includes('pbi.complete') && html.includes('⚠ Incomplete requirement'));
 check('Story Map export includes pbi JSON fields', html.includes("'pbi.poUnderstands'") && html.includes("'pbi.devBuilds'") && html.includes("'pbi.qaValidates'") && html.includes("'pbi.complete'"));
 check('PBI output format doc', fs.existsSync('docs/pbi-output-format.md') && fs.readFileSync('docs/pbi-output-format.md','utf8').includes('DRAFT_NOT_CONTROLLED'));
+check('regulatory trace pipeline stage enum (19 stages)', html.includes('REGULATORY_TRACE_PIPELINE_STAGES') && html.includes("'HUMAN_REVIEW_PACKAGE'") && html.includes("'DOCUMENT'"));
+check('maras.trace-pipeline.v1 schema constant', html.includes("REGULATORY_TRACE_PIPELINE_SCHEMA = 'maras.trace-pipeline.v1'"));
+check('trace link helpers', html.includes('function linkTracePipelineParents') && html.includes('function attachRegulatoryTracePipeline') && html.includes('function buildRegulatoryTraceChainForStory'));
+check('pipeline trace UI in Value Package', html.includes('id="pipeline-trace-wrap"') && html.includes('function renderPackagePipelineTrace') && html.includes('Full trace pipeline'));
+check('human review package export', html.includes('function dlHumanReviewPackageJson') && html.includes('maras.human-review-package.v1') && html.includes('DRAFT-MARAS-Human-Review-Package.json'));
+check('backlog JSON includes trace pipeline', html.includes('regulatoryTracePipeline:ensurePackageTracePipeline(allStories)') && html.includes('traceStageEnum:regulatoryTracePipelineStages()'));
+check('decomposition prompts include regulatoryTraceHints', html.includes('regulatoryTraceHints'));
+check('regulatory trace pipeline doc', fs.existsSync('docs/regulatory-trace-pipeline.md') && fs.readFileSync('docs/regulatory-trace-pipeline.md','utf8').includes('maras.trace-pipeline.v1'));
+check('regulatory trace pipeline json schema', fs.existsSync('docs/schemas/regulatory-trace-pipeline-record.schema.json') && fs.readFileSync('docs/schemas/regulatory-trace-pipeline-record.schema.json','utf8').includes('HUMAN_REVIEW_PACKAGE'));
 
 export const result = { status: 'PASS', checks: checks.length, systemsValidated: 15, names: checks };

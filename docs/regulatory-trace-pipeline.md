@@ -1,0 +1,52 @@
+# Regulatory trace pipeline (MARAS)
+
+**Status:** DRAFT_NOT_CONTROLLED — internal delivery trace model only. Not a compliance decision, validation record, or submission package.
+
+## Purpose
+
+MARAS links curated regulatory sources to delivery artifacts through a **19-stage conversion chain**. Each stage carries `traceId`, `parentTraceId`, and `stage` (enum) so exports and the Value Package RTM remain auditable without replacing SME/QA review.
+
+## Stage enum (`maras.trace-pipeline.v1`)
+
+| # | Stage key | Typical artifact |
+|---|-----------|------------------|
+| 1 | `DOCUMENT` | Library chunk, ingested source, SHA-256 / excerpt |
+| 2 | `REGULATORY_INTENT` | Clause intent from corpus or SME interpretation |
+| 3 | `OBLIGATION` | Normative requirement / RAG-synthesized OBL-* |
+| 4 | `CONDITIONS` | Constraints, environmental or procedural conditions |
+| 5 | `EXCEPTIONS` | Applicability exceptions (often needs-review) |
+| 6 | `BUSINESS_RULES` | ACCEPT action / control statement |
+| 7 | `COMPLIANCE_OUTCOMES` | BOI outcome / expected result |
+| 8 | `BUSINESS_CAPABILITIES` | Capability or system area |
+| 9 | `VALUE_STREAMS` | Programme business outcome |
+| 10 | `AGILE_GOALS` | PI / programme goal |
+| 11 | `EPICS` | Epic name |
+| 12 | `FEATURES` | Feature / PBI title |
+| 13 | `USER_STORIES` | Business PBI narrative |
+| 14 | `ACCEPTANCE_CRITERIA` | Given/When/Then AC |
+| 15 | `COMPLIANCE_TEST_SCENARIOS` | Test trace / RTM test column |
+| 16 | `DEFINITION_OF_READY` | Derived from INVEST + PBI three questions + trace |
+| 17 | `DEFINITION_OF_DONE` | Derived from RTM Layer 1/2 + attestation + tests |
+| 18 | `TRACEABILITY_MATRIX` | Feature Traceability Matrix row |
+| 19 | `HUMAN_REVIEW_PACKAGE` | SME checklist bundle (`maras.human-review-package.v1`) |
+
+## Where it appears in the UI
+
+- **Value Package:** collapsed **Pipeline Trace** panel below the Feature Traceability Matrix; per-PBI **Full trace pipeline** under **Compliance Details** (default remains PBI three questions).
+- **Story Map:** **Regulatory traceability** view mode shows stage counts and expandable chains.
+- **Readiness:** Implementation Readiness Gate references the same 19-stage model in `pipelineNote`.
+
+## Exports
+
+- `DRAFT-MARAS-Backlog.json` — includes `regulatoryTracePipeline` and `traceStageEnum`.
+- `DRAFT-MARAS-Human-Review-Package.json` — full chain + SME review checklist (draft).
+- Saved browser packages (`pkg_*`) persist `regulatoryTracePipeline`.
+- Story Map JSON includes `assureRegulatoryTracePipeline` when Assure PBIs exist in session.
+
+## AI / harness
+
+Decomposition prompts request `regulatoryTraceHints` on each PBI. Missing source material should use `needs-review` stubs — never invent regulatory text.
+
+## Review
+
+Evidence gaps and machine-derived stages require **SME/QA/RA review** before baselining. MARAS does not assert compliance or approval.
