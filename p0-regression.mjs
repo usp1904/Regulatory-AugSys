@@ -133,7 +133,7 @@ function extractBlock(label, startMarker, endMarker) {
 
 const gxpMatch = html.match(/const GXP_CHUNKS=(\[[\s\S]*?\]);\s*\nconst /);
 if (!gxpMatch) throw new Error('Could not extract GXP_CHUNKS for obligation test');
-const oblFnSrc = extractBlock('obligation fns', "const STRUCTURED_OBLIGATION_SCHEMA = 'maras.structured-obligation.v1'", 'function computeStoryDefinitionOfReady(story){');
+const oblFnSrc = extractBlock('obligation fns', "const STRUCTURED_OBLIGATION_SCHEMA = 'maras.structured-obligation.v1'", 'const PO_READINESS_CHECKLIST_KEYS');
 const sandbox = { console, Set, Map, Array, Object, String, Math, Date, JSON, document: { getElementById: () => ({ value: '' }) }, H: { ragReplay: null }, GXP_CHUNKS: [] };
 vm.createContext(sandbox);
 vm.runInContext(`GXP_CHUNKS = ${gxpMatch[1]};`, sandbox);
@@ -144,5 +144,30 @@ check('sample chunk c3 yields structured obligations', bundle.obligations?.lengt
 const full = sandbox.buildStructuredObligationImpactBundle({ regRef: 'REQ-001' }, c3, null, {});
 const hasSourceSupport = (full.impacts || []).some(i => Array.isArray(i.complianceOutcome?.sourceSupport) && i.complianceOutcome.sourceSupport.length > 0);
 check('compliance outcomes include sourceSupport', hasSourceSupport);
+
+const poKeys = ['clausesMapped','conditionsIdentified','exceptionsIdentified','definitionsAnalyzed','acceptanceCriteriaGenerated','complianceOutcomeIdentified','traceabilityComplete','ambiguitiesReviewed','productOwnerReviewReady'];
+check('PO readiness checklist keys', poKeys.every(k => html.includes(`'${k}'`)) && html.includes('maras.po-readiness-checklist.v1'));
+const dodKeys = ['acceptanceCriteriaPassed','complianceTestsPassed','evidenceCaptured','auditTrailMaintained','traceabilityRetained','exceptionsValidated','reportingObligationsSatisfied','complianceReviewCompleted','productOwnerApprovalObtained'];
+check('recommended DoD checklist keys', dodKeys.every(k => html.includes(`'${k}'`)) && html.includes('maras.recommended-dod.v1'));
+check('computeStoryDefinitionOfDone recommendedDoD export', html.includes('recommendedDoD') && html.includes('deriveRecommendedDefinitionOfDone') && html.includes('poReadinessChecklists'));
+check('PO approval localStorage toggle', html.includes('maras.po-approval.v1') && html.includes('toggleStoryPoApproval'));
+check('DoR DoD UI on story cards', html.includes('Definition of Ready / PO review readiness') && html.includes('renderPoReadinessAndRecommendedDoD'));
+check('definition of done doc', fs.existsSync('docs/definition-of-done.md') && fs.readFileSync('docs/definition-of-done.md','utf8').includes('DRAFT_NOT_CONTROLLED'));
+
+const dorDodSrc = extractBlock('dor dod fns', 'const PO_READINESS_CHECKLIST_KEYS', 'function buildRegulatoryTraceChainForStory(story');
+vm.runInContext('function computePbiComplete(p){ return !!p?.complete; } function isPbiSectionFilled(v){ return !!String(v||"").trim(); } function escapeHtml(s){ return String(s); }', sandbox);
+vm.runInContext(dorDodSrc, sandbox);
+const sampleStory = { id: 'TST-1', regulation: '21 CFR Part 11', section: '§11.10(e)', regRef: 'REQ-001', traceId: 'TRC-X', ac: ['Given audit trail When export Then retained'], invest: { independent: 'yes', negotiable: 'yes', valuable: 'yes', estimable: 'yes', small: 'yes', testable: 'yes' }, pbi: { poUnderstands: 'x', devBuilds: 'y', qaValidates: 'Given/When/Then', complete: true }, structuredObligations: { obligations: [{}] } };
+const mkNode = (stage, needsReview) => ({ stage, needsReview: !!needsReview, summary: 'ok', traceId: `T-${stage}` });
+const sampleChain = {
+  rootTraceId: 'TRC-ROOT',
+  leafTraceId: 'TRC-LEAF',
+  structuredObligations: sampleStory.structuredObligations,
+  nodes: ['REGULATORY_INTENT','CONDITIONS','EXCEPTIONS','OBLIGATION','COMPLIANCE_OUTCOMES','COMPLIANCE_TEST_SCENARIOS','TRACEABILITY_MATRIX','DOCUMENT'].map(s => mkNode(s, false))
+};
+const pr = sandbox.derivePoReadinessChecklist(sampleStory, sampleChain);
+check('pipeline derives poReadiness checklist', pr.keys?.length === 9 && pr.items?.length === 9);
+const dod = sandbox.deriveRecommendedDefinitionOfDone(sampleStory, 0, sampleChain);
+check('pipeline derives recommended DoD checklist', dod.keys?.length === 9 && dod.items?.length === 9);
 
 export const result = { status: 'PASS', checks: checks.length, systemsValidated: 15, names: checks };

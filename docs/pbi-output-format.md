@@ -10,6 +10,8 @@ Generated Assure items and Story Map cards default to a **Product Backlog Item (
 
 Regulatory traceability (source refs, REQ ids, interpretation, evidence packages, RTM) stays in the UI under **Compliance Details** (`<details>` collapsed by default).
 
+**Definition of Ready / PO review readiness** and **Recommended Definition of Done (draft)** appear on the default PBI card (business-friendly checklists). Derivation hints (which pipeline stage satisfies each row) sit under Compliance Details. See [definition-of-done.md](./definition-of-done.md).
+
 ## Completeness
 
 Each item exposes `pbi.complete` (boolean). It is `true` only when all three sections have substantive text. Otherwise the UI shows **⚠ Incomplete requirement** and lists missing sections.
