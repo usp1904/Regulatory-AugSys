@@ -103,6 +103,7 @@ check('Implementation Readiness Gate UI for §11.10(e)', html.includes('id="impl
 check('Implementation Readiness Gate export schema', html.includes('maras.implementation-readiness-gate.v1') && html.includes('implementationReadinessGate:buildImplementationReadinessGateRecord()'));
 check('Implementation Readiness Gate doc artifact', fs.existsSync('docs/implementation-readiness-gate-11.10e.md') && fs.readFileSync('docs/implementation-readiness-gate-11.10e.md','utf8').includes('DRAFT_NOT_CONTROLLED'));
 check('PBI three-question output helpers', html.includes('function ensureStoryPbi') && html.includes('function buildAssureStoryPbi') && html.includes('function renderPbiThreeQuestions') && html.includes('function computePbiComplete'));
+check('qc-compat VM loads PBI helpers outside QC block', fs.readFileSync('qc-compat-regression.mjs', 'utf8').includes('pbiHelpersSrc'));
 check('PBI section headings in rendered output', html.includes('Product Owner understands') && html.includes('Developer builds') && html.includes('QA validates'));
 check('PBI compliance details collapsed by default', html.includes('class="pbi-compliance-details sc-compliance-collapsed"') && html.includes('<summary>Compliance Details</summary>'));
 check('PBI incomplete requirement flag', html.includes('data-pbi-incomplete="1"') && html.includes('pbi.complete') && html.includes('⚠ Incomplete requirement'));
