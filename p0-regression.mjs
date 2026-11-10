@@ -93,6 +93,11 @@ check('Story Map hierarchy labels', html.includes('STORY_MAP_HIERARCHY') && html
 check('Story Map state object', html.includes('storyMapState') && html.includes('maras.story-map.v1') && html.includes('function ensureStoryMapState'));
 check('Story Map export functions exist', html.includes('function exportStoryMapJson') && html.includes('function exportStoryMapCsv') && html.includes('function exportStoryMapPng'));
 check('Story Map draft banner text', html.includes('id="story-map-draft-banner"') && html.includes('DRAFT_NOT_CONTROLLED') && html.includes('SME/QA/RA review required'));
+check('Story Map persona lenses defined', html.includes('STORY_MAP_PERSONA_LENSES') && html.includes('system-owner') && html.includes('scrum-master') && html.includes('function storyMapSetPersonaLens'));
+check('Story Map persona lens selector', html.includes('id="story-map-persona-lens-select"') && html.includes('storyMapActiveLensConfig'));
+check('Story Map persona lens unique primary panels', ['story-map-panel-system-owner','story-map-panel-product-owner','story-map-panel-product-manager','story-map-panel-developer','story-map-panel-tester','story-map-panel-scrum-master'].every(id=>html.includes(id)));
+check('Story Map export personaLens metadata', html.includes('personaLensLabel:') && html.includes('personaLensPrimaryPanel') && html.includes('function exportStoryMapCeremonyJson'));
+check('Story Map persona field scoping', html.includes('function storyMapLensHasField') && html.includes('storyMapLensHasField(\'traceLinks\')'));
 check('Implementation Readiness Gate UI for §11.10(e)', html.includes('id="implementation-readiness-gate-panel"') && html.includes('IMPLEMENTATION_READINESS_GATE_1110E') && html.includes('REQ-001 · 21 CFR Part 11 §11.10(e)') && html.includes('renderImplementationReadinessGate'));
 check('Implementation Readiness Gate export schema', html.includes('maras.implementation-readiness-gate.v1') && html.includes('implementationReadinessGate:buildImplementationReadinessGateRecord()'));
 check('Implementation Readiness Gate doc artifact', fs.existsSync('docs/implementation-readiness-gate-11.10e.md') && fs.readFileSync('docs/implementation-readiness-gate-11.10e.md','utf8').includes('DRAFT_NOT_CONTROLLED'));

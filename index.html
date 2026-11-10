@@ -580,6 +580,11 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .sm-integrate{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .sm-integrate button{font-size:10px;padding:5px 9px;border-radius:var(--r);border:1px solid var(--border);background:#fff;cursor:pointer;font-family:inherit}
 .sm-integrate button:hover{border-color:var(--blue);color:var(--blue)}
+.sm-lens-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+.sm-lens-row select{font-size:11px;padding:6px 9px;border:1px solid var(--border);border-radius:var(--r);font-family:inherit;min-width:200px}
+.sm-lens-blurb{font-size:10px;color:var(--ink4);line-height:1.4;flex:1;min-width:200px}
+.sm-lens-primary{margin-top:8px}
+.sm-lens-summary{font-size:11px;line-height:1.45;color:var(--ink2);border:1px solid var(--border);border-radius:var(--r);padding:9px 11px;margin-bottom:10px;background:var(--bg)}
 .rd-gap-row{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--r);margin-bottom:6px;background:#fff}
 .rd-gap-row.warn{border-color:rgba(146,64,14,.35);background:var(--amber-t)}
 .rd-gap-row.fail{border-color:rgba(220,38,38,.35);background:var(--red-t)}
@@ -1247,7 +1252,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
   <div class="assurance-section">
     <div class="assurance-section-h">
       <div class="assurance-section-t">Workshop board</div>
-      <div class="assurance-section-s">Template · grouping · view · release meaning · drag to reorder</div>
+      <div class="assurance-section-s">Persona lens · role-specific fields · release meaning · drag to reorder (DRAFT_NOT_CONTROLLED)</div>
     </div>
     <div class="assurance-body" id="story-map-root"></div>
   </div>
@@ -5616,6 +5621,48 @@ const STORY_MAP_VIEW_MODES=[
   {id:'outcome-okr',label:'Outcome/OKR'},
   {id:'migration-readiness',label:'Migration readiness'}
 ];
+const STORY_MAP_PERSONA_LENSES=[
+  {id:'system-owner',label:'System Owner',primaryPanelId:'story-map-panel-system-owner',blurb:'Accountability, risk appetite, release boundaries, approval gates, DRAFT vs approved posture.',
+    toolbar:{template:false,groupBy:false,view:true,backbone:false,releaseSlice:true},viewModes:['release','workshop'],defaultView:'release',defaultGroupBy:'process',
+    integrate:['readiness'],showIntent:false,showHierarchy:false,draggable:false,
+    fields:['title','status','release','risk','sourceControlRef','outcomeOrObligation','traceLinks'],linkKeys:['readinessGate','regulation']},
+  {id:'product-owner',label:'Product Owner',primaryPanelId:'story-map-panel-product-owner',blurb:'Backlog priority, MoSCoW slices, slice value, story ordering for delivery.',
+    toolbar:{template:true,groupBy:true,view:true,backbone:true,releaseSlice:true},viewModes:['workshop','release'],defaultView:'workshop',defaultGroupBy:'process',
+    integrate:['pbis','sop','compare'],showIntent:true,showHierarchy:true,draggable:true,
+    fields:['title','status','release','owner','outcomeOrObligation','dependency'],linkKeys:[]},
+  {id:'product-manager',label:'Product Manager',primaryPanelId:'story-map-panel-product-manager',blurb:'Outcomes/OKR, market-journey template, stakeholder narrative — not sprint execution.',
+    toolbar:{template:true,groupBy:false,view:true,backbone:false,releaseSlice:false},viewModes:['outcome-okr','migration-readiness'],defaultView:'outcome-okr',defaultGroupBy:'outcome',
+    integrate:['compare','results'],showIntent:true,showHierarchy:true,draggable:false,
+    fields:['title','grid-outcome','grid-feature','story-persona','outcomeOrObligation'],linkKeys:['compare']},
+  {id:'developer',label:'Developer',primaryPanelId:'story-map-panel-developer',blurb:'Implementation package: AC, deps, modules/APIs, technical grouping, blocked/planned status.',
+    toolbar:{template:false,groupBy:true,view:true,backbone:true,releaseSlice:false},viewModes:['workshop','regulatory-trace'],defaultView:'workshop',defaultGroupBy:'technical-module',
+    integrate:['pbis','ctd','results'],showIntent:false,showHierarchy:false,draggable:true,
+    fields:['title','status','grid-technical','grid-feature','dependency','acceptanceCriteria','traceLinks'],linkKeys:['regulation','pbi','ctd']},
+  {id:'tester',label:'Tester',primaryPanelId:'story-map-panel-tester',blurb:'Evidence required, test themes, trace to gap/compare, OQ-style acceptance criteria visibility.',
+    toolbar:{template:false,groupBy:false,view:true,backbone:false,releaseSlice:false},viewModes:['regulatory-trace','workshop'],defaultView:'regulatory-trace',defaultGroupBy:'process',
+    integrate:['sop','compare','readiness'],showIntent:false,showHierarchy:false,draggable:false,
+    fields:['title','acceptanceCriteria','evidenceRequired','acceptanceEvidence','traceLinks'],linkKeys:['gap','compare','sop','inspection','evidenceRequest']},
+  {id:'scrum-master',label:'Scrum Master',primaryPanelId:'story-map-panel-scrum-master',blurb:'Flow health: WIP, blockers, deferred, PI slice cadence, ceremony exports — not PO prioritization.',
+    toolbar:{template:true,groupBy:false,view:true,backbone:false,releaseSlice:true},viewModes:['release','workshop'],defaultView:'release',defaultGroupBy:'process',
+    integrate:[],showIntent:false,showHierarchy:false,draggable:true,
+    fields:['title','status','release','owner','dependency'],linkKeys:[]}
+];
+function storyMapActiveLensConfig(){
+  const id=storyMapState?.personaLens||'product-owner';
+  return STORY_MAP_PERSONA_LENSES.find(l=>l.id===id)||STORY_MAP_PERSONA_LENSES[1];
+}
+function storyMapLensHasField(field){
+  return storyMapActiveLensConfig().fields.includes(field);
+}
+function storyMapSetPersonaLens(lensId){
+  ensureStoryMapState();
+  const lens=STORY_MAP_PERSONA_LENSES.find(l=>l.id===lensId)||STORY_MAP_PERSONA_LENSES[1];
+  storyMapState.personaLens=lens.id;
+  if(lens.defaultView) storyMapState.viewMode=lens.defaultView;
+  if(lens.defaultGroupBy) storyMapState.groupBy=lens.defaultGroupBy;
+  saveStoryMapState();
+  buildStoryMapView();
+}
 function storyMapUid(prefix='sm'){
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,7)}`;
 }
@@ -5662,6 +5709,7 @@ function defaultStoryMapState(){
     template:'regulatory-compliance',
     groupBy:'process',
     viewMode:'workshop',
+    personaLens:'product-owner',
     intent:{title:'Programme intent',notes:'Describe outcome-focused delivery goal — not a regulatory knowledge archive.'},
     backbones:[bb1],
     releaseSlices:[{id:storyMapUid('rel'),name:'Slice 1',meaning:'mvp-value-increment',storyIds:[],notes:''}]
@@ -5674,6 +5722,7 @@ function normalizeStoryMapState(raw){
   if(!Array.isArray(out.backbones)||!out.backbones.length) out.backbones=base.backbones;
   if(!out.intent) out.intent=base.intent;
   if(!Array.isArray(out.releaseSlices)) out.releaseSlices=base.releaseSlices;
+  if(!STORY_MAP_PERSONA_LENSES.some(l=>l.id===out.personaLens)) out.personaLens=base.personaLens;
   out.backbones.forEach(bb=>{
     bb.capabilities=bb.capabilities||[];
     bb.capabilities.forEach(cap=>{
@@ -5719,7 +5768,8 @@ function findStoryLocation(storyId){
 }
 function buildStoryMapRecord(){
   ensureStoryMapState();
-  return {...storyMapState,generatedAt:new Date().toISOString(),hierarchy:STORY_MAP_HIERARCHY,templates:STORY_MAP_TEMPLATES.map(t=>t.id)};
+  const lens=storyMapActiveLensConfig();
+  return {...storyMapState,personaLens:storyMapState.personaLens||lens.id,personaLensLabel:lens.label,personaLensPrimaryPanel:lens.primaryPanelId,generatedAt:new Date().toISOString(),hierarchy:STORY_MAP_HIERARCHY,templates:STORY_MAP_TEMPLATES.map(t=>t.id),personaLenses:STORY_MAP_PERSONA_LENSES.map(l=>({id:l.id,label:l.label,primaryPanelId:l.primaryPanelId}))};
 }
 function storyMapIntegrationOptions(){
   const opts={regulation:[],sop:[],gap:[],inspection:[],compare:[],ctd:[],readinessGate:[],pbi:[],evidenceRequest:[]};
@@ -5922,32 +5972,71 @@ function storyMapImportCompareDeltas(){
 }
 function storyMapResetSample(){storyMapState=defaultStoryMapState(); saveStoryMapState(); buildStoryMapView();}
 function renderStoryCard(story,opts){
+  const lens=storyMapActiveLensConfig();
   const relOpts=(storyMapState.releaseSlices||[]).map(r=>`<option value="${r.id}"${story.releaseSliceId===r.id?' selected':''}>${escapeHtml(r.name)}</option>`).join('');
-  return `<div class="sm-story sm-status-${escapeHtml(story.status||'planned')}" draggable="true" ondragstart="storyMapDragStart(event,'${story.id}')" ondragend="storyMapDragEnd(event)" ondragover="storyMapDragOver(event)" ondragleave="storyMapDragLeave(event)" ondrop="storyMapDropOnStory(event,'${story.id}')">
-    <div class="sm-story-t"><input value="${escapeHtml(story.title)}" onchange="storyMapSetField('${story.id}','title',this.value)" aria-label="Story title"></div>
-    <div class="sm-story-meta">Status <select onchange="storyMapSetField('${story.id}','status',this.value)">${STORY_MAP_STATUSES.map(s=>`<option${s===story.status?' selected':''}>${s}</option>`).join('')}</select>
-    Release <select onchange="storyMapAssignRelease('${story.id}',this.value)"><option value="">—</option>${relOpts}</select></div>
-    <label>Owner</label><input value="${escapeHtml(story.owner)}" onchange="storyMapSetField('${story.id}','owner',this.value)">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:4px">
-      <div><label>Persona</label><input value="${escapeHtml(story.persona)}" onchange="storyMapSetField('${story.id}','persona',this.value)"></div>
-      <div><label>Process</label><input value="${escapeHtml(story.process)}" onchange="storyMapSetField('${story.id}','process',this.value)"></div>
-      <div><label>Outcome</label><input value="${escapeHtml(story.outcome)}" onchange="storyMapSetField('${story.id}','outcome',this.value)"></div>
-      <div><label>Feature</label><input value="${escapeHtml(story.feature)}" onchange="storyMapSetField('${story.id}','feature',this.value)"></div>
-      <div style="grid-column:1/-1"><label>Technical module</label><input value="${escapeHtml(story.technicalModule)}" onchange="storyMapSetField('${story.id}','technicalModule',this.value)"></div>
-    </div>
-    <label>Outcome / obligation</label><textarea onchange="storyMapSetField('${story.id}','outcomeOrObligation',this.value)">${escapeHtml(story.outcomeOrObligation)}</textarea>
-    <label>Acceptance criteria</label><textarea onchange="storyMapSetField('${story.id}','acceptanceCriteria',this.value)">${escapeHtml(story.acceptanceCriteria)}</textarea>
-    <label>Evidence required</label><textarea onchange="storyMapSetField('${story.id}','evidenceRequired',this.value)">${escapeHtml(story.evidenceRequired)}</textarea>
-    <label>Acceptance evidence</label><textarea onchange="storyMapSetField('${story.id}','acceptanceEvidence',this.value)">${escapeHtml(story.acceptanceEvidence)}</textarea>
-    <label>Risk</label><input value="${escapeHtml(story.risk)}" onchange="storyMapSetField('${story.id}','risk',this.value)">
-    <label>Dependency</label><input value="${escapeHtml(story.dependency)}" onchange="storyMapSetField('${story.id}','dependency',this.value)">
-    <label>Source / control ref</label><input value="${escapeHtml(story.sourceControlRef)}" onchange="storyMapSetField('${story.id}','sourceControlRef',this.value)">
-    <label>Trace links</label>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:4px">
-      ${['regulation','sop','gap','inspection','compare','ctd','readinessGate','pbi','evidenceRequest'].map(k=>`<div>${k}: ${storyMapLinkSelect(story,k,opts)}</div>`).join('')}
-    </div>
+  const drag=lens.draggable?'true':'false';
+  const dragHandlers=lens.draggable?` ondragstart="storyMapDragStart(event,'${story.id}')" ondragend="storyMapDragEnd(event)" ondragover="storyMapDragOver(event)" ondragleave="storyMapDragLeave(event)" ondrop="storyMapDropOnStory(event,'${story.id}')"`: '';
+  const linkKeys=lens.linkKeys?.length?lens.linkKeys:['regulation','sop','gap','inspection','compare','ctd','readinessGate','pbi','evidenceRequest'];
+  const traceLinks=storyMapLensHasField('traceLinks')?`<label>Trace links</label><div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:4px">${linkKeys.map(k=>`<div>${k}: ${storyMapLinkSelect(story,k,opts)}</div>`).join('')}</div>`:'';
+  const grid=[];
+  if(storyMapLensHasField('grid-persona')||storyMapLensHasField('story-persona')) grid.push(`<div><label>User role</label><input value="${escapeHtml(story.persona)}" onchange="storyMapSetField('${story.id}','persona',this.value)"></div>`);
+  if(storyMapLensHasField('grid-process')) grid.push(`<div><label>Process</label><input value="${escapeHtml(story.process)}" onchange="storyMapSetField('${story.id}','process',this.value)"></div>`);
+  if(storyMapLensHasField('grid-outcome')) grid.push(`<div><label>Outcome</label><input value="${escapeHtml(story.outcome)}" onchange="storyMapSetField('${story.id}','outcome',this.value)"></div>`);
+  if(storyMapLensHasField('grid-feature')) grid.push(`<div><label>Feature</label><input value="${escapeHtml(story.feature)}" onchange="storyMapSetField('${story.id}','feature',this.value)"></div>`);
+  if(storyMapLensHasField('grid-technical')) grid.push(`<div style="grid-column:1/-1"><label>Technical module</label><input value="${escapeHtml(story.technicalModule)}" onchange="storyMapSetField('${story.id}','technicalModule',this.value)"></div>`);
+  const gridHtml=grid.length?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:4px">${grid.join('')}</div>`:'';
+  return `<div class="sm-story sm-status-${escapeHtml(story.status||'planned')}" draggable="${drag}"${dragHandlers}>
+    ${storyMapLensHasField('title')?`<div class="sm-story-t"><input value="${escapeHtml(story.title)}" onchange="storyMapSetField('${story.id}','title',this.value)" aria-label="Story title"></div>`:''}
+    ${(storyMapLensHasField('status')||storyMapLensHasField('release'))?`<div class="sm-story-meta">${storyMapLensHasField('status')?`Status <select onchange="storyMapSetField('${story.id}','status',this.value)">${STORY_MAP_STATUSES.map(s=>`<option${s===story.status?' selected':''}>${s}</option>`).join('')}</select>`:''}
+    ${storyMapLensHasField('release')?` Release <select onchange="storyMapAssignRelease('${story.id}',this.value)"><option value="">—</option>${relOpts}</select>`:''}</div>`:''}
+    ${storyMapLensHasField('owner')?`<label>Owner</label><input value="${escapeHtml(story.owner)}" onchange="storyMapSetField('${story.id}','owner',this.value)">`:''}
+    ${gridHtml}
+    ${storyMapLensHasField('outcomeOrObligation')?`<label>Outcome / obligation</label><textarea onchange="storyMapSetField('${story.id}','outcomeOrObligation',this.value)">${escapeHtml(story.outcomeOrObligation)}</textarea>`:''}
+    ${storyMapLensHasField('acceptanceCriteria')?`<label>Acceptance criteria (OQ-style visibility)</label><textarea onchange="storyMapSetField('${story.id}','acceptanceCriteria',this.value)">${escapeHtml(story.acceptanceCriteria)}</textarea>`:''}
+    ${storyMapLensHasField('evidenceRequired')?`<label>Evidence required</label><textarea onchange="storyMapSetField('${story.id}','evidenceRequired',this.value)">${escapeHtml(story.evidenceRequired)}</textarea>`:''}
+    ${storyMapLensHasField('acceptanceEvidence')?`<label>Acceptance evidence</label><textarea onchange="storyMapSetField('${story.id}','acceptanceEvidence',this.value)">${escapeHtml(story.acceptanceEvidence)}</textarea>`:''}
+    ${storyMapLensHasField('risk')?`<label>Risk appetite / impact</label><input value="${escapeHtml(story.risk)}" onchange="storyMapSetField('${story.id}','risk',this.value)">`:''}
+    ${storyMapLensHasField('dependency')?`<label>Dependency</label><input value="${escapeHtml(story.dependency)}" onchange="storyMapSetField('${story.id}','dependency',this.value)">`:''}
+    ${storyMapLensHasField('sourceControlRef')?`<label>Source / control ref</label><input value="${escapeHtml(story.sourceControlRef)}" onchange="storyMapSetField('${story.id}','sourceControlRef',this.value)">`:''}
+    ${traceLinks}
     <button type="button" style="margin-top:6px;font-size:9px" onclick="storyMapDeleteStory('${story.id}')">Remove story</button>
   </div>`;
+}
+function renderStoryMapLensSummary(lens){
+  const stories=allStoryMapStories();
+  const pkg=storyMapState.packageStatus||'DRAFT_NOT_CONTROLLED';
+  if(lens.id==='system-owner'){
+    const risky=stories.filter(s=>(s.risk||'').trim()).length;
+    return `<div class="sm-lens-summary"><b>Approval posture:</b> ${escapeHtml(pkg)} — SME/QA/RA gate before baselining. <b>Release boundaries:</b> ${(storyMapState.releaseSlices||[]).length} slice(s). <b>Risk-tagged stories:</b> ${risky}. Blocked: ${stories.filter(s=>s.status==='blocked').length}.</div>`;
+  }
+  if(lens.id==='product-owner'){
+    const moscow=(storyMapState.releaseSlices||[]).filter(s=>s.meaning==='moscow').length;
+    return `<div class="sm-lens-summary"><b>Backlog:</b> ${stories.length} stories · ${stories.filter(s=>s.status==='planned').length} planned · ${stories.filter(s=>s.status==='deferred').length} deferred. MoSCoW-labelled slices: ${moscow}.</div>`;
+  }
+  if(lens.id==='product-manager'){
+    const tmpl=STORY_MAP_TEMPLATES.find(t=>t.id===storyMapState.template)?.label||storyMapState.template;
+    return `<div class="sm-lens-summary"><b>Template:</b> ${escapeHtml(tmpl)} · <b>Stakeholder narrative</b> in Intent below. Outcome groupings visible in Outcome/OKR view.</div>`;
+  }
+  if(lens.id==='developer'){
+  const mods=new Set(stories.map(s=>(s.technicalModule||'').trim()).filter(Boolean));
+    return `<div class="sm-lens-summary"><b>Technical modules:</b> ${mods.size||'—'} · Blocked ${stories.filter(s=>s.status==='blocked').length} · Planned ${stories.filter(s=>s.status==='planned').length}. Group board by technical module.</div>`;
+  }
+  if(lens.id==='tester'){
+    const ev=stories.filter(s=>(s.evidenceRequired||s.acceptanceEvidence||'').trim()).length;
+    const linked=stories.filter(s=>Object.entries(s.links||{}).some(([k,v])=>v&&['gap','compare','sop','inspection'].includes(k))).length;
+    return `<div class="sm-lens-summary"><b>Evidence fields populated:</b> ${ev}/${stories.length}. Stories with gap/compare/SOP/inspection links: ${linked}. Use Regulatory traceability view for matrix review.</div>`;
+  }
+  const wip=stories.filter(s=>s.status!=='completed').length;
+  return `<div class="sm-lens-summary"><b>WIP:</b> ${wip} · Blocked ${stories.filter(s=>s.status==='blocked').length} · Deferred ${stories.filter(s=>s.status==='deferred').length}. PI / release slices: ${(storyMapState.releaseSlices||[]).length}. Ceremony export available below.</div>`;
+}
+function exportStoryMapCeremonyJson(){
+  const stories=allStoryMapStories();
+  const rec={schema:'maras.story-map.ceremony.v1',packageStatus:'DRAFT_NOT_CONTROLLED',personaLens:'scrum-master',generatedAt:new Date().toISOString(),wip:stories.filter(s=>s.status!=='completed'),blocked:stories.filter(s=>s.status==='blocked'),deferred:stories.filter(s=>s.status==='deferred'),releaseSlices:storyMapState.releaseSlices};
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(rec,null,2)],{type:'application/json'}));
+  a.download='DRAFT-MARAS-Story-Map-Ceremony.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
 }
 function storyMapGroupFieldKey(){
   const map={persona:'persona',process:'process',outcome:'outcome',feature:'feature','technical-module':'technicalModule'};
@@ -6010,50 +6099,52 @@ function buildStoryMapView(){
   ensureStoryMapState();
   const root=document.getElementById('story-map-root');
   if(!root) return;
+  const lens=storyMapActiveLensConfig();
   const opts=storyMapIntegrationOptions();
   const stories=allStoryMapStories();
   const metricsEl=document.getElementById('story-map-metrics');
   if(metricsEl){
-    metricsEl.innerHTML=[
-      {v:stories.length,l:'Stories'},
-      {v:stories.filter(s=>s.status==='completed').length,l:'Completed'},
-      {v:stories.filter(s=>s.status==='blocked').length,l:'Blocked'},
-      {v:(storyMapState.releaseSlices||[]).length,l:'Release slices'}
-    ].map(m=>`<div class="metric-card"><div class="metric-v">${m.v}</div><div class="metric-l">${m.l}</div></div>`).join('');
+    let metrics=[{v:stories.length,l:'Stories'},{v:stories.filter(s=>s.status==='blocked').length,l:'Blocked'},{v:stories.filter(s=>s.status!=='completed').length,l:'WIP'},{v:(storyMapState.releaseSlices||[]).length,l:'Release slices'}];
+    if(lens.id==='system-owner') metrics=[{v:storyMapState.packageStatus||'DRAFT',l:'Posture'},{v:stories.filter(s=>s.status==='blocked').length,l:'Blocked'},{v:(storyMapState.releaseSlices||[]).length,l:'Boundaries'},{v:stories.filter(s=>(s.risk||'').trim()).length,l:'Risk tagged'}];
+    else if(lens.id==='product-owner') metrics=[{v:stories.length,l:'Backlog'},{v:stories.filter(s=>s.status==='planned').length,l:'Planned'},{v:stories.filter(s=>s.status==='deferred').length,l:'Deferred'},{v:(storyMapState.releaseSlices||[]).length,l:'Slices'}];
+    else if(lens.id==='product-manager') metrics=[{v:STORY_MAP_TEMPLATES.find(t=>t.id===storyMapState.template)?.label?.slice(0,12)||'Tmpl',l:'Template'},{v:new Set(stories.map(s=>s.outcome).filter(Boolean)).size,l:'Outcomes'},{v:stories.length,l:'Stories'},{v:stories.filter(s=>s.links?.compare).length,l:'Compare links'}];
+    else if(lens.id==='developer') metrics=[{v:stories.filter(s=>s.status==='blocked').length,l:'Blocked'},{v:stories.filter(s=>s.status==='planned').length,l:'Planned'},{v:new Set(stories.map(s=>s.technicalModule).filter(Boolean)).size,l:'Modules'},{v:stories.filter(s=>(s.acceptanceCriteria||'').trim()).length,l:'With AC'}];
+    else if(lens.id==='tester') metrics=[{v:stories.filter(s=>(s.evidenceRequired||'').trim()).length,l:'Evidence reqs'},{v:stories.filter(s=>(s.acceptanceCriteria||'').trim()).length,l:'AC visible'},{v:stories.filter(s=>s.links?.gap||s.links?.compare).length,l:'Gap/compare'},{v:stories.length,l:'Stories'}];
+    else metrics=[{v:stories.filter(s=>s.status!=='completed').length,l:'WIP'},{v:stories.filter(s=>s.status==='blocked').length,l:'Blockers'},{v:stories.filter(s=>s.status==='deferred').length,l:'Deferred'},{v:(storyMapState.releaseSlices||[]).length,l:'PI slices'}];
+    metricsEl.innerHTML=metrics.map(m=>`<div class="metric-card"><div class="metric-v">${escapeHtml(String(m.v))}</div><div class="metric-l">${escapeHtml(m.l)}</div></div>`).join('');
   }
+  const lensOpts=STORY_MAP_PERSONA_LENSES.map(l=>`<option value="${l.id}"${storyMapState.personaLens===l.id?' selected':''}>${escapeHtml(l.label)}</option>`).join('');
   const tmplOpts=STORY_MAP_TEMPLATES.map(t=>`<option value="${t.id}"${storyMapState.template===t.id?' selected':''}>${escapeHtml(t.label)}</option>`).join('');
   const groupOpts=STORY_MAP_GROUP_MODES.map(g=>`<option value="${g.id}"${storyMapState.groupBy===g.id?' selected':''}>${escapeHtml(g.label)}</option>`).join('');
-  const viewOpts=STORY_MAP_VIEW_MODES.map(v=>`<option value="${v.id}"${storyMapState.viewMode===v.id?' selected':''}>${escapeHtml(v.label)}</option>`).join('');
+  const allowedViews=STORY_MAP_VIEW_MODES.filter(v=>!lens.viewModes||lens.viewModes.includes(v.id));
+  if(allowedViews.length&&!allowedViews.some(v=>v.id===storyMapState.viewMode)) storyMapState.viewMode=allowedViews[0].id;
+  const viewOpts=allowedViews.map(v=>`<option value="${v.id}"${storyMapState.viewMode===v.id?' selected':''}>${escapeHtml(v.label)}</option>`).join('');
   let body='';
   if(storyMapState.viewMode==='release') body=renderStoryMapRelease();
   else if(storyMapState.viewMode==='regulatory-trace') body=renderStoryMapTraceTable();
   else if(storyMapState.viewMode==='outcome-okr') body=renderStoryMapOutcomeOkr();
   else if(storyMapState.viewMode==='migration-readiness') body=renderStoryMapMigration();
   else body=`<div class="sm-board">${storyMapState.groupBy==='process'?renderStoryMapWorkshop(opts):renderStoryMapGroupedColumns(opts)}</div>`;
+  const tb=lens.toolbar||{};
+  const integrateMap={pbis:`<button type="button" onclick="storyMapImportPbis()">Import Assure PBIs</button>`,sop:`<button type="button" onclick="storyMapImportSopGaps()">Import SOP gaps</button>`,compare:`<button type="button" onclick="storyMapImportCompareDeltas()">Import compare deltas</button>`,readiness:`<button type="button" onclick="goTab('readiness',document.getElementById('ntab-readiness'))">Open Readiness / IRG</button>`,ctd:`<button type="button" onclick="goTab('ctd',document.getElementById('ntab-ctd'))">Open CTD/eCTD</button>`,results:`<button type="button" onclick="goTab('results',document.getElementById('ntab-results'))">Open Value Package</button>`};
+  const integrateKeys=lens.integrate||[];
+  const integrateHtml=integrateKeys.map(k=>integrateMap[k]||'').join('');
+  const ceremonyBtn=lens.id==='scrum-master'?`<button type="button" onclick="exportStoryMapCeremonyJson()">Ceremony export JSON</button>`:'';
+  const intentHtml=lens.showIntent?`<div class="sm-intent-card"><div style="font-size:11px;font-weight:700">Intent</div><input value="${escapeHtml(storyMapState.intent?.title||'')}" placeholder="Programme intent" onchange="storyMapSetIntent('title',this.value)"><textarea placeholder="${lens.id==='product-manager'?'Stakeholder narrative — market journey, outcomes (not sprint tasks)':'Backlog notes — requirements engineering voice'}" onchange="storyMapSetIntent('notes',this.value)">${escapeHtml(storyMapState.intent?.notes||'')}</textarea></div>`:'';
+  const hierHtml=lens.showHierarchy?`<div class="sm-hier-row">${STORY_MAP_HIERARCHY.map(h=>`<span class="sm-hier-chip">${escapeHtml(h)}</span>`).join('')}</div>`:'';
   root.innerHTML=`
-    <div class="sm-hier-row">${STORY_MAP_HIERARCHY.map(h=>`<span class="sm-hier-chip">${escapeHtml(h)}</span>`).join('')}</div>
-    <div class="sm-intent-card">
-      <div style="font-size:11px;font-weight:700">Intent</div>
-      <input value="${escapeHtml(storyMapState.intent?.title||'')}" placeholder="Programme intent" onchange="storyMapSetIntent('title',this.value)">
-      <textarea placeholder="Backlog notes — requirements engineering voice" onchange="storyMapSetIntent('notes',this.value)">${escapeHtml(storyMapState.intent?.notes||'')}</textarea>
-    </div>
+    <div class="sm-lens-row"><label>Persona lens <select id="story-map-persona-lens-select" onchange="storyMapSetPersonaLens(this.value)">${lensOpts}</select></label><span class="sm-lens-blurb">${escapeHtml(lens.blurb)}</span></div>
+    ${hierHtml}
+    ${intentHtml}
     <div class="sm-toolbar">
-      <label>Template <select id="story-map-template-select" onchange="storyMapSetMeta('template',this.value)">${tmplOpts}</select></label>
-      <label>Group by <select onchange="storyMapSetMeta('groupBy',this.value)">${groupOpts}</select></label>
-      <label>View <select onchange="storyMapSetMeta('viewMode',this.value)">${viewOpts}</select></label>
-      <button type="button" class="assurance-btn secondary" onclick="storyMapAddBackbone()">+ Backbone</button>
-      <button type="button" class="assurance-btn secondary" onclick="storyMapAddReleaseSlice()">+ Release slice</button>
+      ${tb.template!==false?`<label>Template <select id="story-map-template-select" onchange="storyMapSetMeta('template',this.value)">${tmplOpts}</select></label>`:''}
+      ${tb.groupBy!==false?`<label>Group by <select onchange="storyMapSetMeta('groupBy',this.value)">${groupOpts}</select></label>`:''}
+      ${tb.view!==false?`<label>View <select onchange="storyMapSetMeta('viewMode',this.value)">${viewOpts}</select></label>`:''}
+      ${tb.backbone!==false?`<button type="button" class="assurance-btn secondary" onclick="storyMapAddBackbone()">+ Backbone</button>`:''}
+      ${tb.releaseSlice!==false?`<button type="button" class="assurance-btn secondary" onclick="storyMapAddReleaseSlice()">+ Release slice</button>`:''}
     </div>
-    <div class="sm-integrate">
-      <button type="button" onclick="storyMapImportPbis()">Import Assure PBIs</button>
-      <button type="button" onclick="storyMapImportSopGaps()">Import SOP gaps</button>
-      <button type="button" onclick="storyMapImportCompareDeltas()">Import compare deltas</button>
-      <button type="button" onclick="goTab('readiness',document.getElementById('ntab-readiness'))">Open Readiness</button>
-      <button type="button" onclick="goTab('compare',document.getElementById('ntab-compare'))">Open Global Compare</button>
-      <button type="button" onclick="goTab('ctd',document.getElementById('ntab-ctd'))">Open CTD/eCTD</button>
-      <button type="button" onclick="goTab('results',document.getElementById('ntab-results'))">Open Value Package</button>
-    </div>
-    ${body}`;
+    ${integrateHtml||ceremonyBtn?`<div class="sm-integrate">${integrateHtml}${ceremonyBtn}</div>`:''}
+    <div id="${lens.primaryPanelId}" class="sm-lens-primary" data-persona-lens="${escapeHtml(lens.id)}">${renderStoryMapLensSummary(lens)}${body}</div>`;
 }
 function exportStoryMapJson(){
   const rec=buildStoryMapRecord();
