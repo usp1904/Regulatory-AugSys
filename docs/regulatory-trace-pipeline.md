@@ -32,7 +32,7 @@ MARAS links curated regulatory sources to delivery artifacts through a **19-stag
 
 ## Where it appears in the UI
 
-- **Value Package:** **Delivery Package** panel (hard-fail banner + `maras.final-output-order.v1` persona essentials); collapsed **Pipeline Trace** panel below the Feature Traceability Matrix; per-PBI **Delivery Package · Final output order (23 sections)** and **Full trace pipeline** under **Compliance Details** (default remains PBI three questions).
+- **Value Package:** collapsed **Delivery Package & traceability** bundle (hard-fail banner, Feature Traceability Matrix, nested **Show pipeline trace**; `maras.final-output-order.v1` sections remain in JSON / Human Review Package exports); per-PBI cards stay three questions + PO readiness + Recommended DoD; **Compliance Details** links to the package bundle (no duplicate per-PBI delivery panels).
 - **Story Map:** **Regulatory traceability** view mode shows stage counts and expandable chains.
 - **Readiness:** Implementation Readiness Gate references the same 19-stage model in `pipelineNote`.
 
