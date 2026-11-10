@@ -10,6 +10,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+const python = process.env.PYTHON ?? 'python3';
 const checkOnly = process.argv.includes('--check');
 
 function run(label, command, args, options = {}) {
@@ -28,7 +29,9 @@ function run(label, command, args, options = {}) {
 console.log(checkOnly ? 'Self-heal check (no auto-fix)\n' : 'Self-heal: applying safe fixes\n');
 
 if (!checkOnly) {
-  run('Ruff auto-fix', 'ruff', ['check', '--fix', '.'], { cwd: path.join(root, 'apps/api') });
+  run('Ruff auto-fix', python, ['-m', 'ruff', 'check', '--fix', '.'], {
+    cwd: path.join(root, 'apps/api'),
+  });
   run('Regenerate Notion workflows', 'node', ['scripts/generate-notion-workflows.mjs']);
 }
 
