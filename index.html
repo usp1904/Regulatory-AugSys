@@ -344,6 +344,16 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .rubric-check{font-size:9px;padding:2px 6px;border-radius:4px;background:#fff;border:1px solid var(--border);color:var(--ink3)}
 .rubric-check.ok{border-color:rgba(14,122,98,.35);color:#0e7a62;background:#ecfdf5}
 .rubric-check.no{opacity:.75}
+.dor-dod-wrap{margin:10px 0;padding:10px 12px;border-radius:6px;border:1px solid var(--border);background:#fafbfc}
+.dor-dod-k{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.35px;color:var(--ink4);margin-bottom:6px}
+.dor-dod-sub{font-size:10px;color:var(--ink3);margin-bottom:8px;line-height:1.45}
+.dor-dod-list{display:flex;flex-direction:column;gap:3px}
+.dor-dod-item{display:flex;align-items:flex-start;gap:6px;font-size:10px;color:var(--ink2);line-height:1.4}
+.dor-dod-item .dor-mark{flex:none;width:14px;font-weight:700}
+.dor-dod-item.met .dor-mark{color:#0e7a62}
+.dor-dod-item.unmet .dor-mark{color:#b45309}
+.dor-dod-hint{font-size:9px;color:var(--ink4);margin-left:20px}
+.dor-dod-draft{font-size:9px;color:#92400e;margin-top:6px}
 .rag-toggle-row{margin:0 0 10px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r2);background:#fff}
 .rag-toggle-lbl{display:flex;align-items:flex-start;gap:8px;font-size:11px;color:var(--ink2);cursor:pointer;line-height:1.45}
 .rag-toggle-lbl input{margin-top:2px;flex-shrink:0}
@@ -3949,43 +3959,207 @@ function renderStructuredObligationCards(bundle){
     </div>`).join('');
   return `<div class="obl-wrap"><div class="obl-head">${STRUCTURED_OBLIGATION_SCHEMA} · ${items.length} structured obligation(s)</div>${cards}</div>`;
 }
-function computeStoryDefinitionOfReady(story){
+const PO_READINESS_CHECKLIST_KEYS = [
+  'clausesMapped','conditionsIdentified','exceptionsIdentified','definitionsAnalyzed',
+  'acceptanceCriteriaGenerated','complianceOutcomeIdentified','traceabilityComplete',
+  'ambiguitiesReviewed','productOwnerReviewReady'
+];
+const RECOMMENDED_DOD_CHECKLIST_KEYS = [
+  'acceptanceCriteriaPassed','complianceTestsPassed','evidenceCaptured','auditTrailMaintained',
+  'traceabilityRetained','exceptionsValidated','reportingObligationsSatisfied',
+  'complianceReviewCompleted','productOwnerApprovalObtained'
+];
+const PO_APPROVAL_STORAGE_KEY = 'maras.po-approval.v1';
+function tracePipelineNode(chain, stage){
+  return (chain?.nodes||[]).find(n => n.stage === stage) || null;
+}
+function poApprovalStore(){
+  try{ return JSON.parse(localStorage.getItem(PO_APPROVAL_STORAGE_KEY) || '{}'); }catch(_e){ return {}; }
+}
+function getStoryPoApproval(storyId){
+  return !!poApprovalStore()[String(storyId||'')];
+}
+function setStoryPoApproval(storyId, approved){
+  const store = poApprovalStore();
+  store[String(storyId||'')] = !!approved;
+  try{ localStorage.setItem(PO_APPROVAL_STORAGE_KEY, JSON.stringify(store)); }catch(_e){}
+}
+function storyStableId(story, index){
+  return story.id || story.req_id || `PBI-${(story.num ?? index ?? 0) + 1}`;
+}
+function toggleStoryPoApproval(storyId, index){
+  const next = !getStoryPoApproval(storyId);
+  setStoryPoApproval(storyId, next);
+  const s = (allStories||[])[index];
+  if(s){
+    attachRegulatoryTracePipeline(s, index);
+    if(typeof renderStories === 'function' && allStories?.length){
+      renderStories(allStories, H.lastPipelineResult || {qcReport:H.qcReport});
+    }
+  }
+}
+function derivePoReadinessChecklist(story, chain){
+  const nodes = chain?.nodes || [];
+  const node = (stage) => tracePipelineNode(chain, stage);
+  const intent = node('REGULATORY_INTENT');
+  const cond = node('CONDITIONS');
+  const exc = node('EXCEPTIONS');
+  const obl = node('OBLIGATION');
+  const comp = node('COMPLIANCE_OUTCOMES');
+  const tests = node('COMPLIANCE_TEST_SCENARIOS');
+  const bundle = story.structuredObligations || chain?.structuredObligations || obl?.payload?.structuredObligations;
+  const ac = (story.ac || story.acceptanceCriteria || []);
+  const acArr = Array.isArray(ac) ? ac : String(ac || '').split(/\n/).map(s => s.trim()).filter(Boolean);
+  const clausesMapped = !!(story.regRef || (story.regulation && String(story.section || '').trim())) && !(intent?.needsReview && !story.regRef);
+  const conditionsIdentified = !!(cond && !cond.needsReview);
+  const exceptionsIdentified = !!(exc && !exc.needsReview) || ['APPLICABLE','NOT_APPLICABLE','PARTIALLY_APPLICABLE'].includes(story.organisationApplicability);
+  const definitionsAnalyzed = !!(bundle?.obligations?.length) || !!(obl && !obl.needsReview && String(obl.summary || '').trim());
+  const acceptanceCriteriaGenerated = acArr.length >= 1;
+  const complianceOutcomeIdentified = !!(comp && !comp.needsReview && String(comp.summary || '').trim());
+  const traceabilityComplete = !!(story.regRef || story.traceId) && !!node('TRACEABILITY_MATRIX') && nodes.length >= 18;
+  const ambiguityNodes = nodes.filter(n => n.needsReview && ['OBLIGATION','CONDITIONS','EXCEPTIONS','COMPLIANCE_OUTCOMES','COMPLIANCE_TEST_SCENARIOS'].includes(n.stage));
+  const ambiguitiesReviewed = ambiguityNodes.length === 0;
+  const pbiOk = !!(story.pbi?.complete) || (typeof computePbiComplete === 'function' && computePbiComplete(story.pbi || {}));
+  const productOwnerReviewReady = [clausesMapped, conditionsIdentified, exceptionsIdentified, definitionsAnalyzed,
+    acceptanceCriteriaGenerated, complianceOutcomeIdentified, traceabilityComplete, ambiguitiesReviewed, pbiOk].every(Boolean);
+  const items = [
+    {key:'clausesMapped', label:'Clauses mapped', met:clausesMapped, autoHint:'REGULATORY_INTENT + regRef/regulation/section', dataHint:story.regRef || `${story.regulation || ''} ${story.section || ''}`.trim()},
+    {key:'conditionsIdentified', label:'Conditions identified', met:conditionsIdentified, autoHint:'CONDITIONS stage without needs-review', dataHint:cond?.summary?.slice(0, 80) || '—'},
+    {key:'exceptionsIdentified', label:'Exceptions identified', met:exceptionsIdentified, autoHint:'EXCEPTIONS resolved or applicability recorded', dataHint:story.organisationApplicability || exc?.summary?.slice(0, 80) || '—'},
+    {key:'definitionsAnalyzed', label:'Definitions analyzed', met:definitionsAnalyzed, autoHint:'Structured obligations or OBLIGATION payload', dataHint:bundle?.obligations?.length ? `${bundle.obligations.length} obligation(s)` : '—'},
+    {key:'acceptanceCriteriaGenerated', label:'Acceptance Criteria generated', met:acceptanceCriteriaGenerated, autoHint:'ACCEPTANCE_CRITERIA stage / story.ac', dataHint:`${acArr.length} criterion(s)`},
+    {key:'complianceOutcomeIdentified', label:'Compliance outcome identified', met:complianceOutcomeIdentified, autoHint:'COMPLIANCE_OUTCOMES observable', dataHint:comp?.summary?.slice(0, 80) || '—'},
+    {key:'traceabilityComplete', label:'Traceability complete', met:traceabilityComplete, autoHint:'TRACEABILITY_MATRIX + trace IDs', dataHint:story.traceId || story.regRef || '—'},
+    {key:'ambiguitiesReviewed', label:'Ambiguities reviewed', met:ambiguitiesReviewed, autoHint:'No needs-review on obligation/condition/test stages', dataHint:ambiguityNodes.length ? `${ambiguityNodes.length} open` : 'none flagged'},
+    {key:'productOwnerReviewReady', label:'Product Owner review ready', met:productOwnerReviewReady, autoHint:'All PO readiness rows + PBI three questions complete', dataHint:pbiOk ? 'PBI complete' : 'PBI incomplete'}
+  ];
+  return {
+    schema:'maras.po-readiness-checklist.v1',
+    packageStatus:'DRAFT_NOT_CONTROLLED',
+    keys:PO_READINESS_CHECKLIST_KEYS,
+    items,
+    criteria:Object.fromEntries(items.map(i => [i.key, i.met])),
+    readyForPoReview: productOwnerReviewReady,
+    openAmbiguities: ambiguityNodes.map(n => n.stage),
+    derivedAt:new Date().toISOString()
+  };
+}
+function deriveRecommendedDefinitionOfDone(story, index, chain){
+  const node = (stage) => tracePipelineNode(chain, stage);
+  const ac = story.ac || story.acceptanceCriteria || [];
+  const acArr = Array.isArray(ac) ? ac : String(ac || '').split(/\n/).map(s => s.trim()).filter(Boolean);
+  const acStructured = acArr.some(a => /given/i.test(a) && /then/i.test(a));
+  const qaFilled = typeof isPbiSectionFilled === 'function' ? isPbiSectionFilled(story.pbi?.qaValidates) : !!String(story.pbi?.qaValidates || '').trim();
+  const acceptanceCriteriaPassed = acStructured && qaFilled;
+  const testNode = node('COMPLIANCE_TEST_SCENARIOS');
+  const testsMapped = !!(testNode && !testNode.needsReview) || !!String(story.traceabilityTestEvidence || story.testEvidence || '').trim() || acArr.some(a => /given/i.test(a));
+  const complianceTestsPassed = testsMapped && !!String(story.traceabilityTestEvidence || story.testEvidence || '').trim();
+  const evidenceCaptured = !!String(story.traceabilityTestEvidence || story.testEvidence || story.evidenceRequired || story.acceptanceEvidence || '').trim();
+  const auditTrailMaintained = !!(chain?.rootTraceId && chain?.leafTraceId && (chain.nodes || []).every(n => n.traceId));
+  const l1 = story.sourceTruthStatus === 'VERIFIED';
+  const l2 = story.organisationInterpretationStatus === 'APPROVED';
+  const traceabilityRetained = !!(story.regRef && story.traceId) && l1 && l2;
+  const exc = node('EXCEPTIONS');
+  const exceptionsValidated = !!(exc && !exc.needsReview) || ['APPLICABLE','NOT_APPLICABLE','PARTIALLY_APPLICABLE'].includes(story.organisationApplicability);
+  const bundle = story.structuredObligations || chain?.structuredObligations;
+  const reportingObligationsSatisfied = !!(bundle?.obligations?.length) && !!(node('COMPLIANCE_OUTCOMES') && !node('COMPLIANCE_OUTCOMES').needsReview);
+  const complianceReviewCompleted = story.reviewStatus === 'SME_REVIEW_ATTESTED_DRAFT';
+  const sid = storyStableId(story, index);
+  const poManual = getStoryPoApproval(sid);
+  const items = [
+    {key:'acceptanceCriteriaPassed', label:'Acceptance Criteria passed', met:acceptanceCriteriaPassed, autoHint:'Given/When/Then AC + QA validates section', manual:false},
+    {key:'complianceTestsPassed', label:'Compliance Tests passed', met:complianceTestsPassed, autoHint:'COMPLIANCE_TEST_SCENARIOS + RTM test evidence', manual:false},
+    {key:'evidenceCaptured', label:'Evidence captured', met:evidenceCaptured, autoHint:'traceabilityTestEvidence / acceptance evidence fields', manual:false},
+    {key:'auditTrailMaintained', label:'Audit trail maintained', met:auditTrailMaintained, autoHint:'Chained traceId on all 19 stages', manual:false},
+    {key:'traceabilityRetained', label:'Traceability retained', met:traceabilityRetained, autoHint:'Layer 1 verified + Layer 2 approved + regRef', manual:false},
+    {key:'exceptionsValidated', label:'Exceptions validated', met:exceptionsValidated, autoHint:'EXCEPTIONS stage or applicability decision', manual:false},
+    {key:'reportingObligationsSatisfied', label:'Reporting obligations satisfied', met:reportingObligationsSatisfied, autoHint:'Structured obligations + compliance outcomes', manual:false},
+    {key:'complianceReviewCompleted', label:'Compliance review completed', met:complianceReviewCompleted, autoHint:'SME review attested (draft) — not approval', manual:false},
+    {key:'productOwnerApprovalObtained', label:'Product Owner approval obtained', met:poManual, autoHint:'Manual PO toggle (localStorage); not system approval', manual:true}
+  ];
+  const autoMet = items.filter(i => !i.manual && i.met).length;
+  return {
+    schema:'maras.recommended-dod.v1',
+    packageStatus:'DRAFT_NOT_CONTROLLED',
+    disclaimer:'Recommended DoD checklist — DRAFT; does not mark story Done in MARAS.',
+    keys:RECOMMENDED_DOD_CHECKLIST_KEYS,
+    items,
+    criteria:Object.fromEntries(items.map(i => [i.key, i.met])),
+    autoCriteriaMet: autoMet,
+    autoCriteriaTotal: items.filter(i => !i.manual).length,
+    storyId:sid,
+    derivedAt:new Date().toISOString()
+  };
+}
+function renderPoReadinessAndRecommendedDoD(story, index, opts){
+  const chain = story.regulatoryTracePipeline || (typeof buildRegulatoryTraceChainForStory === 'function' ? buildRegulatoryTraceChainForStory(story, index) : null);
+  const dor = story.definitionOfReady?.poReadiness || derivePoReadinessChecklist(story, chain);
+  const dod = story.definitionOfDone?.recommendedDoD || deriveRecommendedDefinitionOfDone(story, index, chain);
+  const dorRows = (dor.items || []).map(i => `<div class="dor-dod-item ${i.met?'met':'unmet'}"><span class="dor-mark">${i.met?'✓':'○'}</span><span>${escapeHtml(i.label)}</span></div>${opts?.verbose?`<div class="dor-dod-hint">${escapeHtml(i.autoHint || '')}</div>`:''}`).join('');
+  const dodRows = (dod.items || []).map(i => `<div class="dor-dod-item ${i.met?'met':'unmet'}"><span class="dor-mark">${i.met?'✓':'○'}</span><span>${escapeHtml(i.label)}</span></div>${opts?.verbose?`<div class="dor-dod-hint">${escapeHtml(i.autoHint || '')}</div>`:''}`).join('');
+  const sid = storyStableId(story, index);
+  const poToggle = `<label class="dor-dod-item" style="cursor:pointer;margin-top:4px"><input type="checkbox" ${getStoryPoApproval(sid)?'checked':''} onchange="toggleStoryPoApproval('${escapeHtml(sid)}',${index})" /> <span>PO approval recorded (draft toggle — not baselining)</span></label>`;
+  return `<div class="dor-dod-wrap">
+    <div class="dor-dod-k">Definition of Ready / PO review readiness</div>
+    <div class="dor-dod-sub">Business-friendly checklist derived from the trace pipeline (stages 1–16). SME/QA review still required.</div>
+    <div class="dor-dod-list">${dorRows}</div>
+    <div class="dor-dod-draft">${dor.readyForPoReview ? 'PO review readiness: criteria met (draft)' : 'PO review readiness: gaps remain — expand Compliance Details'}</div>
+  </div>
+  <div class="dor-dod-wrap">
+    <div class="dor-dod-k">Recommended Definition of Done (draft)</div>
+    <div class="dor-dod-sub">Story is <em>not</em> marked Done in MARAS — ${dod.autoCriteriaMet}/${dod.autoCriteriaTotal} auto-checks suggest readiness for PO conversation.</div>
+    <div class="dor-dod-list">${dodRows}</div>
+    ${poToggle}
+  </div>`;
+}
+function computeStoryDefinitionOfReady(story, chain){
   const inv = story.invest||{};
   const invKeys = ['independent','negotiable','valuable','estimable','small','testable'];
   const invOk = invKeys.every(k => inv[k] && String(inv[k]).toLowerCase() !== 'no');
   const pbiOk = !!(story.pbi?.complete) || (typeof computePbiComplete === 'function' && computePbiComplete(story.pbi||{}));
   const traceOk = !!(story.regRef && story.regulation);
   const acOk = (story.ac||story.acceptanceCriteria||[]).length >= 1;
-  const ready = invOk && pbiOk && traceOk && acOk;
+  const pipe = chain || story.regulatoryTracePipeline;
+  const poReadiness = derivePoReadinessChecklist(story, pipe);
+  const ready = invOk && pbiOk && traceOk && acOk && poReadiness.readyForPoReview;
   return {
     ready: ready ? 'DRAFT_READY' : 'NOT_READY',
     packageStatus:'DRAFT_NOT_CONTROLLED',
-    criteria:{invest:invOk,pbiThreeQuestions:pbiOk,sourceTrace:traceOk,acceptanceCriteria:acOk},
+    criteria:{invest:invOk,pbiThreeQuestions:pbiOk,sourceTrace:traceOk,acceptanceCriteria:acOk,poReviewReadiness:poReadiness.readyForPoReview},
+    poReadiness,
     blockers:[
       ...(!traceOk ? ['Source trace (regRef/regulation) missing — SME review required'] : []),
       ...(!invOk ? ['INVEST incomplete — DoR gate open'] : []),
       ...(!pbiOk ? ['PBI three-question sections incomplete'] : []),
-      ...(!acOk ? ['Acceptance criteria missing'] : [])
+      ...(!acOk ? ['Acceptance criteria missing'] : []),
+      ...(!poReadiness.readyForPoReview ? ['PO review readiness checklist incomplete — see Compliance Details'] : [])
     ],
     derivedAt:new Date().toISOString()
   };
 }
-function computeStoryDefinitionOfDone(story, index){
+function computeStoryDefinitionOfDone(story, index, chain){
   const l1 = story.sourceTruthStatus === 'VERIFIED';
   const l2 = story.organisationInterpretationStatus === 'APPROVED';
   const reviewed = story.reviewStatus === 'SME_REVIEW_ATTESTED_DRAFT';
   const ac = story.ac||story.acceptanceCriteria||[];
   const tests = !!String(story.traceabilityTestEvidence||story.testEvidence||'').trim() || ac.some(a => /then/i.test(a));
-  const done = reviewed && tests && l1 && l2;
+  const pipe = chain || story.regulatoryTracePipeline;
+  const recommendedDoD = deriveRecommendedDefinitionOfDone(story, index, pipe);
+  const autoDone = recommendedDoD.items.filter(i => !i.manual).every(i => i.met);
+  const done = reviewed && tests && l1 && l2 && autoDone;
   return {
     done: done ? 'DRAFT_DONE_CRITERIA_MET' : 'NOT_DONE',
     packageStatus:'DRAFT_NOT_CONTROLLED',
-    criteria:{layer1Verified:l1,layer2Approved:l2,smeReviewAttested:reviewed,testEvidenceMapped:tests},
+    recommendedDoD,
+    disclaimer:'Recommended DoD only — not an assertion that the story is Done.',
+    criteria:{layer1Verified:l1,layer2Approved:l2,smeReviewAttested:reviewed,testEvidenceMapped:tests,recommendedAutoComplete:autoDone},
     blockers:[
       ...(!l1 ? ['Layer 1 source truth not verified in RTM'] : []),
       ...(!l2 ? ['Layer 2 interpretation not approved'] : []),
       ...(!reviewed ? ['SME review attestation missing'] : []),
-      ...(!tests ? ['Compliance test scenarios / AC trace incomplete'] : [])
+      ...(!tests ? ['Compliance test scenarios / AC trace incomplete'] : []),
+      ...(!autoDone ? ['Recommended DoD auto-checks incomplete — see checklist'] : []),
+      ...(!getStoryPoApproval(storyStableId(story, index)) ? ['Product Owner approval toggle not recorded (optional draft)'] : [])
     ],
     rtmRow: (index ?? 0) + 1,
     derivedAt:new Date().toISOString()
@@ -4046,12 +4220,19 @@ function buildRegulatoryTraceChainForStory(story, index){
     mk('TRACEABILITY_MATRIX', 'Traceability matrix', `RTM row ${(index??0)+1} · ${story.regRef||'reg trace pending'}`, {rtmRow:(index??0)+1}),
     mk('HUMAN_REVIEW_PACKAGE', 'Human review package', 'SME/QA checklist bundle — draft attestation only', {reviewStatus:story.reviewStatus||'DRAFT_UNREVIEWED', structuredObligationSchema:STRUCTURED_OBLIGATION_SCHEMA, structuredObligations:structuredBundle}, true)
   ];
-  const dor = computeStoryDefinitionOfReady(story);
-  const dod = computeStoryDefinitionOfDone(story, index);
-  raw[15].summary = `${dor.ready}${dor.blockers.length ? ' — ' + dor.blockers[0] : ''}`;
+  const chainDraft = {nodes: raw, structuredObligations: structuredBundle};
+  const dor = computeStoryDefinitionOfReady(story, chainDraft);
+  const dod = computeStoryDefinitionOfDone(story, index, chainDraft);
+  const poMet = (dor.poReadiness?.items || []).filter(i => i.met).length;
+  const poTot = (dor.poReadiness?.items || []).length;
+  raw[15].summary = `${dor.ready} · PO readiness ${poMet}/${poTot}${dor.blockers.length ? ' — ' + dor.blockers[0] : ''}`;
   raw[15].payload = dor;
-  raw[16].summary = `${dod.done}${dod.blockers.length ? ' — ' + dod.blockers[0] : ''}`;
+  raw[15].needsReview = !dor.poReadiness?.readyForPoReview;
+  const dodMet = dod.recommendedDoD?.autoCriteriaMet ?? 0;
+  const dodTot = dod.recommendedDoD?.autoCriteriaTotal ?? 0;
+  raw[16].summary = `${dod.done} · recommended DoD ${dodMet}/${dodTot} auto${dod.blockers.length ? ' — ' + dod.blockers[0] : ''}`;
   raw[16].payload = dod;
+  raw[16].needsReview = dod.done === 'NOT_DONE';
   const nodes = linkTracePipelineParents(raw);
   return {
     schema:REGULATORY_TRACE_PIPELINE_SCHEMA,
@@ -4106,6 +4287,8 @@ function buildHumanReviewPackageRecord(){
     rtm:(allStories||[]).map((s,i)=>({pbiId:s.id,rtmRow:i+1,regRef:s.regRef,sourceTruth:s.sourceTruthStatus||'UNVERIFIED',interpretation:s.organisationInterpretationStatus||'DRAFT',traceId:s.traceId,parentTraceId:s.parentTraceId})),
     implementationReadinessGate: typeof buildImplementationReadinessGateRecord === 'function' ? buildImplementationReadinessGateRecord() : null,
     smeReviewChecklist:HUMAN_REVIEW_SME_CHECKLIST.map((text,i)=>({id:`HR-${i+1}`,text,status:'PENDING',packageStatus:'DRAFT_NOT_CONTROLLED'})),
+    poReadinessChecklists:(allStories||[]).map((s,i)=>({pbiId:storyStableId(s,i),...(s.definitionOfReady?.poReadiness||derivePoReadinessChecklist(s,s.regulatoryTracePipeline))})),
+    recommendedDefinitionOfDone:(allStories||[]).map((s,i)=>({pbiId:storyStableId(s,i),...(s.definitionOfDone?.recommendedDoD||deriveRecommendedDefinitionOfDone(s,i,s.regulatoryTracePipeline))})),
     context:{org:document.getElementById('f-org')?.value,project:document.getElementById('f-proj')?.value,system:document.getElementById('f-system')?.value,businessOutcome:document.getElementById('f-outcome')?.value},
     disclaimer:'Draft human review bundle — not submission-ready; SME/QA/RA review required.'
   };
@@ -4136,7 +4319,10 @@ function renderPackagePipelineTrace(stories){
   const body = stories.map((s,i) => {
     const c = s.regulatoryTracePipeline || buildRegulatoryTraceChainForStory(s,i);
     const gaps = (c.nodes||[]).filter(n => n.needsReview).length;
-    return `<details class="rtp-story"${i===0?' open':''}><summary><b>${escapeHtml(s.id||`PBI-${i+1}`)}</b> · ${escapeHtml(s.title||'')} · ${(c.nodes||[]).length} stages · ${gaps} needs-review · trace ${escapeHtml(s.traceId||'')}</summary>
+    const dorBrief = s.definitionOfReady?.poReadiness;
+    const poN = dorBrief ? `${(dorBrief.items||[]).filter(x=>x.met).length}/${(dorBrief.items||[]).length} PO-ready` : '';
+    return `<details class="rtp-story"${i===0?' open':''}><summary><b>${escapeHtml(s.id||`PBI-${i+1}`)}</b> · ${escapeHtml(s.title||'')} · ${(c.nodes||[]).length} stages · ${gaps} needs-review · ${poN} · trace ${escapeHtml(s.traceId||'')}</summary>
+      ${renderPoReadinessAndRecommendedDoD(s,i)}
       <div class="rtp-chain compact">${(c.nodes||[]).map(n=>`<div class="rtp-row"><span class="rtp-stage">${escapeHtml(n.stage)}</span><span>${escapeHtml((n.summary||n.label).slice(0,140))}${n.needsReview?' · needs-review':''}</span></div>`).join('')}</div></details>`;
   }).join('');
   wrap.innerHTML = `<div class="rtp-head"><div class="rtp-title">Pipeline Trace</div><div class="rtp-sub">${REGULATORY_TRACE_PIPELINE_SCHEMA} · ${regulatoryTracePipelineStages().length}-stage chain (Document → Human Review Package). Default PBI cards remain three-question format; expand Compliance Details per item for the same chain. DRAFT_NOT_CONTROLLED</div></div>${body}`;
@@ -5622,6 +5808,7 @@ function renderPbiComplianceDetailsAssure(s,i,bil,qgHtml,ragPipeHtml,boiHtml,inv
     ${ragPipeHtml}
     ${ac.length?`<div style="margin-top:8px"><b>Acceptance criteria (trace)</b>${ac.map((a,j)=>`<div class="ac-item" style="margin-top:4px"><span class="ac-n">${j+1}</span><span class="ac-t">${escapeHtml(a)}</span></div>`).join('')}</div>`:''}
     ${s.accept?`<div style="margin-top:8px;padding:8px;background:#fefce8;border-radius:5px"><b>ACCEPT</b> · Action: ${escapeHtml(s.accept.action)} · Expected: ${escapeHtml(s.accept.expected)} · Pass/Fail: ${escapeHtml(s.accept.pass_fail)} · Trace: ${escapeHtml(s.accept.traceable||s.regRef)}</div>`:''}
+    ${(()=>{const pr=s.definitionOfReady?.poReadiness;const rd=s.definitionOfDone?.recommendedDoD;if(!pr&&!rd)return'';const rows=[...(pr?.items||[]),...(rd?.items||[])].map(x=>`<div class="dor-dod-hint"><b>${escapeHtml(x.label)}</b>: ${escapeHtml(x.autoHint||x.dataHint||'')}</div>`).join('');return rows?`<details class="pbi-compliance-details sc-compliance-collapsed" style="margin-top:8px"><summary>PO readiness & DoD derivation hints</summary><div style="padding:6px 0">${rows}</div></details>`:'';})()}
     <div style="margin-top:8px;font-size:9px;color:var(--ink4)">RTM row ${i+1} · DoR ${escapeHtml(s.definitionOfReady?.ready||'NOT_READY')} · DoD ${escapeHtml(s.definitionOfDone?.done||'NOT_DONE')} · interpretation logs — Value Package trace matrix (DRAFT_NOT_CONTROLLED)</div>
     ${renderStructuredObligationCards(s.structuredObligations||s.regulatoryTracePipeline?.structuredObligations)}
     ${renderStoryTracePipelineDetail(s,i)}
@@ -5706,6 +5893,7 @@ function renderStories(stories, pipelineResult) {
         </div>
         <div class="sc-title">${escapeHtml(s.title)} — PBI</div>
         ${renderPbiThreeQuestions(pbi,{showTitle:false})}
+        ${renderPoReadinessAndRecommendedDoD(s,i)}
         ${renderPbiComplianceDetailsAssure(s,i,bil,qgHtml,ragPipeHtml,boiHtml,investHtml,rubHtml,sourceUrl)}
       </div>
       <div class="sc-footer">
@@ -6658,6 +6846,7 @@ function renderStoryCard(story,opts){
   return `<div class="sm-story sm-status-${escapeHtml(story.status||'planned')}" draggable="${drag}"${dragHandlers} data-pbi-complete="${pbi.complete?'true':'false'}">
     ${storyMapLensHasField('title')?`<div class="sm-story-t"><input value="${escapeHtml(story.title)}" onchange="storyMapSetField('${story.id}','title',this.value)" aria-label="Story title"> — PBI</div>`:''}
     ${storyMapLensHasField('pbi-three')?pbiBlock:''}
+    ${storyMapLensHasField('pbi-three')?(()=>{ const idx=(allStories||[]).findIndex(p=>p.id===story.id); return renderPoReadinessAndRecommendedDoD({...story,pbi},idx>=0?idx:0); })():''}
     ${(storyMapLensHasField('status')||storyMapLensHasField('release'))?`<div class="sm-story-meta">${storyMapLensHasField('status')?`Status <select onchange="storyMapSetField('${story.id}','status',this.value)">${STORY_MAP_STATUSES.map(s=>`<option${s===story.status?' selected':''}>${s}</option>`).join('')}</select>`:''}
     ${storyMapLensHasField('release')?` Release <select onchange="storyMapAssignRelease('${story.id}',this.value)"><option value="">—</option>${relOpts}</select>`:''}</div>`:''}
     ${storyMapLensHasField('owner')?`<label>Owner</label><input value="${escapeHtml(story.owner)}" onchange="storyMapSetField('${story.id}','owner',this.value)">`:''}

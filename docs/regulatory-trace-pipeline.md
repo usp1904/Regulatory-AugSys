@@ -25,8 +25,8 @@ MARAS links curated regulatory sources to delivery artifacts through a **19-stag
 | 13 | `USER_STORIES` | Business PBI narrative |
 | 14 | `ACCEPTANCE_CRITERIA` | Given/When/Then AC |
 | 15 | `COMPLIANCE_TEST_SCENARIOS` | Test trace / RTM test column |
-| 16 | `DEFINITION_OF_READY` | Derived from INVEST + PBI three questions + trace |
-| 17 | `DEFINITION_OF_DONE` | Derived from RTM Layer 1/2 + attestation + tests |
+| 16 | `DEFINITION_OF_READY` | INVEST + PBI three questions + `maras.po-readiness-checklist.v1` (9 PO review rows) |
+| 17 | `DEFINITION_OF_DONE` | RTM Layer 1/2 + `maras.recommended-dod.v1` (9 rows; PO approval manual) |
 | 18 | `TRACEABILITY_MATRIX` | Feature Traceability Matrix row |
 | 19 | `HUMAN_REVIEW_PACKAGE` | SME checklist bundle (`maras.human-review-package.v1`) |
 
