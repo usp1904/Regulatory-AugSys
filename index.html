@@ -664,10 +664,23 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .rtm-head{padding:12px 14px;background:var(--bg);border-bottom:1px solid var(--border)}
 .rtm-title{font-size:14px;font-weight:700;color:var(--ink)}
 .rtm-sub{font-size:11px;line-height:1.5;color:var(--ink3);margin-top:3px}
-.rtm-scroll{overflow-x:auto}
-.rtm-table{width:100%;min-width:1180px;border-collapse:collapse;font-size:11px}
-.rtm-table th{padding:9px 10px;text-align:left;background:#f8fafc;color:#475569;border-bottom:1px solid var(--border);vertical-align:top}
-.rtm-table td{padding:10px;vertical-align:top;border-bottom:1px solid var(--border);min-width:190px}
+.rtm-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.rtm-table{width:100%;min-width:960px;table-layout:fixed;border-collapse:collapse;font-size:11px}
+.rtm-table th{padding:9px 10px;text-align:left;background:#f8fafc;color:#475569;border-bottom:1px solid var(--border);vertical-align:top;overflow-wrap:anywhere;word-break:break-word}
+.rtm-table td{padding:10px;vertical-align:top;border-bottom:1px solid var(--border);overflow-wrap:anywhere;word-break:break-word}
+.rtm-table th:nth-child(1),.rtm-table td:nth-child(1){width:14%;min-width:120px}
+.rtm-table th:nth-child(2),.rtm-table td:nth-child(2){width:26%;min-width:200px}
+.rtm-table th:nth-child(3),.rtm-table td:nth-child(3){width:26%;min-width:200px}
+.rtm-table th:nth-child(4),.rtm-table td:nth-child(4){width:22%;min-width:160px}
+.rtm-table th:nth-child(5),.rtm-table td:nth-child(5){width:12%;min-width:100px}
+.rtm-col-impl,.rtm-table td:nth-child(4) .rtm-note{overflow-wrap:anywhere;word-break:break-word;max-width:100%}
+.pkg-trace-bundle{margin:14px 0 18px;border:1px solid var(--border);border-radius:10px;background:var(--card,#fff);overflow:hidden}
+.pkg-trace-bundle>summary{padding:12px 14px;font-size:13px;font-weight:700;color:var(--ink);cursor:pointer;list-style:none;background:var(--bg);border-bottom:1px solid var(--border)}
+.pkg-trace-bundle:not([open])>summary{border-bottom:0}
+.pkg-trace-bundle>summary::-webkit-details-marker{display:none}
+.pkg-trace-bundle-body{padding:0}
+.pkg-trace-bundle .rtm-wrap,.pkg-trace-bundle .delivery-pkg-wrap,.pkg-trace-bundle .rtp-wrap{margin:0;border:0;border-radius:0;border-top:1px solid var(--border)}
+.rtm-details>summary{padding:10px 14px;font-size:12px;font-weight:600}
 .rtm-table tr:last-child td{border-bottom:0}
 .rtm-field{display:block;width:100%;box-sizing:border-box;margin:4px 0 7px;padding:6px 7px;border:1px solid var(--border);border-radius:5px;background:white;color:var(--ink);font:inherit;line-height:1.4}
 .rtm-field:focus{outline:2px solid #93c5fd;outline-offset:1px}
@@ -1093,12 +1106,23 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
       </div>
       <div class="exp-btns" id="exp-btns"></div>
     </div>
-    <div id="feature-traceability-matrix" class="rtm-wrap" aria-label="Feature Traceability Matrix">
-      <div class="rtm-head"><div class="rtm-title">Feature Traceability Matrix</div><div class="rtm-sub">One traceability view for regulatory source truth (Layer 1), approved organisational interpretation (Layer 2), and the existing requirement → PBI → acceptance/test evidence chain. Source and interpretation attestations saved in this browser are draft records, not electronic signatures.</div></div>
-      <div class="rtm-scroll"><table class="rtm-table"><thead><tr><th>Trace / PBI</th><th>Layer 1 · Regulatory source truth</th><th>Layer 2 · Organisational interpretation</th><th>Implementation trace</th><th>Evidence status</th></tr></thead><tbody id="rtm-body"></tbody></table></div>
-    </div>
-    <div id="delivery-package-wrap" class="delivery-pkg-wrap" style="display:none" aria-label="Delivery Package — final output order"></div>
-    <div id="pipeline-trace-wrap" class="rtp-wrap" style="display:none" aria-label="Pipeline Trace — full regulatory conversion chain"></div>
+    <details id="package-delivery-traceability" class="pkg-trace-bundle sc-compliance-collapsed" style="display:none" aria-label="Delivery Package and traceability">
+      <summary>Delivery Package &amp; traceability</summary>
+      <div class="pkg-trace-bundle-body">
+        <details id="feature-traceability-matrix-details" class="pbi-compliance-details sc-compliance-collapsed rtm-details">
+          <summary>Feature Traceability Matrix</summary>
+          <div id="feature-traceability-matrix" class="rtm-wrap" aria-label="Feature Traceability Matrix">
+            <div class="rtm-head"><div class="rtm-title">Feature Traceability Matrix</div><div class="rtm-sub">One traceability view for regulatory source truth (Layer 1), approved organisational interpretation (Layer 2), and the existing requirement → PBI → acceptance/test evidence chain. Source and interpretation attestations saved in this browser are draft records, not electronic signatures.</div></div>
+            <div class="rtm-scroll"><table class="rtm-table"><thead><tr><th>Trace / PBI</th><th>Layer 1 · Regulatory source truth</th><th>Layer 2 · Organisational interpretation</th><th>Implementation trace</th><th>Evidence status</th></tr></thead><tbody id="rtm-body"></tbody></table></div>
+          </div>
+        </details>
+        <div id="delivery-package-wrap" class="delivery-pkg-wrap" style="display:none" aria-label="Delivery Package — final output order"></div>
+        <details id="pipeline-trace-details" class="pbi-compliance-details sc-compliance-collapsed">
+          <summary>Show pipeline trace</summary>
+          <div id="pipeline-trace-wrap" class="rtp-wrap" style="display:none" aria-label="Pipeline Trace — full regulatory conversion chain"></div>
+        </details>
+      </div>
+    </details>
     <div id="stories-list"></div>
   </div>
 </div>
@@ -4347,8 +4371,10 @@ function renderStoryTracePipelineDetail(story, index){
 }
 function renderPackagePipelineTrace(stories){
   const wrap = document.getElementById('pipeline-trace-wrap');
+  const details = document.getElementById('pipeline-trace-details');
   if(!wrap) return;
-  if(!stories?.length){ wrap.style.display = 'none'; return; }
+  if(!stories?.length){ wrap.style.display = 'none'; if(details) details.style.display = 'none'; return; }
+  if(details) details.style.display = 'block';
   wrap.style.display = 'block';
   const body = stories.map((s,i) => {
     const c = s.regulatoryTracePipeline || buildRegulatoryTraceChainForStory(s,i);
@@ -4359,7 +4385,7 @@ function renderPackagePipelineTrace(stories){
       ${renderPoReadinessAndRecommendedDoD(s,i)}
       <div class="rtp-chain compact">${(c.nodes||[]).map(n=>`<div class="rtp-row"><span class="rtp-stage">${escapeHtml(n.stage)}</span><span>${escapeHtml((n.summary||n.label).slice(0,140))}${n.needsReview?' · needs-review':''}</span></div>`).join('')}</div></details>`;
   }).join('');
-  wrap.innerHTML = `<div class="rtp-head"><div class="rtp-title">Pipeline Trace</div><div class="rtp-sub">${REGULATORY_TRACE_PIPELINE_SCHEMA} · ${regulatoryTracePipelineStages().length}-stage chain (Document → Human Review Package). Default PBI cards remain three-question format; expand Compliance Details per item for the same chain. DRAFT_NOT_CONTROLLED</div></div>${body}`;
+  wrap.innerHTML = `<div class="rtp-head"><div class="rtp-title">Pipeline Trace</div><div class="rtp-sub">${REGULATORY_TRACE_PIPELINE_SCHEMA} · ${regulatoryTracePipelineStages().length}-stage chain (Document → Human Review Package). PBI cards stay three-question + PO readiness + Recommended DoD; per-PBI delivery package panels deduplicated here. DRAFT_NOT_CONTROLLED</div></div>${body}`;
 }
 
 /* ─── HARD FAIL + FINAL OUTPUT ORDER (23 sections) ───────────────── */
@@ -4541,10 +4567,13 @@ function validateRegulatoryOutputHardFail(story, chain, structuredObligations){
     const xref = story?.regulatoryTraceHints?.crossReferences || doc?.payload?.crossReferences;
     if(!xref) add('REFERENCE_IGNORED', 'Cross-reference in source not mapped in trace payload', 'WARN_NEEDS_REVIEW');
   }
-  const claimNarrative = `${story?.title||''} ${story?.story||''} ${story?.userStory||''} ${story?.organisationInterpretation||''}`;
+  const freeTextFields = [story?.story, story?.userStory, story?.constraints, story?.organisationInterpretation].filter(v => String(v||'').trim()).join('\n');
+  const claimNarrative = textOutsideAllowedDerivation(freeTextFields);
   const claim = specificClaimUnsupported(claimNarrative, corpus);
   if(claim && story?.sourceApprovalStatus !== 'SME_APPROVED'){
-    add('UNSUPPORTED_STATEMENT', `Unsupported ${claim} — DRAFT_NOT_CONTROLLED; SME-approved citation required`, traceAnchored ? 'WARN_NEEDS_REVIEW' : undefined);
+  if(traceAnchored && claim === 'approval/compliance claim'){ /* benign phrasing when trace is sourced — PBI builder narrative excluded */ }
+  else if(traceAnchored) add('UNSUPPORTED_STATEMENT', `Unsupported ${claim} — DRAFT_NOT_CONTROLLED; SME-approved citation required`, 'WARN_NEEDS_REVIEW');
+  else add('UNSUPPORTED_STATEMENT', `Unsupported ${claim} — DRAFT_NOT_CONTROLLED; SME-approved citation required`);
   }
   const inventionScope = narrativeForInventionCheck(story, chain, bundle);
   narrativeInventedTermHits(inventionScope, INVENTED_TECH_TERMS, corpus).forEach(t => add('TECHNOLOGY_INVENTED', `Technology "${t}" not evidenced in sourceExcerpt corpus`));
@@ -4716,7 +4745,9 @@ function renderHardFailBannerHtml(hardFail, opts){
   const codes = list.map(f =>
     `<span class="hard-fail-code${f.severity==='WARN_NEEDS_REVIEW'?' warn-code':''}" title="${escapeHtml(f.message)}">${escapeHtml(f.code)}</span>`).join('');
   const more = totalUnique > cap ? `<span class="hard-fail-code">+${totalUnique - cap} more</span>` : '';
-  const meta = totalUnique ? `<span style="font-size:10px;opacity:.9">${hardFail.failureCount||totalUnique} occurrence(s) across ${(hardFail.stories||[]).length||'—'} PBI(s) · ${totalUnique} unique</span>` : '';
+  const meta = blocking > 0 && totalUnique
+    ? `<span style="font-size:10px;opacity:.9">${hardFail.failureCount||totalUnique} occurrence(s) across ${(hardFail.stories||[]).length||'—'} PBI(s) · ${totalUnique} unique</span>`
+    : (mode === 'warn' && warnings > 0 ? `<span style="font-size:10px;opacity:.9">Package-level review codes (deduplicated) · DRAFT_NOT_CONTROLLED</span>` : '');
   return `<div class="${cls}" data-hard-fail="${mode}">${title}${meta}<div class="hard-fail-codes">${codes}${more}</div></div>`;
 }
 function renderStoryHardFailHint(hardFail){
@@ -4761,30 +4792,24 @@ function renderFinalOutputOrderAccordion(pkg, opts){
     ${essentials?`<div class="delivery-pkg-essentials">${essentials}</div>`:''}
     <div class="fop-all fop-all-scroll">${rows}</div></details>`;
 }
-function renderStoryDeliveryPackagePanel(story, index){
-  const pkg = story.finalOutputPackage || assembleFinalOutputPackage(story, index);
-  const hf = story.regulatoryOutputHardFail || pkg.regulatoryOutputHardFail;
-  const personaBlocks = [
-    renderDeliveryPersonaEssentials(pkg, 'product-owner'),
-    renderDeliveryPersonaEssentials(pkg, 'developer'),
-    renderDeliveryPersonaEssentials(pkg, 'tester'),
-    renderDeliveryPersonaEssentials(pkg, 'product-manager'),
-    renderDeliveryPersonaEssentials(pkg, 'system-owner'),
-    renderDeliveryPersonaEssentials(pkg, 'rte-project-manager')
-  ].join('');
-  const essentialsWrap = `<details class="pbi-compliance-details sc-compliance-collapsed" style="margin:6px 0"><summary>Persona essentials (PO · Dev · QA · PM · System Owner · RTE)</summary><div class="delivery-pkg-essentials">${personaBlocks}</div></details>`;
-  return `${renderStoryHardFailHint(hf)}${essentialsWrap}${renderFinalOutputOrderAccordion(pkg)}`;
-}
 function renderPackageDeliveryPanel(stories){
   const wrap = document.getElementById('delivery-package-wrap');
+  const bundle = document.getElementById('package-delivery-traceability');
   if(!wrap) return;
-  if(!stories?.length){ wrap.style.display = 'none'; return; }
+  if(!stories?.length){
+    wrap.style.display = 'none';
+    if(bundle) bundle.style.display = 'none';
+    renderPackagePipelineTrace(stories);
+    return;
+  }
+  if(bundle) bundle.style.display = 'block';
   wrap.style.display = 'block';
   const pkgFail = validatePackageRegulatoryHardFail(stories);
   H.regulatoryOutputHardFail = pkgFail;
   const banner = renderHardFailBannerHtml(pkgFail, {maxCodes:5});
   const avgCov = stories.reduce((a,s,i) => a + (s.finalOutputPackage?.coverageReport?.rtmCoveragePercent ?? computePipelineCoveragePercent(s.regulatoryTracePipeline)), 0) / stories.length;
-  wrap.innerHTML = `<div class="delivery-pkg-head"><div class="delivery-pkg-title">Delivery Package</div><div class="delivery-pkg-sub">${FINAL_OUTPUT_ORDER_SCHEMA} · ${FINAL_OUTPUT_ORDER.length} sections per PBI · avg RTM coverage ${Math.round(avgCov * 10) / 10}% · ${REGULATORY_HARD_FAIL_POLICY} · blocking vs review-warn severities</div></div>${banner}<div class="delivery-pkg-sub" style="padding:0 14px 10px">One package-level hard-fail summary (max 5 codes). Each PBI card keeps persona essentials collapsed; expand “Show all 23 sections” per item. FAILED watermark applies only to blocking codes.</div>`;
+  wrap.innerHTML = `<div class="delivery-pkg-head"><div class="delivery-pkg-title">Delivery Package</div><div class="delivery-pkg-sub">${FINAL_OUTPUT_ORDER_SCHEMA} · ${FINAL_OUTPUT_ORDER.length} sections per PBI (JSON / Human Review Package export) · avg RTM coverage ${Math.round(avgCov * 10) / 10}% · ${REGULATORY_HARD_FAIL_POLICY} · blocking vs review-warn severities</div></div>${banner}<div class="delivery-pkg-sub" style="padding:0 14px 10px">Single package-level hard-fail summary (max 5 unique codes). Expand Feature Traceability Matrix and Show pipeline trace below. FAILED watermark applies only to blocking codes.</div>`;
+  renderPackagePipelineTrace(stories);
 }
 function surfaceHardFailOnGenerationComplete(stories){
   const vf = validatePackageRegulatoryHardFail(stories);
@@ -6279,7 +6304,7 @@ function renderPbiComplianceDetailsAssure(s,i,bil,qgHtml,ragPipeHtml,boiHtml,inv
     ${s.accept?`<div style="margin-top:8px;padding:8px;background:#fefce8;border-radius:5px"><b>ACCEPT</b> · Action: ${escapeHtml(s.accept.action)} · Expected: ${escapeHtml(s.accept.expected)} · Pass/Fail: ${escapeHtml(s.accept.pass_fail)} · Trace: ${escapeHtml(s.accept.traceable||s.regRef)}</div>`:''}
     ${(()=>{const pr=s.definitionOfReady?.poReadiness;const rd=s.definitionOfDone?.recommendedDoD;if(!pr&&!rd)return'';const rows=[...(pr?.items||[]),...(rd?.items||[])].map(x=>`<div class="dor-dod-hint"><b>${escapeHtml(x.label)}</b>: ${escapeHtml(x.autoHint||x.dataHint||'')}</div>`).join('');return rows?`<details class="pbi-compliance-details sc-compliance-collapsed" style="margin-top:8px"><summary>PO readiness & DoD derivation hints</summary><div style="padding:6px 0">${rows}</div></details>`:'';})()}
     <div style="margin-top:8px;font-size:9px;color:var(--ink4)">RTM row ${i+1} · DoR ${escapeHtml(s.definitionOfReady?.ready||'NOT_READY')} · DoD ${escapeHtml(s.definitionOfDone?.done||'NOT_DONE')} · interpretation logs — Value Package trace matrix (DRAFT_NOT_CONTROLLED)</div>
-    ${(s.finalOutputPackage||s.regulatoryOutputHardFail)?'<div style="margin-top:8px;font-size:9px;color:var(--ink4)">Structured obligations and full trace pipeline are in the Delivery Package panel above (deduplicated).</div>':`${renderStructuredObligationCards(s.structuredObligations||s.regulatoryTracePipeline?.structuredObligations)}${renderStoryTracePipelineDetail(s,i)}`}
+    ${(s.finalOutputPackage||s.regulatoryOutputHardFail)?'<div style="margin-top:8px;font-size:9px;color:var(--ink4)">Structured obligations, RTM, and full trace pipeline are in Delivery Package &amp; traceability above (single package view).</div>':`${renderStructuredObligationCards(s.structuredObligations||s.regulatoryTracePipeline?.structuredObligations)}${renderStoryTracePipelineDetail(s,i)}`}
   </div></details>`;
 }
 function renderStories(stories, pipelineResult) {
@@ -6323,7 +6348,6 @@ function renderStories(stories, pipelineResult) {
   (stories||[]).forEach((s,i)=>attachRegulatoryTracePipeline(s,i));
   renderTraceabilityMatrix(stories);
   renderPackageDeliveryPanel(stories);
-  renderPackagePipelineTrace(stories);
   surfaceHardFailOnGenerationComplete(stories);
   document.getElementById('stories-list').innerHTML = ragBanner + qcBanner + stories.map((s,i) => {
     const sourceUrl=safeExternalUrl(s.sourceUrl);
@@ -6364,7 +6388,6 @@ function renderStories(stories, pipelineResult) {
         <div class="sc-title">${escapeHtml(s.title)} — PBI</div>
         ${renderPbiThreeQuestions(pbi,{showTitle:false})}
         ${renderPoReadinessAndRecommendedDoD(s,i)}
-        ${renderStoryDeliveryPackagePanel(s,i)}
         ${renderPbiComplianceDetailsAssure(s,i,bil,qgHtml,ragPipeHtml,boiHtml,investHtml,rubHtml,sourceUrl)}
       </div>
       <div class="sc-footer">
@@ -6414,7 +6437,7 @@ function renderTraceabilityMatrix(stories){
         <label>Approval rationale<textarea class="rtm-field rtm-area" data-rtm-field="organisationApprovalRationale" data-rtm-index="${i}" placeholder="Review rationale">${escapeHtml(s.organisationApprovalRationale||'')}</textarea></label>
         <button class="rtm-btn primary" onclick="approveMatrixInterpretation(${i})">Approve interpretation</button>
       </td>
-      <td><div><b>Requirement</b><div class="rtm-note">${escapeHtml(s.requirement||s.story||'Not separately recorded')}</div></div><div style="margin-top:8px"><b>Acceptance criteria</b><div class="rtm-note">${escapeHtml((s.ac||s.acceptanceCriteria||[]).join(' · ')||'Not recorded')}</div></div><div style="margin-top:8px"><b>Test/evidence reference</b><textarea class="rtm-field rtm-area" data-rtm-field="traceabilityTestEvidence" data-rtm-index="${i}" placeholder="Test case ID, execution result, evidence reference">${escapeHtml(s.traceabilityTestEvidence||s.testEvidence||'')}</textarea></div></td>
+      <td class="rtm-col-impl"><div><b>Requirement</b><div class="rtm-note">${escapeHtml(s.requirement||s.story||'Not separately recorded')}</div></div><div style="margin-top:8px"><b>Acceptance criteria</b><div class="rtm-note">${escapeHtml((s.ac||s.acceptanceCriteria||[]).join(' · ')||'Not recorded')}</div></div><div style="margin-top:8px"><b>Test/evidence reference</b><textarea class="rtm-field rtm-area" data-rtm-field="traceabilityTestEvidence" data-rtm-index="${i}" placeholder="Test case ID, execution result, evidence reference">${escapeHtml(s.traceabilityTestEvidence||s.testEvidence||'')}</textarea></div></td>
       <td><div><b>Layer 1</b><div class="rtm-note">${escapeHtml(sourceStatus)}</div></div><div style="margin-top:8px"><b>Layer 2</b><div class="rtm-note">${escapeHtml(interpStatus)}</div></div><div class="rtm-note" style="margin-top:8px">${sourceStatus==='VERIFIED'&&interpStatus==='APPROVED'?'Source and interpretation gates recorded.': 'Draft only — review blockers before relying on this trace.'}</div></td>
     </tr>`;
   }).join('');

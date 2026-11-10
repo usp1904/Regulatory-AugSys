@@ -163,6 +163,7 @@ check('hard-fail blocking vs warn severities', html.includes('HARD_FAIL_BLOCKING
 check('assembleFinalOutputPackage function', html.includes('function assembleFinalOutputPackage(story, index)'));
 check('HARD_FAIL_CODE_ENUM present', html.includes('SOURCE_MISSING') && html.includes('TECHNOLOGY_INVENTED') && html.includes('DESIGN_INVENTED'));
 check('Delivery Package panel HTML', html.includes('id="delivery-package-wrap"') && html.includes('function renderPackageDeliveryPanel'));
+check('package delivery traceability bundle collapsed', html.includes('id="package-delivery-traceability"') && html.includes('Delivery Package &amp; traceability'));
 check('hard fail in JSON export', html.includes('regulatoryOutputHardFail:hardFail') && html.includes('FAILED-DRAFT-MARAS-Backlog.json'));
 check('prohibitions from PROHIBITED modality', html.includes("o.modality === 'PROHIBITED'") && html.includes("key:'PROHIBITIONS'"));
 check('regulatory trace pipeline doc mentions final output order', fs.readFileSync('docs/regulatory-trace-pipeline.md','utf8').includes('maras.final-output-order.v1'));
