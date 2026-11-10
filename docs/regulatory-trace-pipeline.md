@@ -32,9 +32,15 @@ MARAS links curated regulatory sources to delivery artifacts through a **19-stag
 
 ## Where it appears in the UI
 
-- **Value Package:** collapsed **Pipeline Trace** panel below the Feature Traceability Matrix; per-PBI **Full trace pipeline** under **Compliance Details** (default remains PBI three questions).
+- **Value Package:** **Delivery Package** panel (hard-fail banner + `maras.final-output-order.v1` persona essentials); collapsed **Pipeline Trace** panel below the Feature Traceability Matrix; per-PBI **Delivery Package · Final output order (23 sections)** and **Full trace pipeline** under **Compliance Details** (default remains PBI three questions).
 - **Story Map:** **Regulatory traceability** view mode shows stage counts and expandable chains.
 - **Readiness:** Implementation Readiness Gate references the same 19-stage model in `pipelineNote`.
+
+## Hard-fail and final output order
+
+- `validateRegulatoryOutputHardFail(story, chain, structuredObligations)` returns `{ passed, failures[] }` with stable codes (see [hard-fail-output-governance.md](./hard-fail-output-governance.md)).
+- `assembleFinalOutputPackage(story, index)` maps trace pipeline + source fields into 23 sections — stubs are `needs-review`, never invented regulatory text.
+- Package-level coverage for section 21 uses pipeline stage completeness (% stages without `needs-review` with summary text).
 
 ## Exports
 

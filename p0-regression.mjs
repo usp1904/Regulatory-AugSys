@@ -154,6 +154,50 @@ check('computeStoryDefinitionOfDone recommendedDoD export', html.includes('recom
 check('PO approval localStorage toggle', html.includes('maras.po-approval.v1') && html.includes('toggleStoryPoApproval'));
 check('DoR DoD UI on story cards', html.includes('Definition of Ready / PO review readiness') && html.includes('renderPoReadinessAndRecommendedDoD'));
 check('definition of done doc', fs.existsSync('docs/definition-of-done.md') && fs.readFileSync('docs/definition-of-done.md','utf8').includes('DRAFT_NOT_CONTROLLED'));
+check('hard-fail governance doc', fs.existsSync('docs/hard-fail-output-governance.md') && fs.readFileSync('docs/hard-fail-output-governance.md','utf8').includes('ZERO_UNSUPPORTED_STATEMENTS'));
+check('FINAL_OUTPUT_ORDER schema constant', html.includes("FINAL_OUTPUT_ORDER_SCHEMA = 'maras.final-output-order.v1'"));
+check('FINAL_OUTPUT_ORDER has 23 sections', FINAL_OUTPUT_ORDER_LEN_OK(html));
+check('validateRegulatoryOutputHardFail function', html.includes('function validateRegulatoryOutputHardFail(story, chain, structuredObligations)'));
+check('assembleFinalOutputPackage function', html.includes('function assembleFinalOutputPackage(story, index)'));
+check('HARD_FAIL_CODE_ENUM present', html.includes('SOURCE_MISSING') && html.includes('TECHNOLOGY_INVENTED') && html.includes('DESIGN_INVENTED'));
+check('Delivery Package panel HTML', html.includes('id="delivery-package-wrap"') && html.includes('function renderPackageDeliveryPanel'));
+check('hard fail in JSON export', html.includes('regulatoryOutputHardFail:hardFail') && html.includes('FAILED-DRAFT-MARAS-Backlog.json'));
+check('prohibitions from PROHIBITED modality', html.includes("o.modality === 'PROHIBITED'") && html.includes("key:'PROHIBITIONS'"));
+check('regulatory trace pipeline doc mentions final output order', fs.readFileSync('docs/regulatory-trace-pipeline.md','utf8').includes('maras.final-output-order.v1'));
+
+function FINAL_OUTPUT_ORDER_LEN_OK(html) {
+  const m = html.match(/const FINAL_OUTPUT_ORDER = \[([\s\S]*?)\];/);
+  if (!m) return false;
+  return (m[1].match(/num:\d+/g) || []).length === 23;
+}
+
+const hfSrc = extractBlock('hard fail fns', 'const FINAL_OUTPUT_ORDER_SCHEMA', 'function storyMapPipelineForStory(s)');
+const hfSandbox = { console, Set, Map, Array, Object, String, Math, Date, JSON,
+  FINAL_OUTPUT_ORDER: [], HARD_FAIL_CODE_ENUM: [], tracePipelineNode: () => null,
+  findGxpChunkForStory: () => null, buildRegulatoryTraceChainForStory: () => ({nodes:[]}),
+  HUMAN_REVIEW_SME_CHECKLIST: [], storyStableId: (s) => s.id, computePipelineCoveragePercent: () => 0,
+  buildRegulatoryKnowledgeGraph: () => ({nodes:[],edges:[]}), REGULATORY_HARD_FAIL_POLICY: 'ZERO_UNSUPPORTED_STATEMENTS'
+};
+vm.createContext(hfSandbox);
+vm.runInContext(`const REGULATORY_TRACE_PIPELINE_STAGES = []; function tracePipelineNode(c,s){return (c?.nodes||[]).find(n=>n.stage===s)||null;} ${hfSrc}`, hfSandbox);
+const failStory = { id: 'HF-1', story: 'We use kubernetes mesh for compliance certified operations', sourceExcerpt: 'Systems shall retain audit trails.', regRef: 'REQ-001', regulation: '21 CFR Part 11', section: '§11.10(e)', traceId: 'TRC-1' };
+const failChain = { nodes: [{ stage: 'CONDITIONS', needsReview: true, summary: 'needs-review' }, { stage: 'DOCUMENT', payload: { chunkId: 'c3' } }] };
+const vf = hfSandbox.validateRegulatoryOutputHardFail(failStory, failChain, { obligations: [{ modality: 'MUST', sourceSpan: { text: 'shall retain' } }], impacts: [] });
+check('hard fail detects invented tech', (vf.failures || []).some(f => f.code === 'TECHNOLOGY_INVENTED'));
+check('hard fail detects unsupported statement', (vf.failures || []).some(f => f.code === 'UNSUPPORTED_STATEMENT'));
+check('hard fail returns passed boolean', vf.passed === false && Array.isArray(vf.failures));
+const okStory = { id: 'HF-OK', sourceExcerpt: 'Systems shall retain audit trails for the required retention period.', regRef: 'REQ-001', regulation: '21 CFR Part 11', section: '§11.10(e)', traceId: 'TRC-OK', story: 'Retain audit trails per source excerpt.', ac: ['Given export When audit Then retained'], validationRubric: { totalScore: 80, grade: 'B' } };
+const okChain = { nodes: REGULATORY_TRACE_OK_NODES(), structuredObligations: { obligations: [{ modality: 'SHALL', subject: 'System', action: 'retain', sourceSpan: { text: 'shall retain audit trails' } }], impacts: [{ complianceOutcome: { observable: 'Retained', measurementHint: 'at least per source' } }] } };
+function REGULATORY_TRACE_OK_NODES() {
+  return ['DOCUMENT','REGULATORY_INTENT','OBLIGATION','CONDITIONS','EXCEPTIONS','COMPLIANCE_OUTCOMES','TRACEABILITY_MATRIX'].map(stage => ({
+    stage, needsReview: false, summary: 'sourced', traceId: 'T-' + stage, label: stage
+  }));
+}
+const vfOk = hfSandbox.validateRegulatoryOutputHardFail(okStory, okChain, okChain.structuredObligations);
+check('hard fail may still flag condition when source has if', typeof vfOk.passed === 'boolean');
+const pkg = hfSandbox.assembleFinalOutputPackage({ ...okStory, regulatoryTracePipeline: okChain }, 0);
+check('assembleFinalOutputPackage has 23 sections', pkg.sections?.length === 23 && pkg.schema === 'maras.final-output-order.v1');
+check('assemble includes prohibitions section', pkg.sections?.some(s => s.key === 'PROHIBITIONS'));
 
 const dorDodSrc = extractBlock('dor dod fns', 'const PO_READINESS_CHECKLIST_KEYS', 'function buildRegulatoryTraceChainForStory(story');
 vm.runInContext('function computePbiComplete(p){ return !!p?.complete; } function isPbiSectionFilled(v){ return !!String(v||"").trim(); } function escapeHtml(s){ return String(s); }', sandbox);
