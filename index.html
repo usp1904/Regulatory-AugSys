@@ -707,6 +707,29 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .obl-nr{display:inline-block;margin-top:4px;font-size:9px;font-weight:700;color:#b45309;background:#fffbeb;padding:2px 6px;border-radius:4px}
 .obl-infer{font-size:9px;color:#6b7280;font-style:italic}
 .obl-src{margin-top:5px;padding:5px 7px;background:#f1f5f9;border-left:2px solid #94a3b8;font-size:9px;color:#475569}
+/* Delivery Package · Final Output Order (23 sections) */
+.delivery-pkg-wrap{margin:14px 0 18px;border:1px solid var(--border);border-radius:10px;background:#fff;overflow:hidden;max-width:100%}
+.delivery-pkg-head{padding:12px 14px;background:var(--bg);border-bottom:1px solid var(--border)}
+.delivery-pkg-title{font-size:14px;font-weight:700;color:var(--ink)}
+.delivery-pkg-sub{font-size:11px;line-height:1.5;color:var(--ink3);margin-top:3px;overflow-wrap:anywhere;word-wrap:break-word}
+.hard-fail-banner{margin:10px 14px 0;padding:10px 12px;border-radius:8px;font-size:11px;line-height:1.45;display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;overflow-wrap:anywhere}
+.hard-fail-banner.fail{background:linear-gradient(135deg,#fef2f2,#fff7ed);border:1px solid #f97316;color:#9a3412}
+.hard-fail-banner.pass{background:#ecfdf5;border:1px solid #86efac;color:#166534}
+.hard-fail-banner b{font-weight:700}
+.hard-fail-codes{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.hard-fail-code{font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;background:#fff;border:1px solid #fdba74;color:#c2410c}
+.delivery-pkg-essentials{padding:10px 14px 12px;display:flex;flex-direction:column;gap:8px}
+.delivery-ess-block{border:1px solid var(--bg2);border-radius:8px;padding:8px 10px;background:#fafafa}
+.delivery-ess-k{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.35px;color:#475569;margin-bottom:4px}
+.delivery-ess-body{font-size:10px;color:var(--ink3);line-height:1.45;overflow-wrap:anywhere;word-wrap:break-word}
+.fop-all{padding:0 14px 12px}
+.fop-section{margin:6px 0;border:1px solid var(--bg2);border-radius:6px;overflow:hidden;max-width:100%}
+.fop-section>summary{padding:7px 10px;cursor:pointer;font-size:10px;font-weight:600;color:var(--ink2);list-style:none;display:flex;flex-wrap:wrap;gap:6px;align-items:baseline;background:#f8fafc}
+.fop-section>summary::-webkit-details-marker{display:none}
+.fop-num{color:#6366f1;font-weight:700;min-width:1.5em}
+.fop-body{padding:8px 10px 10px;font-size:10px;color:var(--ink3);line-height:1.5;overflow-wrap:anywhere;word-wrap:break-word}
+.fop-nr{font-size:9px;font-weight:700;color:#b45309}
+.delivery-pkg-story{margin-top:8px}
 </style>
 </head>
 <body>
@@ -1070,6 +1093,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
       <div class="rtm-head"><div class="rtm-title">Feature Traceability Matrix</div><div class="rtm-sub">One traceability view for regulatory source truth (Layer 1), approved organisational interpretation (Layer 2), and the existing requirement → PBI → acceptance/test evidence chain. Source and interpretation attestations saved in this browser are draft records, not electronic signatures.</div></div>
       <div class="rtm-scroll"><table class="rtm-table"><thead><tr><th>Trace / PBI</th><th>Layer 1 · Regulatory source truth</th><th>Layer 2 · Organisational interpretation</th><th>Implementation trace</th><th>Evidence status</th></tr></thead><tbody id="rtm-body"></tbody></table></div>
     </div>
+    <div id="delivery-package-wrap" class="delivery-pkg-wrap" style="display:none" aria-label="Delivery Package — final output order"></div>
     <div id="pipeline-trace-wrap" class="rtp-wrap" style="display:none" aria-label="Pipeline Trace — full regulatory conversion chain"></div>
     <div id="stories-list"></div>
   </div>
@@ -4256,6 +4280,7 @@ function attachRegulatoryTracePipeline(story, index){
   story.traceId = chain.leafTraceId;
   story.parentTraceId = chain.rootTraceId;
   story.traceStage = 'USER_STORIES';
+  refreshStoryDeliveryArtifacts(story, index);
   return story;
 }
 function ensurePackageTracePipeline(stories){
@@ -4274,15 +4299,20 @@ function ensurePackageTracePipeline(stories){
 }
 function buildHumanReviewPackageRecord(){
   const pipeline = ensurePackageTracePipeline(allStories);
+  const hardFail = validatePackageRegulatoryHardFail(allStories);
   const structuredObligations = (allStories||[]).map(s => s.structuredObligations || s.regulatoryTracePipeline?.structuredObligations).filter(Boolean);
+  const finalOutputPackages = (allStories||[]).map((s,i) => s.finalOutputPackage || assembleFinalOutputPackage(s,i));
   return {
     schema:'maras.human-review-package.v1',
     schemaVersion:1,
-    packageStatus:'DRAFT_NOT_CONTROLLED',
+    packageStatus:packageStatusWithHardFail('DRAFT_NOT_CONTROLLED', hardFail),
     generatedAt:new Date().toISOString(),
     structuredObligationSchema:STRUCTURED_OBLIGATION_SCHEMA,
     structuredObligations,
     regulatoryTracePipeline:pipeline,
+    finalOutputOrderSchema:FINAL_OUTPUT_ORDER_SCHEMA,
+    finalOutputPackages,
+    regulatoryOutputHardFail:hardFail,
     traceStageEnum:regulatoryTracePipelineStages(),
     rtm:(allStories||[]).map((s,i)=>({pbiId:s.id,rtmRow:i+1,regRef:s.regRef,sourceTruth:s.sourceTruthStatus||'UNVERIFIED',interpretation:s.organisationInterpretationStatus||'DRAFT',traceId:s.traceId,parentTraceId:s.parentTraceId})),
     implementationReadinessGate: typeof buildImplementationReadinessGateRecord === 'function' ? buildImplementationReadinessGateRecord() : null,
@@ -4327,6 +4357,325 @@ function renderPackagePipelineTrace(stories){
   }).join('');
   wrap.innerHTML = `<div class="rtp-head"><div class="rtp-title">Pipeline Trace</div><div class="rtp-sub">${REGULATORY_TRACE_PIPELINE_SCHEMA} · ${regulatoryTracePipelineStages().length}-stage chain (Document → Human Review Package). Default PBI cards remain three-question format; expand Compliance Details per item for the same chain. DRAFT_NOT_CONTROLLED</div></div>${body}`;
 }
+
+/* ─── HARD FAIL + FINAL OUTPUT ORDER (23 sections) ───────────────── */
+const FINAL_OUTPUT_ORDER_SCHEMA = 'maras.final-output-order.v1';
+const REGULATORY_HARD_FAIL_POLICY = 'ZERO_UNSUPPORTED_STATEMENTS';
+const HARD_FAIL_CODE_ENUM = [
+  'SOURCE_MISSING','CLAUSE_MISSING','TRACEABILITY_MISSING','CONDITION_OMITTED','EXCEPTION_OMITTED',
+  'THRESHOLD_OMITTED','DEFINITION_OMITTED','TABLE_IGNORED','REFERENCE_IGNORED','UNSUPPORTED_STATEMENT',
+  'TECHNOLOGY_INVENTED','ARCHITECTURE_INVENTED','VENDOR_INVENTED','DESIGN_INVENTED','OBLIGATION_MISSING'
+];
+const FINAL_OUTPUT_ORDER = [
+  {num:1, key:'REGULATORY_INTENT_SUMMARY', label:'Regulatory Intent Summary'},
+  {num:2, key:'REGULATORY_KNOWLEDGE_GRAPH', label:'Regulatory Knowledge Graph'},
+  {num:3, key:'DEFINITIONS', label:'Definitions'},
+  {num:4, key:'OBLIGATIONS', label:'Obligations'},
+  {num:5, key:'CONDITIONS', label:'Conditions'},
+  {num:6, key:'EXCEPTIONS', label:'Exceptions'},
+  {num:7, key:'PROHIBITIONS', label:'Prohibitions'},
+  {num:8, key:'COMPLIANCE_OUTCOMES', label:'Compliance Outcomes'},
+  {num:9, key:'BUSINESS_CAPABILITIES', label:'Business Capabilities'},
+  {num:10, key:'VALUE_STREAM_IMPACTS', label:'Value Stream Impacts'},
+  {num:11, key:'AGILE_GOALS', label:'Agile Goals'},
+  {num:12, key:'EPICS', label:'Epics'},
+  {num:13, key:'FEATURES', label:'Features'},
+  {num:14, key:'USER_STORIES', label:'User Stories'},
+  {num:15, key:'ACCEPTANCE_CRITERIA', label:'Acceptance Criteria'},
+  {num:16, key:'COMPLIANCE_TEST_CASES', label:'Compliance Test Cases'},
+  {num:17, key:'EVIDENCE_REQUIREMENTS', label:'Evidence Requirements'},
+  {num:18, key:'DEFINITION_OF_READY', label:'Definition of Ready'},
+  {num:19, key:'DEFINITION_OF_DONE', label:'Definition of Done'},
+  {num:20, key:'TRACEABILITY_MATRIX', label:'Traceability Matrix'},
+  {num:21, key:'COVERAGE_REPORT', label:'Coverage Report'},
+  {num:22, key:'VALIDATION_RUBRIC', label:'Validation Rubric'},
+  {num:23, key:'HUMAN_REVIEW_CHECKLIST', label:'Human Review Checklist'}
+];
+const INVENTED_TECH_TERMS = ['kubernetes','k8s','blockchain','web3','hedera','servicenow','snowflake','databricks','veeva vault api','chatgpt','copilot','llm gateway','terraform','istio','kafka','rabbitmq','mongodb atlas','redis cluster','oracle cloud','ibm watson','aws lambda','azure functions','google cloud run'];
+const INVENTED_ARCH_TERMS = ['microservices mesh','event sourcing','cqrs','zero trust architecture','data mesh','lakehouse','serverless mesh'];
+const INVENTED_VENDOR_TERMS = ['veeva','mastercontrol','sparta systems','labvantage','benchling','qualio','trackwise'];
+const INVENTED_DESIGN_TERMS = ['custom ui framework','proprietary sdk','in-house compiler','bespoke middleware'];
+const DELIVERY_PERSONA_SECTIONS = {
+  'product-owner':[14,15,18,19],
+  'developer':[13,14,15,16],
+  'tester':[15,16,17,22],
+  'product-manager':[11,12,13,14],
+  'system-owner':[8,18,19,23],
+  'rte-project-manager':[1,8,9,10,21]
+};
+function regulatoryCorpusText(story, chain, bundle){
+  const parts = [];
+  const doc = tracePipelineNode(chain, 'DOCUMENT');
+  if(story?.sourceExcerpt) parts.push(story.sourceExcerpt);
+  if(doc?.payload?.excerpt) parts.push(doc.payload.excerpt);
+  const chunk = typeof findGxpChunkForStory === 'function' ? findGxpChunkForStory(story) : null;
+  (chunk?.excerpts||[]).forEach(ex => parts.push(ex));
+  (chunk?.reqs||[]).forEach(rq => parts.push(rq));
+  (bundle?.obligations||[]).forEach(o => { if(o.sourceSpan?.text) parts.push(o.sourceSpan.text); });
+  if(story?.sourceRequirement) parts.push(story.sourceRequirement);
+  return parts.filter(Boolean).join('\n');
+}
+function corpusHasTerm(corpus, term){ return corpus.toLowerCase().includes(String(term).toLowerCase()); }
+function narrativeInventedTermHits(text, terms, corpus){
+  const low = String(text||'').toLowerCase();
+  const hits = [];
+  terms.forEach(t => { if(low.includes(t) && !corpusHasTerm(corpus, t)) hits.push(t); });
+  return hits;
+}
+function validateRegulatoryOutputHardFail(story, chain, structuredObligations){
+  const failures = [];
+  const add = (code, message) => {
+    if(HARD_FAIL_CODE_ENUM.includes(code)) failures.push({code, message, policy:REGULATORY_HARD_FAIL_POLICY, packageStatus:'FAILED'});
+  };
+  chain = chain || story?.regulatoryTracePipeline || null;
+  const bundle = structuredObligations || story?.structuredObligations || chain?.structuredObligations || null;
+  const corpus = regulatoryCorpusText(story||{}, chain, bundle);
+  const corpusLow = corpus.toLowerCase();
+  const doc = tracePipelineNode(chain, 'DOCUMENT');
+  const hasSource = !!(String(story?.sourceExcerpt||'').trim() || String(story?.regRef||'').trim() || String(story?.regulation||'').trim() || doc?.payload?.chunkId);
+  if(!hasSource) add('SOURCE_MISSING', 'Source missing — excerpt, regRef, regulation, or library chunk required');
+  const clause = String(story?.section||story?.clauseId||'').trim();
+  const clauseInRef = /\§|section|clause|part\s+\d/i.test(`${story?.regRef||''} ${story?.regulation||''}`);
+  if(!clause && !clauseInRef) add('CLAUSE_MISSING', 'Clause / section identifier missing from story trace');
+  if(!String(story?.traceId||'').trim() || !String(story?.regRef||'').trim() || !(chain?.nodes||[]).length)
+    add('TRACEABILITY_MISSING', 'Traceability missing — traceId, regRef, or pipeline nodes incomplete');
+  if(/\b(shall|must|required\s+to)\b/i.test(corpus) && !(bundle?.obligations?.length))
+    add('OBLIGATION_MISSING', 'Modal obligation language present in source corpus but no structured obligations parsed');
+  if(/\b(if|when|where|provided that|subject to)\b/i.test(corpus)){
+    const cond = tracePipelineNode(chain, 'CONDITIONS');
+    if(!cond || cond.needsReview || /needs-review|not sourced/i.test(String(cond.summary||'')))
+      add('CONDITION_OMITTED', 'Source implies conditions — CONDITIONS stage empty or needs-review');
+  }
+  if(/\b(unless|except|does not apply|exemption)\b/i.test(corpus)){
+    const exc = tracePipelineNode(chain, 'EXCEPTIONS');
+    if(!exc || exc.needsReview || /unresolved|needs-review/i.test(String(exc.summary||'')))
+      add('EXCEPTION_OMITTED', 'Source implies exceptions — EXCEPTIONS stage unresolved');
+  }
+  if(/\b(at least|no more than|within\s+\d|\d+\s*percent|%|minimum of|maximum of)\b/i.test(corpus)){
+    const impacts = bundle?.impacts || [];
+    const hintOk = impacts.some(i => /\bat least\b|percent|%|\d/i.test(`${i.complianceOutcome?.measurementHint||''}${i.complianceOutcome?.observable||''}`));
+  if(!hintOk) add('THRESHOLD_OMITTED', 'Threshold language in source modal obligations not carried to compliance outcomes');
+  }
+  if(/\b(means|defined as|definition of)\b/i.test(corpus)){
+    const defs = bundle?.definitions;
+    const hints = story?.regulatoryTraceHints?.definitions;
+    if(!defs?.length && !hints) add('DEFINITION_OMITTED', 'Definition terms in source — definitions section not populated');
+  }
+  if(/\|[^|]{2,}\|/m.test(corpus) || /\btable\s+\d/i.test(corpus))
+    add('TABLE_IGNORED', 'Table markers in source excerpt context — structured table capture missing');
+  if(/\b(?:see|refer to)\s+(?:section|§)\s*[\w().-]+/i.test(corpus)){
+    const xref = story?.regulatoryTraceHints?.crossReferences || doc?.payload?.crossReferences;
+    if(!xref) add('REFERENCE_IGNORED', 'Cross-reference in source not mapped in trace payload');
+  }
+  const narrative = `${story?.title||''} ${story?.story||''} ${story?.userStory||''} ${story?.organisationInterpretation||''}`;
+  if(/\b(compliant|compliance certified|fda approved|validated system|inspection.?ready|fully compliant)\b/i.test(narrative) && story?.sourceApprovalStatus !== 'SME_APPROVED')
+    add('UNSUPPORTED_STATEMENT', 'Unsupported approval/compliance statement — DRAFT_NOT_CONTROLLED; SME-approved citation required');
+  const labeled = `${narrative} ${(story?.labels||[]).join(' ')} ${story?.gamp||''}`;
+  narrativeInventedTermHits(labeled, INVENTED_TECH_TERMS, corpus).forEach(t => add('TECHNOLOGY_INVENTED', `Technology "${t}" not evidenced in sourceExcerpt corpus`));
+  narrativeInventedTermHits(labeled, INVENTED_ARCH_TERMS, corpus).forEach(t => add('ARCHITECTURE_INVENTED', `Architecture "${t}" not evidenced in sourceExcerpt corpus`));
+  narrativeInventedTermHits(labeled, INVENTED_VENDOR_TERMS, corpus).forEach(t => add('VENDOR_INVENTED', `Vendor/product "${t}" not evidenced in sourceExcerpt corpus`));
+  narrativeInventedTermHits(labeled, INVENTED_DESIGN_TERMS, corpus).forEach(t => add('DESIGN_INVENTED', `Design artifact "${t}" not evidenced in sourceExcerpt corpus`));
+  return {
+    passed: failures.length === 0,
+    failures,
+    codes: failures.map(f => f.code),
+    validatedAt: new Date().toISOString(),
+    policy: REGULATORY_HARD_FAIL_POLICY,
+    packageStatus: failures.length ? 'FAILED' : 'DRAFT_NOT_CONTROLLED'
+  };
+}
+function computePipelineCoveragePercent(chain){
+  const nodes = chain?.nodes || [];
+  if(!nodes.length) return 0;
+  const complete = nodes.filter(n => !n.needsReview && String(n.summary||n.label||'').trim()).length;
+  return Math.round((complete / nodes.length) * 1000) / 10;
+}
+function buildRegulatoryKnowledgeGraph(story, chain, bundle){
+  const nodes = [];
+  const edges = [];
+  const seen = new Set();
+  const node = (id, kind, label, meta) => {
+    if(!id || seen.has(id)) return;
+    seen.add(id);
+    nodes.push({id, kind, label:String(label||id).slice(0,200), packageStatus:'DRAFT_NOT_CONTROLLED', ...meta});
+  };
+  const edge = (from, to, kind) => { if(from && to) edges.push({from, to, kind}); };
+  (chain?.nodes||[]).forEach(n => {
+    node(n.traceId, 'traceStage', n.stage, {stage:n.stage, needsReview:!!n.needsReview});
+    if(n.parentTraceId) edge(n.parentTraceId, n.traceId, 'parentTraceId');
+  });
+  if(story?.regRef) node(`REGREF:${String(story.regRef).slice(0,64)}`, 'regRef', story.regRef);
+  const doc = tracePipelineNode(chain, 'DOCUMENT');
+  if(doc?.payload?.chunkId) node(`CHUNK:${doc.payload.chunkId}`, 'chunk', doc.payload.chunkId, {chunkId:doc.payload.chunkId});
+  (bundle?.obligations||[]).forEach(o => {
+    if(o.id) node(`OBL:${o.id}`, 'obligation', o.modality, {modality:o.modality, obligationId:o.id});
+    if(o.sourceSpan?.chunkId) node(`CHUNK:${o.sourceSpan.chunkId}`, 'chunk', o.sourceSpan.chunkId);
+    if(o.id && o.sourceSpan?.chunkId) edge(`CHUNK:${o.sourceSpan.chunkId}`, `OBL:${o.id}`, 'sourceSpan');
+  });
+  if(story?.regRef && story?.traceId) edge(`REGREF:${String(story.regRef).slice(0,64)}`, story.traceId, 'regRefToTrace');
+  return {schema:'maras.regulatory-knowledge-graph.v1', packageStatus:'DRAFT_NOT_CONTROLLED', nodes, edges, nodeCount:nodes.length, edgeCount:edges.length};
+}
+function needsReviewStub(msg){ return {status:'needs-review', summary:msg, packageStatus:'DRAFT_NOT_CONTROLLED'}; }
+function sectionFromNode(num, key, label, chain, stage, fallbackMsg){
+  const n = tracePipelineNode(chain, stage);
+  if(n && String(n.summary||'').trim() && !n.needsReview) return {num, key, label, traceId:n.traceId, summary:n.summary, payload:n.payload, packageStatus:'DRAFT_NOT_CONTROLLED'};
+  if(n && String(n.summary||'').trim()) return {num, key, label, traceId:n.traceId, summary:n.summary, payload:n.payload, status:'needs-review', packageStatus:'DRAFT_NOT_CONTROLLED'};
+  return {num, key, label, ...needsReviewStub(fallbackMsg||`${label} — not populated from trace pipeline`)};
+}
+function assembleFinalOutputPackage(story, index){
+  const chain = story.regulatoryTracePipeline || buildRegulatoryTraceChainForStory(story, index);
+  const bundle = story.structuredObligations || chain.structuredObligations;
+  const prohibitions = (bundle?.obligations||[]).filter(o => o.modality === 'PROHIBITED');
+  const obligations = (bundle?.obligations||[]).filter(o => o.modality !== 'PROHIBITED');
+  const graph = buildRegulatoryKnowledgeGraph(story, chain, bundle);
+  const coveragePct = computePipelineCoveragePercent(chain);
+  const hardFail = validateRegulatoryOutputHardFail(story, chain, bundle);
+  const ac = story.ac || story.acceptanceCriteria || [];
+  const evidence = [story.traceabilityTestEvidence, story.testEvidence, story.evidenceRequired, story.acceptanceEvidence].filter(v => String(v||'').trim());
+  const defs = (story.regulatoryTraceHints?.definitions && [story.regulatoryTraceHints.definitions]) || bundle?.definitions || [];
+  const sections = [
+    sectionFromNode(1, 'REGULATORY_INTENT_SUMMARY', 'Regulatory Intent Summary', chain, 'REGULATORY_INTENT', 'Regulatory intent not sourced'),
+    {num:2, key:'REGULATORY_KNOWLEDGE_GRAPH', label:'Regulatory Knowledge Graph', graph, packageStatus:'DRAFT_NOT_CONTROLLED'},
+    defs.length ? {num:3, key:'DEFINITIONS', label:'Definitions', items:defs, packageStatus:'DRAFT_NOT_CONTROLLED'} : {num:3, key:'DEFINITIONS', label:'Definitions', ...needsReviewStub('Definitions not extracted — SME review against source')},
+    obligations.length ? {num:4, key:'OBLIGATIONS', label:'Obligations', items:obligations, count:obligations.length, packageStatus:'DRAFT_NOT_CONTROLLED'} : {num:4, key:'OBLIGATIONS', label:'Obligations', ...needsReviewStub('Obligations not parsed from source corpus')},
+    sectionFromNode(5, 'CONDITIONS', 'Conditions', chain, 'CONDITIONS', 'Conditions not sourced'),
+    sectionFromNode(6, 'EXCEPTIONS', 'Exceptions', chain, 'EXCEPTIONS', 'Exceptions not resolved'),
+    prohibitions.length ? {num:7, key:'PROHIBITIONS', label:'Prohibitions', items:prohibitions, modality:'PROHIBITED', packageStatus:'DRAFT_NOT_CONTROLLED'} : {num:7, key:'PROHIBITIONS', label:'Prohibitions', ...needsReviewStub('No PROHIBITED modality obligations parsed')},
+    sectionFromNode(8, 'COMPLIANCE_OUTCOMES', 'Compliance Outcomes', chain, 'COMPLIANCE_OUTCOMES', 'Compliance outcomes not derived'),
+    sectionFromNode(9, 'BUSINESS_CAPABILITIES', 'Business Capabilities', chain, 'BUSINESS_CAPABILITIES', 'Business capabilities not mapped'),
+    sectionFromNode(10, 'VALUE_STREAM_IMPACTS', 'Value Stream Impacts', chain, 'VALUE_STREAMS', 'Value stream impacts not mapped'),
+    sectionFromNode(11, 'AGILE_GOALS', 'Agile Goals', chain, 'AGILE_GOALS', 'Agile goals not sourced'),
+    sectionFromNode(12, 'EPICS', 'Epics', chain, 'EPICS', 'Epic not named'),
+    sectionFromNode(13, 'FEATURES', 'Features', chain, 'FEATURES', 'Feature / PBI title pending'),
+    sectionFromNode(14, 'USER_STORIES', 'User Stories', chain, 'USER_STORIES', 'User story narrative missing'),
+    ac.length ? {num:15, key:'ACCEPTANCE_CRITERIA', label:'Acceptance Criteria', items:ac, packageStatus:'DRAFT_NOT_CONTROLLED'} : {num:15, key:'ACCEPTANCE_CRITERIA', label:'Acceptance Criteria', ...needsReviewStub('Acceptance criteria missing')},
+    sectionFromNode(16, 'COMPLIANCE_TEST_CASES', 'Compliance Test Cases', chain, 'COMPLIANCE_TEST_SCENARIOS', 'Compliance test cases not mapped'),
+    evidence.length ? {num:17, key:'EVIDENCE_REQUIREMENTS', label:'Evidence Requirements', items:evidence, packageStatus:'DRAFT_NOT_CONTROLLED'} : {num:17, key:'EVIDENCE_REQUIREMENTS', label:'Evidence Requirements', ...needsReviewStub('Evidence requirements not recorded')},
+    sectionFromNode(18, 'DEFINITION_OF_READY', 'Definition of Ready', chain, 'DEFINITION_OF_READY', 'Definition of Ready not derived'),
+    sectionFromNode(19, 'DEFINITION_OF_DONE', 'Definition of Done', chain, 'DEFINITION_OF_DONE', 'Definition of Done not derived'),
+    sectionFromNode(20, 'TRACEABILITY_MATRIX', 'Traceability Matrix', chain, 'TRACEABILITY_MATRIX', 'RTM row pending'),
+    {num:21, key:'COVERAGE_REPORT', label:'Coverage Report', rtmCoveragePercent:coveragePct, pipelineStages:(chain?.nodes||[]).length, completeStages:(chain?.nodes||[]).filter(n => !n.needsReview).length, packageStatus:'DRAFT_NOT_CONTROLLED'},
+    story.validationRubric ? {num:22, key:'VALIDATION_RUBRIC', label:'Validation Rubric', rubric:story.validationRubric, packageStatus:'DRAFT_NOT_CONTROLLED'} : {num:22, key:'VALIDATION_RUBRIC', label:'Validation Rubric', ...needsReviewStub('Validation rubric not scored')},
+    {num:23, key:'HUMAN_REVIEW_CHECKLIST', label:'Human Review Checklist', items:HUMAN_REVIEW_SME_CHECKLIST.map((text,i)=>({id:`HR-${i+1}`,text,status:'PENDING'})), reviewStatus:story.reviewStatus||'DRAFT_UNREVIEWED', packageStatus:'DRAFT_NOT_CONTROLLED'}
+  ];
+  return {
+    schema:FINAL_OUTPUT_ORDER_SCHEMA,
+    schemaVersion:1,
+    packageStatus:hardFail.passed ? 'DRAFT_NOT_CONTROLLED' : 'FAILED',
+    storyId:storyStableId(story, index),
+    sectionOrder:FINAL_OUTPUT_ORDER.map(s => s.key),
+    sections,
+    sectionCount:FINAL_OUTPUT_ORDER.length,
+    regulatoryKnowledgeGraph:graph,
+    coverageReport:{rtmCoveragePercent:coveragePct, derivedFrom:'maras.trace-pipeline.v1 completeness', packageStatus:'DRAFT_NOT_CONTROLLED'},
+    regulatoryOutputHardFail:hardFail,
+    generatedAt:new Date().toISOString(),
+    disclaimer:'OUTPUT ONLY SOURCE SUPPORTED — DRAFT_NOT_CONTROLLED — SME/QA/RA review required'
+  };
+}
+function validatePackageRegulatoryHardFail(stories){
+  const perStory = (stories||[]).map((s,i) => {
+    const chain = s.regulatoryTracePipeline || buildRegulatoryTraceChainForStory(s, i);
+    const vf = validateRegulatoryOutputHardFail(s, chain, s.structuredObligations);
+    return {storyId:storyStableId(s,i), index:i, ...vf};
+  });
+  const failures = perStory.flatMap(r => (r.failures||[]).map(f => ({...f, storyId:r.storyId})));
+  return {
+    passed: failures.length === 0,
+    policy:REGULATORY_HARD_FAIL_POLICY,
+    stories:perStory,
+    failures,
+    failureCount:failures.length,
+    packageStatus:failures.length ? 'FAILED' : 'DRAFT_NOT_CONTROLLED',
+    validatedAt:new Date().toISOString()
+  };
+}
+function packageStatusWithHardFail(base, hardFail){
+  const hf = hardFail || validatePackageRegulatoryHardFail(allStories);
+  if(hf.passed === false) return 'FAILED · '+String(base||'DRAFT_NOT_CONTROLLED');
+  return String(base||'DRAFT_NOT_CONTROLLED');
+}
+function refreshStoryDeliveryArtifacts(story, index){
+  const chain = story.regulatoryTracePipeline || buildRegulatoryTraceChainForStory(story, index);
+  story.regulatoryOutputHardFail = validateRegulatoryOutputHardFail(story, chain, story.structuredObligations);
+  story.finalOutputPackage = assembleFinalOutputPackage(story, index);
+  return story;
+}
+function renderHardFailBannerHtml(hardFail, compact){
+  if(!hardFail) return '';
+  const cls = hardFail.passed ? 'hard-fail-banner pass' : 'hard-fail-banner fail';
+  const title = hardFail.passed
+    ? '<b>Regulatory output hard-fail:</b> PASS — trace pipeline fields sourced; DRAFT_NOT_CONTROLLED'
+    : '<b>Regulatory output hard-fail:</b> FAILED — generation/export watermarked; SME/QA review required before reliance';
+  const codes = (hardFail.failures||[]).slice(0, compact ? 8 : 40).map(f =>
+    `<span class="hard-fail-code" title="${escapeHtml(f.message)}">${escapeHtml(f.code)}</span>`).join('');
+  const more = (hardFail.failures||[]).length > 8 && compact ? `<span class="hard-fail-code">+${hardFail.failures.length - 8} more</span>` : '';
+  return `<div class="${cls}" data-hard-fail="${hardFail.passed?'pass':'fail'}">${title}<div class="hard-fail-codes">${codes}${more}</div></div>`;
+}
+function formatDeliverySectionBody(sec){
+  if(sec.graph) return `Nodes ${sec.graph.nodeCount||0} · Edges ${sec.graph.edgeCount||0} (traceIds, reg refs, chunk ids only)`;
+  if(sec.items) {
+    if(sec.key === 'OBLIGATIONS' || sec.key === 'PROHIBITIONS') return (sec.items||[]).map(o => `${o.modality}: ${o.subject} — ${o.action}`).join(' · ').slice(0,500) || sec.summary;
+    if(sec.key === 'ACCEPTANCE_CRITERIA') return (sec.items||[]).join(' · ').slice(0,500);
+    if(sec.key === 'EVIDENCE_REQUIREMENTS') return (sec.items||[]).join(' · ').slice(0,400);
+    if(sec.key === 'HUMAN_REVIEW_CHECKLIST') return `${(sec.items||[]).length} SME checklist row(s) · review ${sec.reviewStatus||'DRAFT_UNREVIEWED'}`;
+    return JSON.stringify(sec.items).slice(0,400);
+  }
+  if(sec.rtmCoveragePercent != null) return `RTM coverage ${sec.rtmCoveragePercent}% · ${sec.completeStages||0}/${sec.pipelineStages||0} pipeline stages complete`;
+  if(sec.rubric) return `Score ${sec.rubric.totalScore||0}/100 · Grade ${sec.rubric.grade||'—'}`;
+  if(sec.summary) return String(sec.summary).slice(0,500);
+  if(sec.status === 'needs-review') return String(sec.summary||'needs-review');
+  return 'needs-review — not invented';
+}
+function renderDeliveryPersonaEssentials(pkg, persona){
+  const nums = DELIVERY_PERSONA_SECTIONS[persona] || [14,15];
+  const blocks = nums.map(n => {
+    const sec = (pkg.sections||[]).find(s => s.num === n);
+    if(!sec) return '';
+    return `<div class="delivery-ess-block"><div class="delivery-ess-k">${n}. ${escapeHtml(sec.label)}</div><div class="delivery-ess-body">${escapeHtml(formatDeliverySectionBody(sec))}</div></div>`;
+  }).join('');
+  const labels = { 'product-owner':'PO essentials', developer:'Dev essentials', tester:'Tester essentials', 'product-manager':'PM / Agile Coach', 'system-owner':'System Owner', 'rte-project-manager':'RTE / Project Manager' };
+  return `<div class="delivery-ess-block"><div class="delivery-ess-k">${escapeHtml(labels[persona]||persona)}</div>${blocks}</div>`;
+}
+function renderFinalOutputOrderAccordion(pkg, opts){
+  const rows = (pkg.sections||[]).map(sec => {
+    const nr = sec.status === 'needs-review' ? ' <span class="fop-nr">needs-review</span>' : '';
+    return `<details class="fop-section"><summary><span class="fop-num">${sec.num}.</span> ${escapeHtml(sec.label)}${nr}</summary><div class="fop-body">${escapeHtml(formatDeliverySectionBody(sec))}</div></details>`;
+  }).join('');
+  return `<details class="pbi-compliance-details sc-compliance-collapsed delivery-pkg-story"${opts?.open?' open':''}><summary>Delivery Package · Final output order (${pkg.sectionCount||23} sections · ${FINAL_OUTPUT_ORDER_SCHEMA})</summary><div class="fop-all">${rows}</div></details>`;
+}
+function renderStoryDeliveryPackagePanel(story, index){
+  const pkg = story.finalOutputPackage || assembleFinalOutputPackage(story, index);
+  const hf = story.regulatoryOutputHardFail || pkg.regulatoryOutputHardFail;
+  const personaBlocks = [
+    renderDeliveryPersonaEssentials(pkg, 'product-owner'),
+    renderDeliveryPersonaEssentials(pkg, 'developer'),
+    renderDeliveryPersonaEssentials(pkg, 'tester'),
+    renderDeliveryPersonaEssentials(pkg, 'product-manager'),
+    renderDeliveryPersonaEssentials(pkg, 'system-owner'),
+    renderDeliveryPersonaEssentials(pkg, 'rte-project-manager')
+  ].join('');
+  return `${renderHardFailBannerHtml(hf, true)}<div class="delivery-pkg-essentials">${personaBlocks}</div>${renderFinalOutputOrderAccordion(pkg)}`;
+}
+function renderPackageDeliveryPanel(stories){
+  const wrap = document.getElementById('delivery-package-wrap');
+  if(!wrap) return;
+  if(!stories?.length){ wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  const pkgFail = validatePackageRegulatoryHardFail(stories);
+  H.regulatoryOutputHardFail = pkgFail;
+  const banner = renderHardFailBannerHtml(pkgFail, false);
+  const avgCov = stories.reduce((a,s,i) => a + (s.finalOutputPackage?.coverageReport?.rtmCoveragePercent ?? computePipelineCoveragePercent(s.regulatoryTracePipeline)), 0) / stories.length;
+  wrap.innerHTML = `<div class="delivery-pkg-head"><div class="delivery-pkg-title">Delivery Package</div><div class="delivery-pkg-sub">${FINAL_OUTPUT_ORDER_SCHEMA} · ${FINAL_OUTPUT_ORDER.length} sections per PBI · avg RTM coverage ${Math.round(avgCov * 10) / 10}% · ${REGULATORY_HARD_FAIL_POLICY}</div></div>${banner}<div class="delivery-pkg-sub" style="padding:0 14px 10px">Persona essentials appear on each PBI card; expand numbered sections 1–23 below Compliance Details. Hard-fail blocks automatic pass — exports carry FAILED watermark when any code fires.</div>`;
+}
+function surfaceHardFailOnGenerationComplete(stories){
+  const vf = validatePackageRegulatoryHardFail(stories);
+  H.regulatoryOutputHardFail = vf;
+  if(vf.passed === false){
+    setStatus('block', `Regulatory hard-fail: ${vf.failureCount} issue(s) — review Delivery Package before export (FAILED watermark)`);
+  }
+}
+
 function storyMapPipelineForStory(s){
   const ref = String(s.sourceControlRef||'').trim();
   const idx = (allStories||[]).findIndex(p => p.id === ref || p.regRef === ref || p.id === s.links?.pbi);
@@ -5854,7 +6203,9 @@ function renderStories(stories, pipelineResult) {
 
   (stories||[]).forEach((s,i)=>attachRegulatoryTracePipeline(s,i));
   renderTraceabilityMatrix(stories);
+  renderPackageDeliveryPanel(stories);
   renderPackagePipelineTrace(stories);
+  surfaceHardFailOnGenerationComplete(stories);
   document.getElementById('stories-list').innerHTML = ragBanner + qcBanner + stories.map((s,i) => {
     const sourceUrl=safeExternalUrl(s.sourceUrl);
     const bilBadge = bil.japanese?'<span class="sc-num-badge" style="background:#fef3c7;color:#92400e">🇯🇵 EN+日本語</span>':
@@ -5894,6 +6245,7 @@ function renderStories(stories, pipelineResult) {
         <div class="sc-title">${escapeHtml(s.title)} — PBI</div>
         ${renderPbiThreeQuestions(pbi,{showTitle:false})}
         ${renderPoReadinessAndRecommendedDoD(s,i)}
+        ${renderStoryDeliveryPackagePanel(s,i)}
         ${renderPbiComplianceDetailsAssure(s,i,bil,qgHtml,ragPipeHtml,boiHtml,investHtml,rubHtml,sourceUrl)}
       </div>
       <div class="sc-footer">
@@ -6014,10 +6366,14 @@ function savePackage(){
   const sys=document.getElementById('f-system').value||selApp;
   const ctx=[sys,selDomain,fw].filter(Boolean).join(' · ');
   const reviewed=allStories.filter(s=>s.reviewStatus==='SME_REVIEW_ATTESTED_DRAFT').length;
+  const hardFail = validatePackageRegulatoryHardFail(allStories);
   const rec={key:'pkg_'+Date.now(),name,at:new Date().toISOString(),count:allStories.length,
-             packageStatus:'DRAFT_NOT_CONTROLLED',reviewedCount:reviewed,
+             packageStatus:packageStatusWithHardFail('DRAFT_NOT_CONTROLLED', hardFail),reviewedCount:reviewed,
              stories:allStories,ctx,gateLog:H.gateLog,ragReplay:ragGraphEnabled?H.ragReplay:null,
-             regulatoryTracePipeline:ensurePackageTracePipeline(allStories)};
+             regulatoryTracePipeline:ensurePackageTracePipeline(allStories),
+             regulatoryOutputHardFail:hardFail,
+             finalOutputOrderSchema:FINAL_OUTPUT_ORDER_SCHEMA,
+             finalOutputPackages:(allStories||[]).map((s,i)=>s.finalOutputPackage||assembleFinalOutputPackage(s,i))};
   try{localStorage.setItem(rec.key,JSON.stringify(rec));}catch{alert('Browser storage full. Export JSON to save.');}
   document.getElementById('save-ok').textContent='Saved ✓';
   setTimeout(()=>document.getElementById('save-ok').textContent='',2500);
@@ -6077,10 +6433,15 @@ function dlADO(){
   dlCSV([h.join(','),...r.map(x=>x.join(','))].join('\n'),'DRAFT-MARAS-Business-PBI-ADO-Export.csv');
 }
 function dlJSON(){
+  const hardFail = validatePackageRegulatoryHardFail(allStories);
+  const finalOutputPackages = (allStories||[]).map((s,i) => s.finalOutputPackage || assembleFinalOutputPackage(s,i));
   // Legacy-compatible payload (main fields first) + additive QC / schema metadata
   const b=new Blob([JSON.stringify({
     generatedAt:new Date().toISOString(),
-    packageStatus:'DRAFT_NOT_CONTROLLED',
+    packageStatus:packageStatusWithHardFail('DRAFT_NOT_CONTROLLED', hardFail),
+    regulatoryOutputHardFail:hardFail,
+    finalOutputOrderSchema:FINAL_OUTPUT_ORDER_SCHEMA,
+    finalOutputPackages,
     reviewSummary:{draftAttestations:allStories.filter(s=>s.reviewStatus==='SME_REVIEW_ATTESTED_DRAFT').length,total:allStories.length,electronicSignature:false,immutableAuditRecord:false},
     context:{org:document.getElementById('f-org').value,project:document.getElementById('f-proj').value,
              system:document.getElementById('f-system').value,framework:getFrameworkValue(),
@@ -6095,7 +6456,9 @@ function dlJSON(){
     qualityControl:H.qcReport,
     ragReplay:ragGraphEnabled?H.ragReplay:null
   },null,2)],{type:'application/json'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='DRAFT-MARAS-Backlog.json';a.click();
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);
+  a.download = hardFail.passed ? 'DRAFT-MARAS-Backlog.json' : 'FAILED-DRAFT-MARAS-Backlog.json';
+  a.click();
 }
 function dlFdaClinicalSchema(){
   const pkg = H.healthcarePackage || toFdaClinicalStandardPackage(allStories, {
