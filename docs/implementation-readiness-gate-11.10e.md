@@ -3,7 +3,7 @@
 **Status:** DRAFT_NOT_CONTROLLED  
 **Requirement trace:** REQ-001 · 21 CFR Part 11 §11.10(e)  
 **Curated source anchor:** GXP chunk `c3` (Audit Trail Requirements)  
-**Package context:** Regulatory→software pipeline steps 1–10 for the §11.10(e) demonstration package
+**Package context:** Regulatory→software **19-stage trace pipeline** (`maras.trace-pipeline.v1`) for the §11.10(e) demonstration package — see [regulatory-trace-pipeline.md](./regulatory-trace-pipeline.md)
 
 This gate assesses whether the **draft** assurance package may enter **implementation planning**. It is not a compliance, validation, or inspection-ready decision. SME/QA/RA review is required for all substantive regulatory claims.
 

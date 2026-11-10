@@ -668,6 +668,24 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
 .rtm-status.good{background:#dcfce7;color:#166534}
 .rtm-status.bad{background:#fee2e2;color:#991b1b}
 .rtm-note{font-size:10px;color:var(--ink3);line-height:1.45;margin-top:6px}
+/* Regulatory trace pipeline (19-stage chain) */
+.rtp-wrap{margin:14px 0 18px;border:1px solid var(--border);border-radius:10px;background:#fff;overflow:hidden}
+.rtp-head{padding:12px 14px;background:var(--bg);border-bottom:1px solid var(--border)}
+.rtp-title{font-size:14px;font-weight:700;color:var(--ink)}
+.rtp-sub{font-size:11px;line-height:1.5;color:var(--ink3);margin-top:3px}
+.rtp-story{border-bottom:1px solid var(--border);font-size:11px}
+.rtp-story>summary{padding:9px 12px;cursor:pointer;font-weight:600;color:var(--ink2);list-style:none}
+.rtp-story>summary::-webkit-details-marker{display:none}
+.rtp-chain{padding:8px 12px 12px}
+.rtp-chain.compact .rtp-row{display:grid;grid-template-columns:160px 1fr;gap:6px;padding:3px 0;border-bottom:1px dashed var(--bg2);font-size:10px;color:var(--ink3)}
+.rtp-stage{font-weight:700;color:#475569;font-size:9px;text-transform:uppercase;letter-spacing:.3px}
+.rtp-node{margin:4px 0;border:1px solid var(--bg2);border-radius:5px}
+.rtp-node-h{width:100%;text-align:left;border:0;background:#f8fafc;padding:6px 8px;cursor:pointer;font:inherit;display:flex;justify-content:space-between;gap:8px}
+.rtp-node-b{display:none;padding:6px 8px 8px;font-size:10px;color:var(--ink3);line-height:1.45}
+.rtp-node-b.show{display:block}
+.rtp-id{font-size:9px;color:var(--ink4);font-weight:500}
+.rtp-nr{display:inline-block;margin-top:4px;font-size:9px;font-weight:700;color:#b45309;background:#fffbeb;padding:2px 6px;border-radius:4px}
+.rtp-parent{font-size:9px;color:var(--ink4);margin-top:4px}
 </style>
 </head>
 <body>
@@ -1031,6 +1049,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-s
       <div class="rtm-head"><div class="rtm-title">Feature Traceability Matrix</div><div class="rtm-sub">One traceability view for regulatory source truth (Layer 1), approved organisational interpretation (Layer 2), and the existing requirement → PBI → acceptance/test evidence chain. Source and interpretation attestations saved in this browser are draft records, not electronic signatures.</div></div>
       <div class="rtm-scroll"><table class="rtm-table"><thead><tr><th>Trace / PBI</th><th>Layer 1 · Regulatory source truth</th><th>Layer 2 · Organisational interpretation</th><th>Implementation trace</th><th>Evidence status</th></tr></thead><tbody id="rtm-body"></tbody></table></div>
     </div>
+    <div id="pipeline-trace-wrap" class="rtp-wrap" style="display:none" aria-label="Pipeline Trace — full regulatory conversion chain"></div>
     <div id="stories-list"></div>
   </div>
 </div>
@@ -3644,6 +3663,236 @@ function suppressDuplicateStories(stories) {
   return { kept, suppressed };
 }
 
+/* ─── REGULATORY TRACE PIPELINE (19 stages) ───────────────────────── */
+const REGULATORY_TRACE_PIPELINE_SCHEMA = 'maras.trace-pipeline.v1';
+const REGULATORY_TRACE_PIPELINE_STORAGE_KEY = 'maras.trace-pipeline.v1';
+const REGULATORY_TRACE_PIPELINE_STAGES = [
+  'DOCUMENT','REGULATORY_INTENT','OBLIGATION','CONDITIONS','EXCEPTIONS',
+  'BUSINESS_RULES','COMPLIANCE_OUTCOMES','BUSINESS_CAPABILITIES','VALUE_STREAMS',
+  'AGILE_GOALS','EPICS','FEATURES','USER_STORIES','ACCEPTANCE_CRITERIA',
+  'COMPLIANCE_TEST_SCENARIOS','DEFINITION_OF_READY','DEFINITION_OF_DONE',
+  'TRACEABILITY_MATRIX','HUMAN_REVIEW_PACKAGE'
+];
+const HUMAN_REVIEW_SME_CHECKLIST = [
+  'Source excerpt verified against official authority text (Layer 1)',
+  'Organisational interpretation recorded and independently reviewable (Layer 2)',
+  'No autonomous compliance or approval claims in export payloads',
+  'Negative test scenarios identified where applicable',
+  'Jurisdiction and applicability decisions documented',
+  'Package retains DRAFT_NOT_CONTROLLED watermark and SME/QA attestation metadata'
+];
+function regulatoryTracePipelineStages(){ return REGULATORY_TRACE_PIPELINE_STAGES.slice(); }
+function tracePipelineStageEnum(){ return REGULATORY_TRACE_PIPELINE_STAGES.slice(); }
+function makeRegulatoryTraceId(stage, ownerId, seq){
+  const slug = String(ownerId||'PKG').replace(/[^a-zA-Z0-9-]/g,'').slice(0,28);
+  return `TRC-${stage}-${slug}-${String(seq).padStart(2,'0')}`;
+}
+function linkTracePipelineParents(nodes){
+  let parent = null;
+  return (nodes||[]).map((n,i)=>{
+    const node = {...n, parentTraceId: parent, ordinal: i + 1};
+    parent = node.traceId;
+    return node;
+  });
+}
+function findGxpChunkForStory(story){
+  const sec = story.section||'';
+  const reg = story.regulation||'';
+  const chunks = typeof GXP_CHUNKS !== 'undefined' ? GXP_CHUNKS : [];
+  return chunks.find(c => reg && c.reg && (c.reg === reg || reg.includes(String(c.reg).split(' ')[0])) && sec && c.sec && (sec.includes(c.sec) || c.sec.includes(sec.replace(/§/g,''))))
+    || chunks.find(c => story.regRef && (c.id === 'c3' && /REQ-001|§11\.10\(e\)/i.test(story.regRef)));
+}
+function storyObligationsFromRag(story){
+  const obls = H?.ragReplay?.stages?.synthesize?.output?.obligations || [];
+  if(!obls.length) return null;
+  const hint = String(story.sourceRequirement||story.title||'').toLowerCase();
+  return obls.find(o => hint && String(o.text||'').toLowerCase().slice(0,30) && hint.includes(String(o.text||'').toLowerCase().slice(0,20))) || obls[0];
+}
+function computeStoryDefinitionOfReady(story){
+  const inv = story.invest||{};
+  const invKeys = ['independent','negotiable','valuable','estimable','small','testable'];
+  const invOk = invKeys.every(k => inv[k] && String(inv[k]).toLowerCase() !== 'no');
+  const pbiOk = !!(story.pbi?.complete) || (typeof computePbiComplete === 'function' && computePbiComplete(story.pbi||{}));
+  const traceOk = !!(story.regRef && story.regulation);
+  const acOk = (story.ac||story.acceptanceCriteria||[]).length >= 1;
+  const ready = invOk && pbiOk && traceOk && acOk;
+  return {
+    ready: ready ? 'DRAFT_READY' : 'NOT_READY',
+    packageStatus:'DRAFT_NOT_CONTROLLED',
+    criteria:{invest:invOk,pbiThreeQuestions:pbiOk,sourceTrace:traceOk,acceptanceCriteria:acOk},
+    blockers:[
+      ...(!traceOk ? ['Source trace (regRef/regulation) missing — SME review required'] : []),
+      ...(!invOk ? ['INVEST incomplete — DoR gate open'] : []),
+      ...(!pbiOk ? ['PBI three-question sections incomplete'] : []),
+      ...(!acOk ? ['Acceptance criteria missing'] : [])
+    ],
+    derivedAt:new Date().toISOString()
+  };
+}
+function computeStoryDefinitionOfDone(story, index){
+  const l1 = story.sourceTruthStatus === 'VERIFIED';
+  const l2 = story.organisationInterpretationStatus === 'APPROVED';
+  const reviewed = story.reviewStatus === 'SME_REVIEW_ATTESTED_DRAFT';
+  const ac = story.ac||story.acceptanceCriteria||[];
+  const tests = !!String(story.traceabilityTestEvidence||story.testEvidence||'').trim() || ac.some(a => /then/i.test(a));
+  const done = reviewed && tests && l1 && l2;
+  return {
+    done: done ? 'DRAFT_DONE_CRITERIA_MET' : 'NOT_DONE',
+    packageStatus:'DRAFT_NOT_CONTROLLED',
+    criteria:{layer1Verified:l1,layer2Approved:l2,smeReviewAttested:reviewed,testEvidenceMapped:tests},
+    blockers:[
+      ...(!l1 ? ['Layer 1 source truth not verified in RTM'] : []),
+      ...(!l2 ? ['Layer 2 interpretation not approved'] : []),
+      ...(!reviewed ? ['SME review attestation missing'] : []),
+      ...(!tests ? ['Compliance test scenarios / AC trace incomplete'] : [])
+    ],
+    rtmRow: (index ?? 0) + 1,
+    derivedAt:new Date().toISOString()
+  };
+}
+function buildRegulatoryTraceChainForStory(story, index){
+  const hints = story.regulatoryTraceHints || {};
+  const chunk = findGxpChunkForStory(story);
+  const oblRag = storyObligationsFromRag(story);
+  const ctx = {
+    org: document.getElementById('f-org')?.value||'',
+    project: document.getElementById('f-proj')?.value||'',
+    system: document.getElementById('f-system')?.value||'',
+    businessOutcome: document.getElementById('f-outcome')?.value||''
+  };
+  const ownerId = story.id || story.req_id || `PBI-${(index??0)+1}`;
+  const stageIndex = (stage) => REGULATORY_TRACE_PIPELINE_STAGES.indexOf(stage) + 1;
+  const mk = (stage, label, summary, payload, needsReview) => ({
+    stage,
+    traceId: makeRegulatoryTraceId(stage, ownerId, stageIndex(stage)),
+    artifactId: ownerId,
+    label,
+    summary: String(summary||'').slice(0, 600),
+    payload: payload||{},
+    needsReview: !!needsReview,
+    packageStatus:'DRAFT_NOT_CONTROLLED'
+  });
+  const raw = [
+    mk('DOCUMENT', 'Source document', chunk ? `${chunk.reg} ${chunk.sec}` : (story.sourceAuthority||story.regulation||'Curated library / ingestion'), {chunkId:chunk?.id, sourceUrl:story.sourceUrl, sourceVersion:story.sourceVersion, excerpt:story.sourceExcerpt}, !story.sourceExcerpt),
+    mk('REGULATORY_INTENT', 'Regulatory intent', hints.regulatoryIntent || chunk?.reqs?.[0] || `${story.regulation||''} ${story.section||''}`.trim(), {regulation:story.regulation, section:story.section}),
+    mk('OBLIGATION', 'Obligation', hints.obligation || oblRag?.text || story.sourceRequirement || story.title, {obligationId: oblRag?.id}),
+    mk('CONDITIONS', 'Conditions', hints.conditions || (story.constraints ? Object.values(story.constraints).filter(Boolean).join(' · ') : (chunk?.reqs?.slice(1,3).join(' · ')||'Needs-review — conditions not sourced')), {constraints:story.constraints}, !hints.conditions && !story.constraints),
+    mk('EXCEPTIONS', 'Exceptions', hints.exceptions || (story.organisationApplicability === 'NOT_APPLICABLE' ? 'Recorded not-applicable scope' : 'Unresolved exceptions — SME/QA review required'), {}, !hints.exceptions && story.organisationApplicability !== 'NOT_APPLICABLE'),
+    mk('BUSINESS_RULES', 'Business rule', hints.businessRule || story.accept?.action || story.story, {accept:story.accept}),
+    mk('COMPLIANCE_OUTCOMES', 'Compliance outcome', hints.complianceOutcome || story.boi?.outcome || story.accept?.expected, {boi:story.boi}),
+    mk('BUSINESS_CAPABILITIES', 'Business capability', hints.capability || story.boi?.business_area || ctx.system || 'Capability mapping pending', {}, !(hints.capability||story.boi?.business_area)),
+    mk('VALUE_STREAMS', 'Value stream', hints.valueStream || ctx.businessOutcome || 'Regulated delivery value stream — needs-review', {}, !ctx.businessOutcome && !hints.valueStream),
+    mk('AGILE_GOALS', 'Agile goal', hints.agileGoal || ctx.businessOutcome || ctx.project || 'Programme goal — needs-review', {}, !ctx.businessOutcome && !hints.agileGoal),
+    mk('EPICS', 'Epic', hints.epic || story.epic || 'Epic not named — needs-review', {}, !story.epic && !hints.epic),
+    mk('FEATURES', 'Feature', hints.feature || story.title, {}),
+    mk('USER_STORIES', 'User story', story.story||story.userStory||'', {}),
+    mk('ACCEPTANCE_CRITERIA', 'Acceptance criteria', (story.ac||story.acceptanceCriteria||[]).join(' · '), {ac:story.ac||story.acceptanceCriteria}),
+    mk('COMPLIANCE_TEST_SCENARIOS', 'Compliance test scenarios', hints.complianceTestScenarios || story.traceabilityTestEvidence || (story.ac||[]).filter(a => /given/i.test(a)).join(' · ') || 'Draft test mapping — needs-review', {}, !(story.traceabilityTestEvidence || (story.ac||[]).length)),
+    mk('DEFINITION_OF_READY', 'Definition of Ready', '', {}, false),
+    mk('DEFINITION_OF_DONE', 'Definition of Done', '', {}, false),
+    mk('TRACEABILITY_MATRIX', 'Traceability matrix', `RTM row ${(index??0)+1} · ${story.regRef||'reg trace pending'}`, {rtmRow:(index??0)+1}),
+    mk('HUMAN_REVIEW_PACKAGE', 'Human review package', 'SME/QA checklist bundle — draft attestation only', {reviewStatus:story.reviewStatus||'DRAFT_UNREVIEWED'}, true)
+  ];
+  const dor = computeStoryDefinitionOfReady(story);
+  const dod = computeStoryDefinitionOfDone(story, index);
+  raw[15].summary = `${dor.ready}${dor.blockers.length ? ' — ' + dor.blockers[0] : ''}`;
+  raw[15].payload = dor;
+  raw[16].summary = `${dod.done}${dod.blockers.length ? ' — ' + dod.blockers[0] : ''}`;
+  raw[16].payload = dod;
+  const nodes = linkTracePipelineParents(raw);
+  return {
+    schema:REGULATORY_TRACE_PIPELINE_SCHEMA,
+    schemaVersion:1,
+    packageStatus:'DRAFT_NOT_CONTROLLED',
+    ownerId,
+    stageEnum:regulatoryTracePipelineStages(),
+    nodes,
+    definitionOfReady:dor,
+    definitionOfDone:dod,
+    rootTraceId:nodes[0]?.traceId||null,
+    leafTraceId:nodes[nodes.length-1]?.traceId||null
+  };
+}
+function attachRegulatoryTracePipeline(story, index){
+  const chain = buildRegulatoryTraceChainForStory(story, index);
+  story.regulatoryTracePipeline = chain;
+  story.definitionOfReady = chain.definitionOfReady;
+  story.definitionOfDone = chain.definitionOfDone;
+  story.traceId = chain.leafTraceId;
+  story.parentTraceId = chain.rootTraceId;
+  story.traceStage = 'USER_STORIES';
+  return story;
+}
+function ensurePackageTracePipeline(stories){
+  const items = (stories||[]).map((s,i) => { attachRegulatoryTracePipeline(s,i); return s.regulatoryTracePipeline; });
+  const stageEnum = regulatoryTracePipelineStages();
+  const record = {
+    schema:REGULATORY_TRACE_PIPELINE_SCHEMA,
+    schemaVersion:1,
+    packageStatus:'DRAFT_NOT_CONTROLLED',
+    generatedAt:new Date().toISOString(),
+    stageEnum,
+    stories:items
+  };
+  try{ localStorage.setItem(REGULATORY_TRACE_PIPELINE_STORAGE_KEY, JSON.stringify({at:record.generatedAt, stageEnum, count:items.length})); }catch(_e){}
+  return record;
+}
+function buildHumanReviewPackageRecord(){
+  const pipeline = ensurePackageTracePipeline(allStories);
+  return {
+    schema:'maras.human-review-package.v1',
+    schemaVersion:1,
+    packageStatus:'DRAFT_NOT_CONTROLLED',
+    generatedAt:new Date().toISOString(),
+    regulatoryTracePipeline:pipeline,
+    traceStageEnum:regulatoryTracePipelineStages(),
+    rtm:(allStories||[]).map((s,i)=>({pbiId:s.id,rtmRow:i+1,regRef:s.regRef,sourceTruth:s.sourceTruthStatus||'UNVERIFIED',interpretation:s.organisationInterpretationStatus||'DRAFT',traceId:s.traceId,parentTraceId:s.parentTraceId})),
+    implementationReadinessGate: typeof buildImplementationReadinessGateRecord === 'function' ? buildImplementationReadinessGateRecord() : null,
+    smeReviewChecklist:HUMAN_REVIEW_SME_CHECKLIST.map((text,i)=>({id:`HR-${i+1}`,text,status:'PENDING',packageStatus:'DRAFT_NOT_CONTROLLED'})),
+    context:{org:document.getElementById('f-org')?.value,project:document.getElementById('f-proj')?.value,system:document.getElementById('f-system')?.value,businessOutcome:document.getElementById('f-outcome')?.value},
+    disclaimer:'Draft human review bundle — not submission-ready; SME/QA/RA review required.'
+  };
+}
+function dlHumanReviewPackageJson(){
+  if(!allStories.length){alert('Create an assurance package first.');return;}
+  const rec = buildHumanReviewPackageRecord();
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(rec,null,2)],{type:'application/json'}));
+  a.download = 'DRAFT-MARAS-Human-Review-Package.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+function toggleRtpNode(btn){ btn.nextElementSibling?.classList.toggle('show'); }
+function renderStoryTracePipelineDetail(story, index){
+  const chain = story.regulatoryTracePipeline || buildRegulatoryTraceChainForStory(story, index);
+  const rows = (chain.nodes||[]).map(n => `<div class="rtp-node" data-trace-stage="${escapeHtml(n.stage)}">
+    <button type="button" class="rtp-node-h" onclick="toggleRtpNode(this)"><span class="rtp-stage">${escapeHtml(n.stage.replace(/_/g,' '))}</span><span class="rtp-id">${escapeHtml(n.traceId)}</span></button>
+    <div class="rtp-node-b"><div>${escapeHtml(n.summary||n.label)}</div>${n.needsReview?'<span class="rtp-nr">needs-review</span>':''}<div class="rtp-parent">parentTraceId: ${escapeHtml(n.parentTraceId||'—')}</div></div>
+  </div>`).join('');
+  return `<details class="pbi-compliance-details sc-compliance-collapsed" style="margin-top:6px"><summary>Full trace pipeline (${(chain.nodes||[]).length} stages · ${REGULATORY_TRACE_PIPELINE_SCHEMA})</summary><div class="rtp-chain">${rows}</div></details>`;
+}
+function renderPackagePipelineTrace(stories){
+  const wrap = document.getElementById('pipeline-trace-wrap');
+  if(!wrap) return;
+  if(!stories?.length){ wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  const body = stories.map((s,i) => {
+    const c = s.regulatoryTracePipeline || buildRegulatoryTraceChainForStory(s,i);
+    const gaps = (c.nodes||[]).filter(n => n.needsReview).length;
+    return `<details class="rtp-story"${i===0?' open':''}><summary><b>${escapeHtml(s.id||`PBI-${i+1}`)}</b> · ${escapeHtml(s.title||'')} · ${(c.nodes||[]).length} stages · ${gaps} needs-review · trace ${escapeHtml(s.traceId||'')}</summary>
+      <div class="rtp-chain compact">${(c.nodes||[]).map(n=>`<div class="rtp-row"><span class="rtp-stage">${escapeHtml(n.stage)}</span><span>${escapeHtml((n.summary||n.label).slice(0,140))}${n.needsReview?' · needs-review':''}</span></div>`).join('')}</div></details>`;
+  }).join('');
+  wrap.innerHTML = `<div class="rtp-head"><div class="rtp-title">Pipeline Trace</div><div class="rtp-sub">${REGULATORY_TRACE_PIPELINE_SCHEMA} · ${regulatoryTracePipelineStages().length}-stage chain (Document → Human Review Package). Default PBI cards remain three-question format; expand Compliance Details per item for the same chain. DRAFT_NOT_CONTROLLED</div></div>${body}`;
+}
+function storyMapPipelineForStory(s){
+  const ref = String(s.sourceControlRef||'').trim();
+  const idx = (allStories||[]).findIndex(p => p.id === ref || p.regRef === ref || p.id === s.links?.pbi);
+  if(idx >= 0) return allStories[idx].regulatoryTracePipeline || buildRegulatoryTraceChainForStory(allStories[idx], idx);
+  const pseudo = {id:s.id,title:s.title,story:s.title,regRef:ref,ac:String(s.acceptanceCriteria||'').split(/\n/).filter(Boolean),epic:s.capability,sourceRequirement:s.outcomeOrObligation,invest:{independent:'yes',negotiable:'yes',valuable:'yes',estimable:'yes',small:'yes',testable:'yes'}};
+  if(typeof ensureStoryPbi === 'function') ensureStoryPbi(pseudo);
+  return buildRegulatoryTraceChainForStory(pseudo, 0);
+}
+
 function normalizeStoryOutput(s, idx, pfx, qcMeta) {
   const criticality = ['P0','P1','P2'].includes(s.regulatoryCriticality) ? s.regulatoryCriticality : (idx < 3 ? 'P0' : idx < 6 ? 'P1' : 'P2');
   const type = ['business-control','compliance-control','integration-control','evidence-enabler'].includes(s.type)
@@ -3676,6 +3925,7 @@ function normalizeStoryOutput(s, idx, pfx, qcMeta) {
     qc: qcMeta || s.qc || {}
   };
   out.pbi = buildAssureStoryPbi(out);
+  attachRegulatoryTracePipeline(out, idx);
   return out;
 }
 
@@ -4198,8 +4448,9 @@ ${bilNote}
 GUARDRAILS:
   · PBIs only from explicit regulatory/source requirements — no filler
   · Every PBI: req_id + regulatory source traceability; INVEST pass; effort ESTIMATION_PENDING
+  · Populate regulatoryTraceHints where source supports pipeline stages (else needs-review stub): regulatoryIntent, obligation, conditions, exceptions, businessRule, complianceOutcome, capability, valueStream, agileGoal, epic, feature, complianceTestScenarios
 OUTPUT (strict JSON in \`\`\`json\`\`\` block):
-[{"id":"${autoPrefix()}-001","num":1,"title":"...","type":"business-control|compliance-control|integration-control|evidence-enabler","frameworks_applied":["BOI","ACCEPT","INVEST","3C"],"regulation":"21 CFR Part 11","section":"§11.10(e)","regRef":"REQ-001 · 21 CFR Part 11 §11.10(e)","epic":"...","boi":{"business_area":"...","outcome":"...","impact":"..."},"story":"For [business process/system], the business must [control/action] so that [measurable regulatory or operational outcome].","invest":{"independent":"yes|no","negotiable":"yes","valuable":"...","estimable":"yes","small":"yes","testable":"yes"},"ac":["Given [...] When [...] Then [...]"],"accept":{"action":"...","criteria":["..."],"expected":"...","pass_fail":"...","traceable":"REQ-001 · 21 CFR Part 11 §11.10(e)"},"constraints":{"security":"...","performance":"...","permissions":"..."},"gamp":"Cat.4 — Configured Software","phase":"Evidence Stage: Operational Qualification","labels":["audit-trail","cfr-11"]}]`
+[{"id":"${autoPrefix()}-001","num":1,"title":"...","type":"business-control|compliance-control|integration-control|evidence-enabler","frameworks_applied":["BOI","ACCEPT","INVEST","3C"],"regulation":"21 CFR Part 11","section":"§11.10(e)","regRef":"REQ-001 · 21 CFR Part 11 §11.10(e)","epic":"...","regulatoryTraceHints":{"regulatoryIntent":"...","obligation":"...","conditions":"...","exceptions":"needs-review","businessRule":"...","complianceOutcome":"...","capability":"...","valueStream":"...","agileGoal":"...","epic":"...","feature":"...","complianceTestScenarios":"Given/When/Then ..."},"boi":{"business_area":"...","outcome":"...","impact":"..."},"story":"For [business process/system], the business must [control/action] so that [measurable regulatory or operational outcome].","invest":{"independent":"yes|no","negotiable":"yes","valuable":"...","estimable":"yes","small":"yes","testable":"yes"},"ac":["Given [...] When [...] Then [...]"],"accept":{"action":"...","criteria":["..."],"expected":"...","pass_fail":"...","traceable":"REQ-001 · 21 CFR Part 11 §11.10(e)"},"constraints":{"security":"...","performance":"...","permissions":"..."},"gamp":"Cat.4 — Configured Software","phase":"Evidence Stage: Operational Qualification","labels":["audit-trail","cfr-11"]}]`
       : `You are the Business Assurance Decomposition Agent in MARAS.
 ROLE: Decompose Regulatory Objects into business-specific PBIs, controls, test obligations and evidence needs.
 FRAMEWORKS (apply selectively by PBI type — harness rule, never ignore):
@@ -4219,6 +4470,7 @@ GUARDRAILS:
   · Every PBI must carry req_id + regulatory source traceability
   · Estimation always marked ESTIMATION_PENDING — never finalised by agent
   · P0 requirements must produce at least one business PBI, but delivery ranking is left to the team
+  · Populate regulatoryTraceHints for maras.trace-pipeline.v1 stages where feasible; use "needs-review" when source is silent
 OUTPUT (strict JSON in \`\`\`json\`\`\` block):
 [{
   "id":"${autoPrefix()}-001","num":1,"title":"...",
@@ -4226,6 +4478,7 @@ OUTPUT (strict JSON in \`\`\`json\`\`\` block):
   "frameworks_applied":["BOI","ACCEPT","INVEST","3C"],
   "regulation":"21 CFR Part 11","section":"§11.10(e)",
   "regRef":"REQ-001 · 21 CFR Part 11 §11.10(e)",
+  "regulatoryTraceHints":{"regulatoryIntent":"","obligation":"","conditions":"","exceptions":"needs-review","businessRule":"","complianceOutcome":"","capability":"","valueStream":"","agileGoal":"","epic":"","feature":"","complianceTestScenarios":""},
   "epic":"...",
   "boi":{"business_area":"...","outcome":"...","impact":"..."},
   "story":"For [business process/system], the business must [control/action] so that [measurable regulatory or operational outcome].",
@@ -5110,7 +5363,8 @@ function renderPbiComplianceDetailsAssure(s,i,bil,qgHtml,ragPipeHtml,boiHtml,inv
     ${ragPipeHtml}
     ${ac.length?`<div style="margin-top:8px"><b>Acceptance criteria (trace)</b>${ac.map((a,j)=>`<div class="ac-item" style="margin-top:4px"><span class="ac-n">${j+1}</span><span class="ac-t">${escapeHtml(a)}</span></div>`).join('')}</div>`:''}
     ${s.accept?`<div style="margin-top:8px;padding:8px;background:#fefce8;border-radius:5px"><b>ACCEPT</b> · Action: ${escapeHtml(s.accept.action)} · Expected: ${escapeHtml(s.accept.expected)} · Pass/Fail: ${escapeHtml(s.accept.pass_fail)} · Trace: ${escapeHtml(s.accept.traceable||s.regRef)}</div>`:''}
-    <div style="margin-top:8px;font-size:9px;color:var(--ink4)">RTM row ${i+1} · interpretation logs · evidence package links — Value Package trace matrix (DRAFT_NOT_CONTROLLED)</div>
+    <div style="margin-top:8px;font-size:9px;color:var(--ink4)">RTM row ${i+1} · DoR ${escapeHtml(s.definitionOfReady?.ready||'NOT_READY')} · DoD ${escapeHtml(s.definitionOfDone?.done||'NOT_DONE')} · interpretation logs — Value Package trace matrix (DRAFT_NOT_CONTROLLED)</div>
+    ${renderStoryTracePipelineDetail(s,i)}
   </div></details>`;
 }
 function renderStories(stories, pipelineResult) {
@@ -5127,7 +5381,8 @@ function renderStories(stories, pipelineResult) {
     <button class="exp-btn" style="background:#0052cc" onclick="dlJira()">↓ Draft Jira CSV</button>
     <button class="exp-btn" style="background:#0078d4" onclick="dlADO()">↓ Draft ADO CSV</button>
     <button class="exp-btn" style="background:#0e7a62" onclick="dlFdaClinicalSchema()">↓ Draft FDA Schema</button>
-    <button class="exp-btn" style="background:#374151" onclick="dlJSON()">↓ Draft JSON</button>`;
+    <button class="exp-btn" style="background:#374151" onclick="dlJSON()">↓ Draft JSON</button>
+    <button class="exp-btn" style="background:#4c1d95" onclick="dlHumanReviewPackageJson()">↓ Human Review Package</button>`;
 
   const qcBanner = qc ? `<div class="qc-banner" id="qc-banner">
     <div class="qc-banner-title">Automated readiness checks — SME/QA approval still required</div>
@@ -5150,7 +5405,9 @@ function renderStories(stories, pipelineResult) {
     ${H.ragReplay.stages.verify?.output?.pass ? 'verify OK (draft)' : 'verify flagged'} · DRAFT_NOT_CONTROLLED
   </div>` : '';
 
+  (stories||[]).forEach((s,i)=>attachRegulatoryTracePipeline(s,i));
   renderTraceabilityMatrix(stories);
+  renderPackagePipelineTrace(stories);
   document.getElementById('stories-list').innerHTML = ragBanner + qcBanner + stories.map((s,i) => {
     const sourceUrl=safeExternalUrl(s.sourceUrl);
     const bilBadge = bil.japanese?'<span class="sc-num-badge" style="background:#fef3c7;color:#92400e">🇯🇵 EN+日本語</span>':
@@ -5311,7 +5568,8 @@ function savePackage(){
   const reviewed=allStories.filter(s=>s.reviewStatus==='SME_REVIEW_ATTESTED_DRAFT').length;
   const rec={key:'pkg_'+Date.now(),name,at:new Date().toISOString(),count:allStories.length,
              packageStatus:'DRAFT_NOT_CONTROLLED',reviewedCount:reviewed,
-             stories:allStories,ctx,gateLog:H.gateLog,ragReplay:ragGraphEnabled?H.ragReplay:null};
+             stories:allStories,ctx,gateLog:H.gateLog,ragReplay:ragGraphEnabled?H.ragReplay:null,
+             regulatoryTracePipeline:ensurePackageTracePipeline(allStories)};
   try{localStorage.setItem(rec.key,JSON.stringify(rec));}catch{alert('Browser storage full. Export JSON to save.');}
   document.getElementById('save-ok').textContent='Saved ✓';
   setTimeout(()=>document.getElementById('save-ok').textContent='',2500);
@@ -5380,6 +5638,8 @@ function dlJSON(){
              system:document.getElementById('f-system').value,framework:getFrameworkValue(),
              businessOutcome:document.getElementById('f-outcome').value},
     pipeline:{gateLog:H.gateLog,ragGraphEnabled:!!ragGraphEnabled,pipelineMode:ragGraphEnabled?(H.ragReplay?.fallbackUsed?'rag-legacy-fallback':'rag-graph'):'legacy'},
+    regulatoryTracePipeline:ensurePackageTracePipeline(allStories),
+    traceStageEnum:regulatoryTracePipelineStages(),
     stories:allStories,
     // Additive — does not remove legacy consumers' fields above
     schemaId:FDA_CLINICAL_DATA_SCHEMA.schemaId,
@@ -5893,7 +6153,8 @@ function findStoryLocation(storyId){
 function buildStoryMapRecord(){
   ensureStoryMapState();
   const lens=storyMapActiveLensConfig();
-  return {...storyMapState,personaLens:storyMapState.personaLens||lens.id,personaLensLabel:lens.label,personaLensPrimaryPanel:lens.primaryPanelId,generatedAt:new Date().toISOString(),hierarchy:STORY_MAP_HIERARCHY,templates:STORY_MAP_TEMPLATES.map(t=>t.id),personaLenses:STORY_MAP_PERSONA_LENSES.map(l=>({id:l.id,label:l.label,primaryPanelId:l.primaryPanelId}))};
+  const assurePipeline=(typeof allStories!=='undefined'&&allStories.length)?ensurePackageTracePipeline(allStories):null;
+  return {...storyMapState,personaLens:storyMapState.personaLens||lens.id,personaLensLabel:lens.label,personaLensPrimaryPanel:lens.primaryPanelId,generatedAt:new Date().toISOString(),hierarchy:STORY_MAP_HIERARCHY,regulatoryTracePipelineSchema:REGULATORY_TRACE_PIPELINE_SCHEMA,traceStageEnum:regulatoryTracePipelineStages(),assureRegulatoryTracePipeline:assurePipeline,templates:STORY_MAP_TEMPLATES.map(t=>t.id),personaLenses:STORY_MAP_PERSONA_LENSES.map(l=>({id:l.id,label:l.label,primaryPanelId:l.primaryPanelId}))};
 }
 function storyMapIntegrationOptions(){
   const opts={regulation:[],sop:[],gap:[],inspection:[],compare:[],ctd:[],readinessGate:[],pbi:[],evidenceRequest:[]};
@@ -6225,14 +6486,18 @@ function renderStoryMapRelease(){
 }
 function renderStoryMapTraceTable(){
   const stories=allStoryMapStories();
-  const rows=stories.map(s=>`<tr>
-    <td>${escapeHtml(s.title)}</td>
-    <td>${escapeHtml(s.sourceControlRef)}</td>
+  const stageHdr=regulatoryTracePipelineStages().slice(0,6).join(' · ')+' …';
+  const rows=stories.map(s=>{
+    const pipe=storyMapPipelineForStory(s);
+      return `<tr>
+    <td>${escapeHtml(s.title)}<div class="cmp-req">DoR ${escapeHtml(pipe.definitionOfReady?.ready||'—')} · DoD ${escapeHtml(pipe.definitionOfDone?.done||'—')}</div></td>
+    <td>${escapeHtml(s.sourceControlRef)}<div class="cmp-req">${escapeHtml(pipe.rootTraceId||'')} → ${escapeHtml(pipe.leafTraceId||'')}</div></td>
     <td>${Object.entries(s.links||{}).filter(([,v])=>v).map(([k,v])=>`${k}:${escapeHtml(v)}`).join('<br>')||'—'}</td>
-    <td>${escapeHtml(s.evidenceRequired)}</td>
-    <td>${escapeHtml(s.status)}</td>
-  </tr>`).join('');
-  return `<table class="sm-trace-table"><thead><tr><th>User story</th><th>Source/control</th><th>Trace links</th><th>Evidence</th><th>Status</th></tr></thead><tbody>${rows||'<tr><td colspan="5">No stories</td></tr>'}</tbody></table>`;
+    <td><details><summary>${(pipe.nodes||[]).length} stages</summary><div class="rtp-chain compact" style="padding:4px 0">${(pipe.nodes||[]).map(n=>`<div class="rtp-row"><span class="rtp-stage">${escapeHtml(n.stage)}</span><span>${escapeHtml((n.summary||'').slice(0,80))}</span></div>`).join('')}</div></details></td>
+    <td>${escapeHtml(s.evidenceRequired)} · ${escapeHtml(s.status)}</td>
+  </tr>`;
+  }).join('');
+  return `<div class="assurance-note" style="margin-bottom:8px"><b>${REGULATORY_TRACE_PIPELINE_SCHEMA}</b> — ${stageHdr} (${regulatoryTracePipelineStages().length} total) · DRAFT_NOT_CONTROLLED</div><table class="sm-trace-table"><thead><tr><th>User story</th><th>Source/control · trace root</th><th>Integration links</th><th>Pipeline stages</th><th>Evidence · status</th></tr></thead><tbody>${rows||'<tr><td colspan="5">No stories</td></tr>'}</tbody></table>`;
 }
 function renderStoryMapOutcomeOkr(){
   const stories=allStoryMapStories();
@@ -6354,7 +6619,7 @@ const IMPLEMENTATION_READINESS_GATE_1110E={
   reqId:'REQ-001',
   trace:'REQ-001 · 21 CFR Part 11 §11.10(e)',
   chunkId:'c3',
-  pipelineNote:'Regulatory→software pipeline steps 1–10 — gate assesses whether draft package may enter delivery planning (not compliance approval).',
+  pipelineNote:'Regulatory→software pipeline — 19 trace stages (maras.trace-pipeline.v1) from Document through Human Review Package; gate assesses delivery planning readiness only (not compliance approval).',
   questions:[
     {id:'dev_sme_free',role:'Dev',label:'Can implementation proceed SME-free?',answer:'NO',
       rationale:'Layer 2 interpretation and system boundary for §11.10(e) audit trails still needs RA/QA SME review; demo PBIs are draft suggestions only.',
