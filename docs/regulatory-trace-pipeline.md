@@ -12,13 +12,13 @@ MARAS links curated regulatory sources to delivery artifacts through a **19-stag
 |---|-----------|------------------|
 | 1 | `DOCUMENT` | Library chunk, ingested source, SHA-256 / excerpt |
 | 2 | `REGULATORY_INTENT` | Clause intent from corpus or SME interpretation |
-| 3 | `OBLIGATION` | Normative requirement / RAG-synthesized OBL-* |
+| 3 | `OBLIGATION` | Normative requirement / RAG-synthesized OBL-*; payload may include `maras.structured-obligation.v1` |
 | 4 | `CONDITIONS` | Constraints, environmental or procedural conditions |
 | 5 | `EXCEPTIONS` | Applicability exceptions (often needs-review) |
 | 6 | `BUSINESS_RULES` | ACCEPT action / control statement |
-| 7 | `COMPLIANCE_OUTCOMES` | BOI outcome / expected result |
-| 8 | `BUSINESS_CAPABILITIES` | Capability or system area |
-| 9 | `VALUE_STREAMS` | Programme business outcome |
+| 7 | `COMPLIANCE_OUTCOMES` | Observable compliance outcomes with `sourceSupport` quotes |
+| 8 | `BUSINESS_CAPABILITIES` | Capability impact rows (`new` \| `enhance` \| `retire`) |
+| 9 | `VALUE_STREAMS` | Journey / lifecycle touchpoints (inferential fields need review) |
 | 10 | `AGILE_GOALS` | PI / programme goal |
 | 11 | `EPICS` | Epic name |
 | 12 | `FEATURES` | Feature / PBI title |
@@ -39,13 +39,13 @@ MARAS links curated regulatory sources to delivery artifacts through a **19-stag
 ## Exports
 
 - `DRAFT-MARAS-Backlog.json` — includes `regulatoryTracePipeline` and `traceStageEnum`.
-- `DRAFT-MARAS-Human-Review-Package.json` — full chain + SME review checklist (draft).
+- `DRAFT-MARAS-Human-Review-Package.json` — full chain + `structuredObligations` (`maras.structured-obligation.v1`) + SME review checklist (draft).
 - Saved browser packages (`pkg_*`) persist `regulatoryTracePipeline`.
 - Story Map JSON includes `assureRegulatoryTracePipeline` when Assure PBIs exist in session.
 
 ## AI / harness
 
-Decomposition prompts request `regulatoryTraceHints` on each PBI. Missing source material should use `needs-review` stubs — never invent regulatory text.
+Decomposition prompts request `regulatoryTraceHints` on each PBI and verbatim modal language for normalization. See [structured-obligation-normalization.md](./structured-obligation-normalization.md). Missing source material should use `needs-review` stubs — never invent regulatory text.
 
 ## Review
 

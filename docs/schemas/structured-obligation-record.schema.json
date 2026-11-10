@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "maras.structured-obligation.v1",
+  "title": "MARAS structured obligation and impact bundle",
+  "description": "Normalized regulatory modal language with derived compliance, capability, and value-stream impacts. DRAFT_NOT_CONTROLLED — SME review required for inferential fields.",
+  "type": "object",
+  "required": ["schema", "packageStatus", "obligations"],
+  "properties": {
+    "schema": { "const": "maras.structured-obligation.v1" },
+    "packageStatus": { "const": "DRAFT_NOT_CONTROLLED" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "sourceCount": { "type": "integer", "minimum": 0 },
+    "obligations": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/structuredObligation" }
+    },
+    "impacts": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/impactRow" }
+    }
+  },
+  "$defs": {
+    "modality": {
+      "type": "string",
+      "enum": ["MUST", "SHALL", "REQUIRED_TO", "PROHIBITED"]
+    },
+    "sourceSpan": {
+      "type": "object",
+      "required": ["text"],
+      "properties": {
+        "text": { "type": "string" },
+        "chunkId": { "type": ["string", "null"] },
+        "regRef": { "type": ["string", "null"] },
+        "sourceKind": { "type": "string" }
+      }
+    },
+    "structuredObligation": {
+      "type": "object",
+      "required": ["schema", "id", "modality", "subject", "action", "sourceSpan", "packageStatus"],
+      "properties": {
+        "schema": { "const": "maras.structured-obligation.v1" },
+        "id": { "type": "string" },
+        "modality": { "$ref": "#/$defs/modality" },
+        "subject": { "type": "string" },
+        "action": { "type": "string" },
+        "object": { "type": "string" },
+        "sourceSpan": { "$ref": "#/$defs/sourceSpan" },
+        "confidence": { "type": "string", "enum": ["low", "medium", "high"] },
+        "needsReview": { "type": "boolean" },
+        "packageStatus": { "const": "DRAFT_NOT_CONTROLLED" }
+      }
+    },
+    "complianceOutcome": {
+      "type": "object",
+      "required": ["observable", "sourceSupport", "needsReview"],
+      "properties": {
+        "observable": { "type": "string" },
+        "measurementHint": { "type": "string" },
+        "sourceSupport": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "quote": { "type": "string" },
+              "chunkId": { "type": ["string", "null"] },
+              "regRef": { "type": ["string", "null"] },
+              "sourceKind": { "type": "string" }
+            }
+          }
+        },
+        "needsReview": { "type": "boolean" }
+      }
+    },
+    "businessCapabilityImpact": {
+      "type": "object",
+      "properties": {
+        "capability": { "type": "string" },
+        "changeType": { "type": "string", "enum": ["new", "enhance", "retire"] },
+        "rationale": { "type": "string" },
+        "inferential": { "type": "boolean" },
+        "needsReview": { "type": "boolean" },
+        "packageStatus": { "const": "DRAFT_NOT_CONTROLLED" }
+      }
+    },
+    "valueStreamImpact": {
+      "type": "object",
+      "properties": {
+        "stream": { "type": "string" },
+        "journeyPhase": { "type": "string" },
+        "touchpoints": { "type": "array", "items": { "type": "string" } },
+        "lifecycleStage": { "type": "string" },
+        "sourceSupport": { "type": "array" },
+        "inferential": { "type": "boolean" },
+        "needsReview": { "type": "boolean" },
+        "packageStatus": { "const": "DRAFT_NOT_CONTROLLED" }
+      }
+    },
+    "impactRow": {
+      "type": "object",
+      "required": ["obligation", "complianceOutcome"],
+      "properties": {
+        "obligation": { "$ref": "#/$defs/structuredObligation" },
+        "complianceOutcome": { "$ref": "#/$defs/complianceOutcome" },
+        "businessCapabilityImpact": { "$ref": "#/$defs/businessCapabilityImpact" },
+        "valueStreamImpact": { "$ref": "#/$defs/valueStreamImpact" }
+      }
+    }
+  }
+}
