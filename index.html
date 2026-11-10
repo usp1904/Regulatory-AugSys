@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>MARAS v6.4.1 MVP — Regulatory Business Assurance</title>
-<script>(function(){try{var q=new URLSearchParams(location.search);var eu=q.get('internal')!=='1'&&(localStorage.getItem('maras_end_user_surface_v1')!=='0');document.documentElement.classList.toggle('maras-end-user-surface',eu);document.documentElement.classList.toggle('maras-internal-surface',!eu);}catch(_e){document.documentElement.classList.add('maras-end-user-surface');}})();</script>
+<script>(function(){try{var q=new URLSearchParams(location.search);var eu;if(q.get('internal')==='1')eu=false;else if(q.get('internal')==='0')eu=true;else{var s=localStorage.getItem('maras_end_user_surface_v1');eu=(s==='0')?false:(s==='1')?true:true;}document.documentElement.classList.toggle('maras-end-user-surface',!!eu);document.documentElement.classList.toggle('maras-internal-surface',!eu);}catch(_e){document.documentElement.classList.add('maras-end-user-surface');}})();</script>
+<style>.maras-internal-only{display:none!important}html.maras-internal-surface .maras-internal-only{display:revert!important}</style>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -369,7 +370,9 @@ html.maras-caveman .delivery-pkg-sub:not(:first-of-type){display:none}
 html.maras-caveman .rtp-sub{display:none}
 html.maras-caveman .hard-fail-story-hint{display:none}
 /* End-user surface (default): hide staff/advanced chrome; staff use ?internal=1 or localStorage maras_end_user_surface_v1=0 */
-html.maras-end-user-surface .maras-internal-only{display:none!important}
+.maras-internal-only{display:none!important}
+html.maras-internal-surface .maras-internal-only{display:revert!important}
+#rag-toggle-row-mount:empty{display:none!important}
 .rag-toggle-row{margin:0 0 10px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r2);background:#fff}
 .rag-toggle-lbl{display:flex;align-items:flex-start;gap:8px;font-size:11px;color:var(--ink2);cursor:pointer;line-height:1.45}
 .rag-toggle-lbl input{margin-top:2px;flex-shrink:0}
@@ -1078,18 +1081,7 @@ html.maras-end-user-surface .maras-internal-only{display:none!important}
   <!-- SUBMIT — full width, like Image 1 -->
   <div class="submit-footer">
     <div id="mvp-validation" role="alert" aria-live="assertive" tabindex="-1" style="display:none;margin:0 0 10px;padding:10px 12px;border:1px solid #dc2626;border-radius:7px;background:#fef2f2;color:#991b1b;font-size:12px;line-height:1.5"></div>
-    <div class="rag-toggle-row maras-internal-only" id="rag-toggle-row">
-      <label class="rag-toggle-lbl">
-        <input type="checkbox" id="caveman-mode-toggle" aria-describedby="caveman-mode-hint" onchange="setCavemanMode(this.checked)">
-        <span><b>Caveman mode</b> — plain-language cards first; technical/schema detail stays behind expanders. <span class="caveman-elide">Default ON every session.</span></span>
-      </label>
-      <div id="caveman-mode-hint" class="rag-graph-hint caveman-elide" style="display:none">CRS Caveman UI — shortest safe summaries on PBI cards; full trace in Delivery Package &amp; Compliance Details · DRAFT_NOT_CONTROLLED</div>
-      <label class="rag-toggle-lbl" style="margin-top:8px">
-        <input type="checkbox" id="rag-graph-toggle" aria-describedby="rag-graph-hint" onchange="setRagGraphMode(this.checked)">
-        <span><b>RAG Graph pipeline (beta)</b> — Parse → Retrieve → ReRank → Synthesize → Verify → Replay. Enabled by default; uncheck to use legacy ranking only.</span>
-      </label>
-      <div id="rag-graph-hint" class="rag-graph-hint" style="display:none">CRS RAG Graph (draft) active — uncheck for legacy rankChunks only · SME/QA review still required · exports remain DRAFT_NOT_CONTROLLED</div>
-    </div>
+    <div id="rag-toggle-row-mount" hidden></div>
     <button class="submit-btn demo" id="submit-btn" onclick="doGenerate()">
       <span class="sb-send-icon">🚀</span>
       <span id="submit-lbl">Create Business Assurance Package</span>
@@ -2684,12 +2676,43 @@ function initMarasEndUserSurface() {
   } catch (_e) { marasEndUserMode = true; }
 }
 function isMarasEndUserMode() { return !!marasEndUserMode; }
+function isMarasInternalSurface() { return !isMarasEndUserMode(); }
+function syncInternalStaffControlsMount() {
+  const mount = document.getElementById('rag-toggle-row-mount');
+  if (!mount) return;
+  if (!isMarasInternalSurface()) {
+    mount.innerHTML = '';
+    mount.hidden = true;
+    return;
+  }
+  mount.hidden = false;
+  if (document.getElementById('caveman-mode-toggle')) {
+    updateCavemanModeUI();
+    updateRagGraphToggleUI();
+    return;
+  }
+  mount.innerHTML = `<div class="rag-toggle-row maras-internal-only" id="rag-toggle-row">
+      <label class="rag-toggle-lbl">
+        <input type="checkbox" id="caveman-mode-toggle" aria-describedby="caveman-mode-hint" onchange="setCavemanMode(this.checked)">
+        <span><b>Caveman mode</b> — plain-language cards first; technical/schema detail stays behind expanders. <span class="caveman-elide">Default ON every session.</span></span>
+      </label>
+      <div id="caveman-mode-hint" class="rag-graph-hint caveman-elide" style="display:none">CRS Caveman UI — shortest safe summaries on PBI cards; full trace in Delivery Package &amp; Compliance Details · DRAFT_NOT_CONTROLLED</div>
+      <label class="rag-toggle-lbl" style="margin-top:8px">
+        <input type="checkbox" id="rag-graph-toggle" aria-describedby="rag-graph-hint" onchange="setRagGraphMode(this.checked)">
+        <span><b>RAG Graph pipeline (beta)</b> — Parse → Retrieve → ReRank → Synthesize → Verify → Replay. Enabled by default; uncheck to use legacy ranking only.</span>
+      </label>
+      <div id="rag-graph-hint" class="rag-graph-hint" style="display:none">CRS RAG Graph (draft) active — uncheck for legacy rankChunks only · SME/QA review still required · exports remain DRAFT_NOT_CONTROLLED</div>
+    </div>`;
+  updateCavemanModeUI();
+  updateRagGraphToggleUI();
+}
 function updateMarasEndUserSurfaceUI() {
   const root = document.documentElement;
   if (root) {
     root.classList.toggle('maras-end-user-surface', marasEndUserMode);
     root.classList.toggle('maras-internal-surface', !marasEndUserMode);
   }
+  syncInternalStaffControlsMount();
 }
 
 /* CAVE_MAN_MODE — CRS plain-language UI (default ON; persists in localStorage) */
@@ -6433,7 +6456,7 @@ function renderStories(stories, pipelineResult) {
     </div>
   </div>` : '';
 
-  const ragBanner = (ragGraphEnabled && H.ragReplay?.stages) ? `<div class="rag-banner maras-internal-only" id="rag-banner">
+  const ragBanner = (isMarasInternalSurface() && ragGraphEnabled && H.ragReplay?.stages) ? `<div class="rag-banner maras-internal-only" id="rag-banner">
     <b>RAG Graph (draft)</b> — Parse → Hybrid Retrieve → ReRank → Synthesize → Verify ·
     ${H.ragReplay.fallbackUsed ? '<span style="color:#b45309">legacy fallback active</span> · ' : ''}
     ${H.ragReplay.stages.retrieve?.output?.hybrid ? 'OKF+Graph+TF-IDF' : 'legacy'} ·
@@ -6471,7 +6494,7 @@ function renderStories(stories, pipelineResult) {
       <div class="rubric-checks">${(rub.checks||[]).map(c=>`<span class="rubric-check ${c.pass?'ok':'no'}">${c.pass?'✓':'·'} ${c.label} (${c.score}/${c.weight})</span>`).join('')}</div>
     </div>` : '';
     const qgHtml = renderQualityGatePanel(i, s);
-    const ragPipeHtml = ragGraphEnabled ? `<div class="maras-internal-only"><button type="button" class="sc-expand rag-pipe-btn" onclick="toggleRagPipeline(this)">
+    const ragPipeHtml = (isMarasInternalSurface() && ragGraphEnabled) ? `<div class="maras-internal-only"><button type="button" class="sc-expand rag-pipe-btn" onclick="toggleRagPipeline(this)">
       <span>Pipeline replay (optional)</span><span style="transition:transform .14s">▼</span>
     </button><div class="rag-pipe-panel">${ragReplayDetailHtml()}</div></div>` : '';
     const pbi=ensureStoryPbi(s);

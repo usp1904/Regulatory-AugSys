@@ -156,7 +156,13 @@ check('DoR DoD UI on story cards', html.includes('Definition of Ready / PO revie
 check('DoR DoD collapsed in pbi-accordion details', html.includes('class="pbi-accordion sc-compliance-collapsed dor-dod-wrap"') && html.includes('<summary>Definition of Ready / PO review readiness') && html.includes('<summary>Recommended Definition of Done (draft)'));
 check('PBI three questions use click-to-expand accordion', html.includes('Three questions ·') && html.includes('class="pbi-accordion sc-compliance-collapsed"'));
 check('caveman mode default ON with localStorage', html.includes('CAVE_MAN_MODE_CONFIG') && html.includes('maras_caveman_mode_v1') && html.includes('cavemanModeEnabled = true') && html.includes('else cavemanModeEnabled = true') && html.includes('html.maras-caveman') && html.includes('id="caveman-mode-toggle"'));
-check('end-user surface hides internal chrome by default', html.includes('MARAS_END_USER_MODE_CONFIG') && html.includes('maras_end_user_surface_v1') && html.includes('marasEndUserMode = true') && html.includes('html.maras-end-user-surface .maras-internal-only') && html.includes("qs.get('internal') === '1'") && html.includes('class="rag-toggle-row maras-internal-only"'));
+check('end-user surface hides internal chrome by default', html.includes('MARAS_END_USER_MODE_CONFIG') && html.includes('maras_end_user_surface_v1') && html.includes('marasEndUserMode = true') && html.includes('.maras-internal-only{display:none!important}') && html.includes('html.maras-internal-surface .maras-internal-only') && html.includes("qs.get('internal') === '1'") && html.includes('function isMarasInternalSurface') && html.includes('function syncInternalStaffControlsMount') && html.includes('id="rag-toggle-row-mount"'));
+check('staff RAG/caveman toggles not in static submit footer', (() => {
+  const m = html.match(/<div class="submit-footer">([\s\S]*?)<button class="submit-btn demo"/);
+  if (!m) return false;
+  const chunk = m[1];
+  return chunk.includes('rag-toggle-row-mount') && !chunk.includes('Caveman mode') && !chunk.includes('RAG Graph pipeline (beta)') && !chunk.includes('rankChunks only');
+})());
 check('definition of done doc', fs.existsSync('docs/definition-of-done.md') && fs.readFileSync('docs/definition-of-done.md','utf8').includes('DRAFT_NOT_CONTROLLED'));
 check('hard-fail governance doc', fs.existsSync('docs/hard-fail-output-governance.md') && fs.readFileSync('docs/hard-fail-output-governance.md','utf8').includes('ZERO_UNSUPPORTED_STATEMENTS'));
 check('FINAL_OUTPUT_ORDER schema constant', html.includes("FINAL_OUTPUT_ORDER_SCHEMA = 'maras.final-output-order.v1'"));
