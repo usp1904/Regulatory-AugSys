@@ -128,6 +128,7 @@ Preferred direction already discussed for MARAS:
 - OCR may use Google Document AI, subject to credentials, regional availability, data residency, and cost approval.
 - Evaluate Docling for structure-aware parsing; do not add it until the deployment image and representative regulatory documents pass tests.
 - Begin with an explicit Python state machine and typed tool contracts. Add a framework only if it solves a demonstrated orchestration need.
+- Zero-budget baseline must run locally without cloud credentials or paid model APIs: SQLite persistence, BM25 ranking and source-linked graph facts.
 - Use a durable queue/worker for production indexing. Do not rely on FastAPI in-process background tasks for long-running indexing.
 
 No provider key, project ID, Firebase database, production tenant model or deployment target was supplied during this implementation. External provider integrations therefore remain gated, not falsely marked complete.
