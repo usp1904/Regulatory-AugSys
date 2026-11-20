@@ -14,10 +14,10 @@ from app.schemas.regulatory_intelligence import (
 )
 from app.services.regulatory_intelligence import (
     execute_regulatory_intelligence_query,
+    get_regulatory_candidate_graph,
     get_regulatory_graph,
     index_regulatory_document,
     list_indexable_documents,
-    get_regulatory_candidate_graph,
     retrieve_regulatory_evidence,
 )
 
@@ -57,7 +57,10 @@ def get_candidate_graph(
     graph = get_regulatory_candidate_graph(document_id)
     stats = _local_store().stats(document_id)
     if stats["chunk_count"] == 0:
-        raise HTTPException(status_code=404, detail="Document has not been indexed in the local RAG engine.")
+        raise HTTPException(
+            status_code=404,
+            detail="Document has not been indexed in the local RAG engine.",
+        )
     return {
         "document_id": document_id,
         "graph_semantics": "CANDIDATE_CO_MENTION_NOT_VALIDATED_REGULATORY_RELATIONSHIP",
