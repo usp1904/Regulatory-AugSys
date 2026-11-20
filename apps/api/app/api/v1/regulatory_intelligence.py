@@ -3,10 +3,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.models.document import Document
-
 from app.api.v1.requirements_mapping import require_mapping_reader, require_mapping_writer
 from app.core.database import get_db
+from app.models.document import Document
 from app.schemas.regulatory_intelligence import (
     RegulatoryIndexRequest,
     RegulatoryIndexResponse,
@@ -66,7 +65,10 @@ def get_candidate_graph(
     if not current_edges:
         raise HTTPException(
             status_code=404,
-            detail="No current graph index found. Re-index this document in Regulatory Intelligence.",
+            detail=(
+                "No current graph index found. Re-index this document "
+                "in Regulatory Intelligence."
+            ),
         )
     entity_ids = {
         edge["source_id"] for edge in current_edges
