@@ -632,3 +632,26 @@ Bring the shared glassmorphism / modern neumorphism system beyond the Regulatory
 - [ ] The existing GitHub Pages URL remains the legacy static app. It does not execute the Next.js + FastAPI application.
 - [ ] Next release gate: provision the web/API hosting and durable services, configure environment variables and secrets, run migrations, then complete end-to-end upload → extract → index → retrieve → obligation SME review → graph exploration smoke tests.
 - [ ] Address the 12 npm audit findings reported by CI (7 moderate, 4 high, 1 critical) before calling this production-ready.
+
+
+### Intelligent RAG engine migration audit — 2026-11-20
+- [x] Confirmed the MARAS Regulatory Intelligence API uses the modular `app.regulatory_rag.orchestrator.execute_regulatory_query` path for `POST /api/v1/regulatory-intelligence/query`.
+- [x] Confirmed the orchestrator calls `retrieve_hybrid` from `app.regulatory_rag.engine`; the retrieval engine combines BM25 lexical ranking, optional Vertex AI embeddings/Firestore vector search, candidate graph expansion and reciprocal-rank fusion.
+- [x] Confirmed the current MARAS index operation calls `index_document`, which persists chunks, candidate entities, edges and term frequencies in the local SQLite index; optional cloud mode also writes vectors and graph records to Firestore.
+- [ ] Do not claim a complete production Agentic Graph RAG replacement yet. The engine is a modular hybrid RAG foundation, not a fully production-hardened agentic Graph RAG system.
+- [ ] Default configuration has `rag_enabled = false`. Without explicit cloud configuration and the optional `rag` dependencies, query retrieval is primarily BM25 plus local candidate-graph expansion; Vertex/Firestore vector retrieval is not active.
+- [ ] The current graph extractor in `app/regulatory_rag/graph.py` uses a small set of regex patterns for regulations, controls and processes. Its `MENTIONED_WITH` edges represent same-chunk co-mentions, not semantic/legal relationships. It does not yet provide ontology-backed relation extraction, entity resolution, confidence scoring, multi-hop reasoning or expert validation.
+- [ ] The orchestrator's answer synthesis currently declares `NO_LLM_USED_EXTRACTIVE_ONLY`. It is not yet using a grounded generation model to synthesize answers with claim-level citations.
+- [ ] The planner and orchestrator are bounded Python modules, not independent tool-using agents with durable state, retry policies, human approval gates and traceable tool execution. Agentic orchestration remains to be implemented.
+- [ ] Current chunking/extraction path does not establish full-fidelity multimodal ingestion for scanned PDFs/OCR, tables, charts, figures, images and complex layouts. This must be validated and extended before marketing the product for arbitrary large multimodal regulatory corpora.
+- [ ] Current cloud vector store writes to Firestore and uses vector search, but deployment requires configured Google Cloud project, model, Firestore vector index/database, credentials, dependency extras and explicit operational testing.
+- [ ] Review the legacy document retrieval/extraction routes and migrate every product-facing retrieval consumer to the single Regulatory Intelligence engine. Keep MARAS source-of-truth, obligation review, requirements mapping and audit persistence as existing business capabilities; replace retrieval internals, not those business workflows.
+- [ ] Add parity and regression tests proving every document Q&A, obligation extraction evidence lookup and graph exploration call uses the new engine and preserves source version/hash, page/section citation and access controls.
+
+### Hosting decision and deployment gate — 2026-11-20
+- [x] Confirmed the repository is a monorepo: Next.js frontend under `apps/web`, FastAPI backend under `apps/api`.
+- [x] Confirmed Vercel can host the Next.js frontend, but deploying only `apps/web` does not deploy the FastAPI backend or provide durable storage for regulatory source files and the local SQLite RAG index.
+- [ ] No deployment should be advertised as production-live until a backend host, managed PostgreSQL, durable object storage, API secrets and provider credentials are configured.
+- [ ] Free-tier hosting can be used for a sponsor/demo environment, but verify free-tier sleep, compute, storage, request and data-retention limits. Do not upload confidential or regulated documents to an unapproved demo environment.
+- [ ] Current GitHub Actions reports 12 npm audit findings (7 moderate, 4 high, 1 critical). Resolve or explicitly risk-accept with documented justification before a production release.
+- [ ] Deployment still requires a reachable API, database migrations, durable document store, RAG provider configuration, end-to-end smoke tests and backup/restore checks.
