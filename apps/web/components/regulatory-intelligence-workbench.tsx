@@ -1,7 +1,14 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 
+type SourceDocument = {
+  document_id: number;
+  filename: string;
+  version: number;
+  file_hash: string;
+  parse_status: string;
+};
 type Evidence = {
   document_id: number;
   filename: string;
@@ -12,45 +19,86 @@ type Evidence = {
   excerpt: string;
   score: number;
 };
-
 type RetrievalResponse = {
   status: string;
   query: string;
   results: Evidence[];
   message: string;
 };
+type IndexResponse = {
+  document_id: number;
+  document_version: number;
+  chunk_count: number;
+  entity_count: number;
+  edge_count: number;
+  vector_count: number;
+  graph_persisted: boolean;
+  provider_status: string;
+};
 
 export function RegulatoryIntelligenceWorkbench() {
+  const [documents, setDocuments] = useState<SourceDocument[]>([]);
+  const [selectedDocument, setSelectedDocument] = useState("");
   const [query, setQuery] = useState("");
-  const [documentIds, setDocumentIds] = useState("");
   const [result, setResult] = useState<RetrievalResponse | null>(null);
+  const [indexResult, setIndexResult] = useState<IndexResponse | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [indexing, setIndexing] = useState(false);
+
+  async function loadDocuments() {
+    try {
+      const response = await fetch("/api/regulatory-intelligence/documents", { cache: "no-store" });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.detail ?? "Could not load MARAS documents.");
+      setDocuments(body as SourceDocument[]);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Could not load documents.");
+    }
+  }
+
+  useEffect(() => {
+    void loadDocuments();
+  }, []);
+
+  async function indexSelected() {
+    if (!selectedDocument) return;
+    setIndexing(true);
+    setError("");
+    setIndexResult(null);
+    try {
+      const response = await fetch("/api/regulatory-intelligence/index", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ document_id: Number(selectedDocument) }),
+      });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.detail ?? "Indexing failed.");
+      setIndexResult(body as IndexResponse);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Indexing failed.");
+    } finally {
+      setIndexing(false);
+    }
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
     setError("");
     setResult(null);
-
-    const parsedIds = documentIds.trim()
-      ? documentIds.split(",").map((value) => Number(value.trim())).filter((value) => Number.isInteger(value) && value > 0)
-      : undefined;
-
     try {
       const response = await fetch("/api/regulatory-intelligence/retrieve", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           query,
-          document_ids: parsedIds,
+          document_ids: selectedDocument ? [Number(selectedDocument)] : undefined,
           top_k: 8,
         }),
       });
       const body = await response.json();
-      if (!response.ok) {
-        throw new Error(body.detail ?? "Evidence retrieval failed.");
-      }
+      if (!response.ok) throw new Error(body.detail ?? "Evidence retrieval failed.");
       setResult(body as RetrievalResponse);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Unexpected retrieval error.");
@@ -61,45 +109,82 @@ export function RegulatoryIntelligenceWorkbench() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-xl border bg-card p-5 shadow-sm">
-        <div className="mb-4">
-          <h2 className="text-lg font-semibold">Search existing regulatory documents</h2>
+      <section className="space-y-4 rounded-xl border bg-card p-5 shadow-sm">
+        <div>
+          <h2 className="text-lg font-semibold">Regulatory knowledge engine</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Retrieve source passages from MARAS documents already ingested. This initial release
-            uses lexical matching and does not generate regulatory advice.
+            Uses MARAS-controlled documents as its source of truth. Indexing builds stable source
+            chunks and candidate regulatory graph facts. Cloud vector persistence requires configured
+            Vertex AI and Firestore credentials.
           </p>
         </div>
-        <form onSubmit={submit} className="space-y-4">
+        <label className="block space-y-1.5">
+          <span className="text-sm font-medium">Existing extracted MARAS document</span>
+          <select
+            value={selectedDocument}
+            onChange={(event) => setSelectedDocument(event.target.value)}
+            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+          >
+            <option value="">All extracted documents</option>
+            {documents.map((doc) => (
+              <option key={doc.document_id} value={doc.document_id}>
+                #{doc.document_id} · {doc.filename} · v{doc.version}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="flex flex-wrap items-center gap-3">
+          <button type="button" onClick={() => void loadDocuments()} className="rounded-md border px-3 py-2 text-sm">
+            Refresh documents
+          </button>
+          <button
+            type="button"
+            disabled={!selectedDocument || indexing}
+            onClick={() => void indexSelected()}
+            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
+          >
+            {indexing ? "Building index..." : "Build / refresh RAG index"}
+          </button>
+        </div>
+        {indexResult ? (
+          <div className="rounded-lg border p-3 text-sm">
+            <p className="font-semibold">Index operation completed · {indexResult.provider_status}</p>
+            <p className="mt-1 text-muted-foreground">
+              {indexResult.chunk_count} chunks · {indexResult.entity_count} entities ·
+              {" "}{indexResult.edge_count} candidate edges · {indexResult.vector_count} vectors persisted
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Persistent graph: {indexResult.graph_persisted ? "yes" : "no, local extraction only"}
+            </p>
+          </div>
+        ) : null}
+      </section>
+
+      <section className="rounded-xl border bg-card p-5 shadow-sm">
+        <h2 className="text-lg font-semibold">Ask the regulatory knowledge base</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Hybrid retrieval combines lexical and semantic ranking when cloud providers are enabled.
+          Every result retains its source document, version, hash and location.
+        </p>
+        <form onSubmit={submit} className="mt-4 space-y-4">
           <label className="block space-y-1.5">
-            <span className="text-sm font-medium">Regulatory question or search terms</span>
+            <span className="text-sm font-medium">Regulatory question</span>
             <textarea
               required
               minLength={3}
               maxLength={2000}
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Example: What audit trail requirements apply to regulated records?"
+              placeholder="Which controls are associated with 21 CFR Part 11 audit trail requirements?"
               className="min-h-28 w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
             />
-          </label>
-          <label className="block space-y-1.5">
-            <span className="text-sm font-medium">Optional document IDs</span>
-            <input
-              value={documentIds}
-              onChange={(event) => setDocumentIds(event.target.value)}
-              placeholder="For example: 12, 18"
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
-            />
-            <span className="text-xs text-muted-foreground">
-              Leave blank to search all extracted documents visible to this MARAS reader.
-            </span>
           </label>
           <button
             type="submit"
             disabled={loading || query.trim().length < 3}
-            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
           >
-            {loading ? "Searching sources..." : "Retrieve evidence"}
+            {loading ? "Retrieving evidence..." : "Retrieve grounded evidence"}
           </button>
         </form>
         {error ? (
@@ -111,42 +196,27 @@ export function RegulatoryIntelligenceWorkbench() {
 
       {result ? (
         <section className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <h2 className="text-lg font-semibold">Retrieved evidence</h2>
-              <p className="text-sm text-muted-foreground">{result.message}</p>
-            </div>
-            <span className="rounded-full border px-3 py-1 text-xs font-medium">
-              {result.results.length} passage(s)
-            </span>
+          <div>
+            <h2 className="text-lg font-semibold">Evidence results</h2>
+            <p className="text-sm text-muted-foreground">{result.message}</p>
           </div>
-          {result.results.length ? (
-            <div className="space-y-3">
-              {result.results.map((item, index) => (
-                <article key={`${item.document_id}-${item.location}-${index}`} className="rounded-xl border bg-card p-4">
-                  <div className="flex flex-wrap items-start justify-between gap-2">
-                    <div>
-                      <h3 className="font-semibold">{item.filename}</h3>
-                      <p className="text-xs text-muted-foreground">
-                        Document #{item.document_id} · Version {item.document_version} · {item.location}
-                      </p>
-                    </div>
-                    <span className="text-xs text-muted-foreground">
-                      Lexical score: {item.score.toFixed(2)}
-                    </span>
-                  </div>
-                  <blockquote className="mt-3 border-l-2 pl-3 text-sm leading-relaxed">
-                    {item.excerpt}
-                  </blockquote>
-                  <p className="mt-3 break-all font-mono text-[11px] text-muted-foreground">
-                    SHA-256: {item.file_hash}
+          {result.results.length ? result.results.map((item, index) => (
+            <article key={\`\${item.document_id}-\${item.location}-\${index}\`} className="rounded-xl border bg-card p-4">
+              <div className="flex flex-wrap justify-between gap-2">
+                <div>
+                  <h3 className="font-semibold">{item.filename}</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Document #{item.document_id} · Version {item.document_version} · {item.location}
                   </p>
-                </article>
-              ))}
-            </div>
-          ) : (
+                </div>
+                <span className="text-xs text-muted-foreground">Fusion score: {item.score.toFixed(5)}</span>
+              </div>
+              <blockquote className="mt-3 border-l-2 pl-3 text-sm leading-relaxed">{item.excerpt}</blockquote>
+              <p className="mt-3 break-all font-mono text-[11px] text-muted-foreground">SHA-256: {item.file_hash}</p>
+            </article>
+          )) : (
             <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
-              No matching source passages were found. Try a clause number or different terms.
+              No matching source passages found.
             </div>
           )}
         </section>
