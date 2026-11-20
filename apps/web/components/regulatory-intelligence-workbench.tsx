@@ -185,7 +185,7 @@ export function RegulatoryIntelligenceWorkbench() {
         <h2 className="text-lg font-semibold">Ask the regulatory knowledge base</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           Local retrieval combines BM25 ranking with source-linked graph expansion. Optional cloud
-          embeddings can be added later. Every result retains source document, version, hash and location.
+          embeddings can be added later. Every result retains source document, version, hash and location. Extractive synthesis is enabled only for MARAS sources verified against their current content hash.
         </p>
         <form onSubmit={submit} className="mt-4 space-y-4">
           <label className="block space-y-1.5">
