@@ -30,7 +30,7 @@ def plan_regulatory_query(query: str) -> RetrievalPlan:
     if clause:
         return RetrievalPlan(
             intent="CLAUSE_LOOKUP",
-            strategy=("lexical", "vector", "graph"),
+            strategy=("bm25", "optional_vector", "graph"),
             clause_reference=clause.group(0),
             max_graph_hops=1,
             rationale="A named regulation or clause reference was detected.",
@@ -38,7 +38,7 @@ def plan_regulatory_query(query: str) -> RetrievalPlan:
     if any(term in normalized for term in relationship_terms):
         return RetrievalPlan(
             intent="RELATIONSHIP_ANALYSIS",
-            strategy=("vector", "lexical", "graph"),
+            strategy=("bm25", "optional_vector", "graph"),
             clause_reference=None,
             max_graph_hops=1,
             rationale="The query asks how regulatory concepts or controls are connected.",
