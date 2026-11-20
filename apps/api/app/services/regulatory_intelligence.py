@@ -114,5 +114,8 @@ def get_regulatory_graph(db: Session, document_ids: list[int] | None = None) -> 
     return {
         "entities": [item for item in graph["entities"] if item["entity_id"] in entity_ids],
         "edges": edges,
-        "notice": "Candidate co-mentions only. Edges are not validated legal or causal relationships.",
+        "notice": (
+            "Candidate co-mentions only. Edges are not validated legal "
+            "or causal relationships."
+        ),
     }
