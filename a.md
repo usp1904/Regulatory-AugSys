@@ -209,6 +209,16 @@ No provider key, project ID, Firebase database, production tenant model or deplo
 
 **Safety boundary:** This is extractive evidence assembly, not LLM-generated interpretation. It must not be represented as legal advice, applicability analysis or a compliance determination.
 
+
+### Phase 1.9 — MARAS source-authority gate (implemented; CI pending)
+- [x] Reuse existing `RegulatorySourceRecord` rather than creating a second source registry.
+- [x] Attach source status to every retrieved evidence item.
+- [x] Mark missing source records as `UNREGISTERED` and content-hash mismatches as `STALE`.
+- [x] Permit extractive synthesis only when the MARAS source status is `VERIFIED` and the source hash matches the current document.
+- [x] Keep unverified evidence visible for review while abstaining from synthesis.
+- [x] Add tests for verified and unverified source behaviour.
+- [ ] Complete CI verification and run the workflow against existing MARAS verified source records.
+
 ### Phase 2 — Index lifecycle and structured extraction
 - [ ] Add index job and index manifest models/migrations.
 - [ ] Dispatch indexing after successful existing document ingestion.
@@ -387,7 +397,7 @@ A code scaffold is not a completed integration. A passing unit test is not produ
 
 ### Current honest product maturity
 
-**Phase 1.8 zero-budget evidence retrieval prototype / internal integration slice.** It has source-aware chunking, persistent local BM25 and graph indexes, version/hash-aware retrieval, deterministic query planning, extractive evidence assembly and verbatim citation validation. It does not yet provide dense semantic embeddings, multimodal extraction, durable background jobs or autonomous LLM agents. It does not generate regulatory interpretations and is not a production Agentic Graph RAG system.
+**Phase 1.9 zero-budget evidence retrieval prototype / internal integration slice.** It has source-aware chunking, persistent local BM25 and graph indexes, version/hash-aware retrieval, deterministic query planning, extractive evidence assembly, verbatim citation validation and a gate that requires MARAS source verification. It does not yet provide dense semantic embeddings, multimodal extraction, durable background jobs or autonomous LLM agents. It does not generate regulatory interpretations and is not a production Agentic Graph RAG system.
 
 ## 11. Local verification commands
 
