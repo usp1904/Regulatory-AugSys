@@ -103,6 +103,9 @@ async def ingest_controlled_document(
             detail={
                 "page_count": len(extraction.pages),
                 "paragraph_count": len(extraction.paragraphs),
+                "warnings": list(extraction.warnings),
+                "tables_preserved_in_text": any("[EXTRACTED TABLE" in value for value in [*extraction.pages, *extraction.paragraphs]),
+                "ocr_used": any("OCR_USED" in warning for warning in extraction.warnings),
             },
         )
     else:
