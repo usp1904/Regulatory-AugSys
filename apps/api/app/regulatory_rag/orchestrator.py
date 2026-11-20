@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.regulatory_rag.engine import retrieve_hybrid
 from app.regulatory_rag.planner import plan_regulatory_query
+from app.regulatory_rag.synthesis import build_evidence_answer
 
 
 def execute_regulatory_query(
@@ -17,6 +18,7 @@ def execute_regulatory_query(
     """Plan and execute retrieval; returns evidence and an inspectable execution trace."""
     plan = plan_regulatory_query(query)
     retrieval = retrieve_hybrid(db, query, document_ids, top_k)
+    answer = build_evidence_answer(query, retrieval["results"])
     return {
         **retrieval,
         "plan": {
@@ -45,5 +47,6 @@ def execute_regulatory_query(
             },
             {"stage": "evidence_assembly", "status": "completed"},
         ],
-        "generation_status": "NOT_ENABLED_EVIDENCE_ONLY",
+        "generation_status": "NO_LLM_USED_EXTRACTIVE_ONLY",
+        **answer,
     }
