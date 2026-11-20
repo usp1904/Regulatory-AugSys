@@ -102,7 +102,7 @@ export function ObligationWorkbench() {
       {selectedDoc && selectedDoc.parse_status !== "EXTRACTED" ? <p className="text-sm text-amber-800">This document is not ready for extraction. Resolve the parser/hold state first.</p> : null}
     </section>
 
-    <section className="panel space-y-4">
+    <section className="ri-glass-card ri-main-card space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-semibold">Candidate register</h2><p className="text-xs text-muted-foreground">Approve only after a subject-matter expert checks the source excerpt and applicability context.</p></div><select className="form-input max-w-48" value={filter} onChange={e=>setFilter(e.target.value)}>{["ALL","DRAFT","APPROVED","REJECTED"].map(s=><option key={s} value={s}>{s}</option>)}</select></div>
       <label className="block max-w-xl space-y-1.5"><span className="form-label">Reviewer / SME</span><input className="form-input" value={reviewer} onChange={e=>setReviewer(e.target.value)}/></label>
       <label className="block space-y-1.5"><span className="form-label">Review rationale</span><textarea className="form-input" rows={2} value={rationale} onChange={e=>setRationale(e.target.value)} placeholder="Required for approval or rejection."/></label>
