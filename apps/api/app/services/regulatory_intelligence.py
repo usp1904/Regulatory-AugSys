@@ -64,3 +64,24 @@ def list_indexable_documents(db: Session) -> list[dict]:
         }
         for item in documents
     ]
+
+
+
+def execute_regulatory_intelligence_query(
+    db: Session,
+    payload: RegulatoryRetrievalRequest,
+) -> dict:
+    """Execute the bounded planner and hybrid retrieval flow with an inspectable trace."""
+    from app.regulatory_rag.orchestrator import execute_regulatory_query
+
+    result = execute_regulatory_query(
+        db, payload.query, payload.document_ids, payload.top_k
+    )
+    result["results"] = [
+        {
+            **item,
+            "score": item["fusion_score"],
+        }
+        for item in result["results"]
+    ]
+    return result
