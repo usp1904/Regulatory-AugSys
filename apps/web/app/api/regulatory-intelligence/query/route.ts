@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
   try {
     const upstream = await fetch(new URL("/api/v1/regulatory-intelligence/query", apiBase), {
       method: "POST",
-      headers: { Authorization: \`Bearer ${key}\`, "Content-Type": "application/json" },
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
       body: await request.text(),
       cache: "no-store",
     });
