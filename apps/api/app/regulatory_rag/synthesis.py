@@ -25,6 +25,8 @@ def build_evidence_answer(query: str, results: list[dict[str, Any]]) -> dict[str
     query_terms = set(tokenize(query))
     candidates: list[tuple[float, str, dict[str, Any]]] = []
     for item in results:
+        if item.get("source_status") != "VERIFIED":
+            continue
         for sentence in _sentences(item.get("excerpt", "")):
             sentence_terms = set(tokenize(sentence))
             overlap = len(query_terms & sentence_terms)
@@ -55,6 +57,7 @@ def build_evidence_answer(query: str, results: list[dict[str, Any]]) -> dict[str
                         "file_hash": item["file_hash"],
                         "location": item["location"],
                         "chunk_id": item["chunk_id"],
+                        "source_status": item["source_status"],
                     }
                 ],
             }
@@ -76,7 +79,8 @@ def build_evidence_answer(query: str, results: list[dict[str, Any]]) -> dict[str
         "claims": claims,
         "validation_status": "PASSED" if claims else "ABSTAINED",
         "disclaimer": (
-            "Statements are quoted from retrieved source passages. This is not a legal "
-            "interpretation, applicability decision or compliance determination."
+            "Only source records marked VERIFIED with a matching content hash are used. "
+            "Statements are quoted verbatim, not interpreted. This is not legal advice, "
+            "an applicability decision or a compliance determination."
         ),
     }
