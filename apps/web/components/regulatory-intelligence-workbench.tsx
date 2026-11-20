@@ -212,7 +212,7 @@ export function RegulatoryIntelligenceWorkbench() {
             </div>
           ) : null}
           {result.results.length ? result.results.map((item, index) => (
-            <article key={\`${item.document_id}-${item.location}-${index}\`} className="rounded-xl border bg-card p-4">
+            <article key={`${item.document_id}-${item.location}-${index}`} className="rounded-xl border bg-card p-4">
               <div className="flex flex-wrap justify-between gap-2">
                 <div>
                   <h3 className="font-semibold">{item.filename}</h3>
