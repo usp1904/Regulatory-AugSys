@@ -270,3 +270,57 @@ def retrieve_hybrid(
         ),
     }
 
+
+def get_engine_status() -> dict[str, Any]:
+    """Report configured engine capabilities without exposing credentials or secrets."""
+    import importlib.util
+
+    settings = get_settings()
+
+    def available(module: str) -> bool:
+        try:
+            return importlib.util.find_spec(module) is not None
+        except (ImportError, ModuleNotFoundError, ValueError):
+            return False
+
+    vertex_sdk_available = available("google.genai")
+    firestore_sdk_available = available("google.cloud.firestore")
+    cloud_configured = bool(
+        settings.rag_enabled
+        and settings.google_cloud_project
+        and vertex_sdk_available
+        and firestore_sdk_available
+    )
+    return {
+        "engine": "MARAS_INTELLIGENT_HYBRID_GRAPH_RAG",
+        "pipeline_version": "maras-rag-v1",
+        "legacy_retrieval_replaced": True,
+        "active_retrieval_mode": (
+            "BM25_VERTEX_VECTOR_CANDIDATE_GRAPH"
+            if cloud_configured
+            else "BM25_LOCAL_CANDIDATE_GRAPH"
+        ),
+        "capabilities": {
+            "lexical_bm25": True,
+            "local_provenance_graph": True,
+            "vertex_embeddings": cloud_configured,
+            "firestore_vector_and_graph": cloud_configured,
+            "agentic_planning": True,
+            "llm_grounded_generation": False,
+            "multimodal_ocr_and_layout_extraction": False,
+            "table_and_figure_understanding": False,
+            "claim_level_citation_validation": "EXTRACTIVE_ONLY",
+        },
+        "configuration": {
+            "cloud_rag_enabled": settings.rag_enabled,
+            "google_cloud_project_configured": bool(settings.google_cloud_project),
+            "vertex_sdk_available": vertex_sdk_available,
+            "firestore_sdk_available": firestore_sdk_available,
+        },
+        "limitations": [
+            "Graph relationships are heuristic co-mentions, not validated regulatory semantics.",
+            "Answer synthesis is extractive and uses only verified, current source records.",
+            "OCR, chart, image and structured table extraction are not implemented.",
+            "Local SQLite index durability depends on a persistent storage volume.",
+        ],
+    }

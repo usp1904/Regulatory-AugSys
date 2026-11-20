@@ -334,3 +334,16 @@ def test_stale_source_hash_is_flagged_and_synthesis_abstains(db_session) -> None
     answer = build_evidence_answer("audit trail controls", result["results"])
     assert answer["validation_status"] == "ABSTAINED"
     assert answer["claims"] == []
+
+def test_engine_status_reports_local_mode_when_cloud_is_disabled(monkeypatch):
+    import app.regulatory_rag.engine as engine
+
+    settings = engine.get_settings()
+    monkeypatch.setattr(settings, "rag_enabled", False)
+    monkeypatch.setattr(settings, "google_cloud_project", "")
+    monkeypatch.setattr(engine, "get_settings", lambda: settings)
+    status = engine.get_engine_status()
+    assert status["engine"] == "MARAS_INTELLIGENT_HYBRID_GRAPH_RAG"
+    assert status["active_retrieval_mode"] == "BM25_LOCAL_CANDIDATE_GRAPH"
+    assert status["capabilities"]["llm_grounded_generation"] is False
+    assert status["capabilities"]["multimodal_ocr_and_layout_extraction"] is False
