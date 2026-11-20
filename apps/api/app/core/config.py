@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./data/regulatory_augsys.db"
     storage_root: str = "./storage"
     max_upload_bytes: int = 10 * 1024 * 1024
-    allowed_upload_mime_types: str = (
+    rag_enabled: bool = False\n    google_cloud_project: str = ""\n    google_cloud_location: str = "us-central1"\n    firestore_database: str = "(default)"\n    rag_collection_prefix: str = "maras_rag"\n    rag_embedding_model: str = "text-embedding-005"\n    rag_embedding_dimensions: int = 768\n    allowed_upload_mime_types: str = (
         "application/pdf,"
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document,"
         "text/plain"
