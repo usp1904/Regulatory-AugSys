@@ -675,3 +675,197 @@ Bring the shared glassmorphism / modern neumorphism system beyond the Regulatory
 - Existing graph relations are still heuristic `MENTIONED_WITH` co-occurrences. They must not be described as validated semantic/legal relations.
 - Query generation remains extractive and source-verification gated; no ungrounded LLM generation has been introduced.
 - This is the first migration step, not the completion of production Agentic Graph RAG.
+
+
+## Stage 2 — structure-aware document extraction foundation — 2026-11-20
+
+### Implemented on `feat/multimodal-ingestion-foundation`
+- [x] Preserve DOCX table rows and cells in the existing controlled-document paragraph stream using explicit `[EXTRACTED TABLE n]` markers.
+- [x] Detect and serialize PDF tables into the corresponding page text while preserving page-level source identity.
+- [x] Attempt OCR for PDF pages with no selectable text using PyMuPDF's Tesseract OCR bridge.
+- [x] Explicitly return `OCR_REQUIRED` when a PDF has no selectable text and OCR is unavailable or yields no text. This prevents scanned documents from being incorrectly marked as fully extracted and indexed as empty content.
+- [x] Record OCR warnings, whether OCR was used, and table-preservation indicators in the existing extraction audit event.
+- [x] Add regression coverage for DOCX table extraction and the scanned-PDF/OCR-unavailable path.
+- [ ] CI verification and merge to main.
+- [ ] Verify OCR success on an actual scanned regulatory PDF in a runtime with Tesseract installed.
+- [ ] Add embedded image/figure extraction, OCR for image regions on mixed-content pages, chart/diagram interpretation, and richer layout metadata.
+- [ ] Validate PDF table extraction against multi-page, merged-cell and complex-layout regulatory tables.
+
+### Scope and limitations
+- The original uploaded file remains unchanged; extracted table text is added to the existing extracted text stream.
+- PDF OCR is currently an optional runtime capability. The Python package alone does not install the Tesseract system executable or language packs.
+- This stage does not yet provide image captioning, chart understanding, figure relationship extraction or visual-layout reconstruction.
+- No new document repository or parallel ingestion database was introduced. Existing MARAS document records, versioning, hashes, storage and audit events remain the source of truth.
+
+
+---
+
+# MARAS + Intelligent Agentic Graph RAG — Living Delivery Register
+
+> This file is the operational source of truth for implementation status. A checkbox is not considered complete merely because code exists. Every `[x]` must have a verification method and evidence (test, CI run, API result, deployment URL or reviewer sign-off). Use `[~]` for partial, `[ ]` for not started, and `[!]` for failed or blocked. Never silently convert a failed or unverified item to complete.
+
+## A. Product outcome and architecture contract
+
+- [ ] One MARAS application with existing regulatory source-of-truth, document versioning, obligation review, approvals and audit workflows retained.
+- [ ] One production-grade intelligent RAG retrieval contract used by every product-facing retrieval consumer.
+- [ ] Multimodal ingestion preserves provenance for text, tables, images, diagrams, charts and OCR content.
+- [ ] Graph entities and relations are semantically grounded, versioned, confidence-scored and traceable to source spans.
+- [ ] Agent orchestration is bounded, observable, retry-safe, permission-aware and supports human approval where actions affect regulatory decisions.
+- [ ] Every generated answer and obligation recommendation is evidence-grounded with claim-level source citations.
+- [ ] Reproducible evaluation, security, operational monitoring, deployment and recovery are in place.
+
+## B. Status vocabulary and evidence rules
+
+| Status | Meaning | Completion evidence |
+|---|---|---|
+| `[ ]` Not started | No implementation yet | None |
+| `[~]` Partial | Some code exists; acceptance criteria remain | List completed and missing criteria |
+| `[x]` Verified | All acceptance criteria passed | Test/CI/API/deployment evidence |
+| `[!]` Failed/blocked | Verification failed or external dependency blocks work | Failure log and remediation owner/action |
+
+Rules:
+1. Record exact repository path(s), PR, commit SHA and CI run for every code change.
+2. Record the exact test command and result. A passing lint is not a passing functional test.
+3. For API work, record request, expected response, actual response and authorization/provenance checks.
+4. For UI work, record browser/device, workflow, screenshots or reproducible steps.
+5. For external services, distinguish code support from provisioned/configured/live service.
+6. Do not mark production-ready until deployment, security, data durability, backup/restore and end-to-end smoke tests pass.
+7. When a check fails, keep it visible under Failed/Blocked until fixed and re-run successfully.
+8. After merge, reconcile this register against `main`; do not rely on feature-branch-only checkboxes.
+
+## C. Implementation and verification register
+
+### C1. Existing MARAS product capabilities (baseline audit)
+
+| Capability | Implementation evidence to locate | Verification checklist | Status |
+|---|---|---|---|
+| Regulatory document records and versioning | Existing document models/services | Upload two versions; confirm immutable file hash/version and correct current version | [~] |
+| Source document storage | Existing storage adapter/config | Restart service; verify file still exists and hash matches | [~] |
+| Obligation extraction and review | Existing obligation routes/services/UI | Extract, edit, approve/reject; verify audit history and source links | [~] |
+| Requirements mapping | Existing mapping routes/services | Map requirement to evidence; verify provenance and permissions | [~] |
+| Audit events | Existing audit service/models | Exercise upload, extraction, review and approval; verify actor/time/action | [~] |
+| Graph explorer UI | `apps/web/components/regulatory-graph-explorer.tsx` | Load graph for a current document; test empty, stale, unauthorized and valid cases | [~] |
+| Authenticated graph API | `apps/api/app/api/v1/regulatory_intelligence.py` | Verify auth, document ownership/access, current version and file hash | [~] |
+
+Baseline status is partial until each verification is executed and recorded. Existing presence in source code is not proof of working end-to-end behaviour.
+
+### C2. Intelligent RAG migration
+
+| Work item | Implementation evidence | Verification checklist | Status |
+|---|---|---|---|
+| Unified retrieval orchestrator | `apps/api/app/regulatory_rag/orchestrator.py`; `apps/api/app/services/regulatory_intelligence.py` | Verify all public retrieval paths use the same orchestrator; test API contract parity | [~] |
+| Lexical/BM25 retrieval | `apps/api/app/regulatory_rag/engine.py` | Query exact terms, synonyms and no-match terms; measure recall/precision on labelled set | [~] |
+| Vector retrieval | Vertex/Firestore adapter and configuration | Enable with real credentials/index; verify vector writes, reads, filtering and fallback | [ ] |
+| Hybrid fusion | RRF in retrieval engine | Compare lexical-only, vector-only and fused ranking on fixed evaluation queries | [~] |
+| Graph expansion | Candidate graph in retrieval engine | Verify graph expansion is document/version scoped and cannot cross tenant boundaries | [~] |
+| Semantic graph extraction | Current `apps/api/app/regulatory_rag/graph.py` | Replace co-mention-only edges with typed relations, source spans, confidence and validation | [ ] |
+| Entity resolution | Not yet established | Test aliases, duplicate entities, jurisdiction collisions and conflicting definitions | [ ] |
+| Multi-hop reasoning | Not yet established | Test multi-document and multi-hop questions with path-level evidence citations | [ ] |
+| Grounded generation | Current synthesis is extractive (`NO_LLM_USED_EXTRACTIVE_ONLY`) | Verify each generated claim is supported by citations; reject unsupported claims | [ ] |
+| Retrieval evaluation | Evaluation harness/dataset to be established | Track Recall@k, MRR/nDCG, answer faithfulness, citation precision/recall and latency | [ ] |
+| Tenant/access isolation | Existing auth and document filters | Attempt cross-tenant and unauthorized retrieval; expect deny/no leakage | [ ] |
+
+### C3. Multimodal ingestion
+
+| Work item | Implementation evidence | Verification checklist | Status |
+|---|---|---|---|
+| PDF selectable text | `apps/api/app/services/document_extraction.py` | Extract text from multi-page PDF; verify page-level ordering and provenance | [~] |
+| PDF table detection | Same file, `find_tables()` | Test simple, multi-page, merged-cell and complex tables against expected cells | [~] |
+| DOCX paragraphs | Same file | Verify paragraph order and text | [~] |
+| DOCX tables | Same file, `[EXTRACTED TABLE n]` | Test headers, rows, merged cells and nested tables; verify no cell loss | [~] |
+| Scanned PDF OCR | PyMuPDF Tesseract bridge | Test OCR success with installed Tesseract + language pack; test OCR missing/failure | [~] |
+| Mixed pages (text + embedded images) | Not yet established | Verify image regions are extracted/OCR'd without dropping selectable text | [ ] |
+| Image attachments | Not yet established | Test PNG/JPEG/TIFF input, orientation, resolution and OCR confidence | [ ] |
+| Charts/diagrams/figures | Not yet established | Test visual interpretation, labels, legends, relationships and evidence coordinates | [ ] |
+| Layout and reading order | Not yet established | Test columns, headers/footers, footnotes, tables and multi-column pages | [ ] |
+| Large files and async processing | Not yet established | Load test file-size limits, worker queues, retries, cancellation and idempotency | [ ] |
+| Extraction failure handling | `OCR_REQUIRED` / `EXTRACTION_FAILED` | Ensure failed/partial extraction cannot be silently indexed as complete | [~] |
+
+### C4. Agentic workflow and controls
+
+- [ ] Define agent responsibilities, tools, input/output schemas and least-privilege permissions.
+- [ ] Implement planner → retrieval → graph reasoning → evidence validation → synthesis flow.
+- [ ] Add bounded step/time/token budgets, retries, timeouts and idempotency.
+- [ ] Persist run state, intermediate evidence, tool calls and failure reasons.
+- [ ] Add human-in-the-loop approval before regulatory decisions or external side effects.
+- [ ] Add prompt-injection and malicious-document handling; treat ingested content as untrusted data.
+- [ ] Add deterministic replay and regression tests for agent traces.
+- [ ] Add agent evaluation for tool selection, groundedness, completeness and refusal behaviour.
+
+### C5. API, UI and workflow integration
+
+- [ ] Inventory every retrieval call site across API routes, services, background jobs and UI proxy routes.
+- [ ] Prove document Q&A uses the unified RAG orchestrator.
+- [ ] Prove obligation extraction/evidence lookup uses the unified RAG orchestrator.
+- [ ] Prove requirements mapping/evidence lookup uses the unified RAG orchestrator.
+- [ ] Prove graph exploration reads the current graph index and respects source version/hash.
+- [ ] Preserve existing MARAS business workflow and API compatibility where required.
+- [ ] Add end-to-end test: upload → parse → index → query → obligation review → approve/reject → audit → graph.
+- [ ] Verify error, empty, stale-index, unsupported-file and unauthorized states in UI.
+
+### C6. Security, reliability and performance
+
+- [ ] Resolve or document risk acceptance for all dependency vulnerabilities; current recorded baseline: 12 npm audit findings (7 moderate, 4 high, 1 critical).
+- [ ] Add malware/file-type/size validation and safe parser limits.
+- [ ] Verify secrets are environment-managed and never committed/logged.
+- [ ] Verify tenant isolation, RBAC and document-level authorization across all retrieval paths.
+- [ ] Verify encryption in transit and at rest for stored source documents and indexes.
+- [ ] Add structured logs, traces, metrics, alerting and correlation IDs.
+- [ ] Load test large regulatory corpora, concurrent ingestion and retrieval latency.
+- [ ] Verify backup/restore, retention, deletion and re-indexing procedures.
+- [ ] Verify graceful degradation when embedding provider, vector DB or LLM is unavailable.
+
+### C7. Deployment and release
+
+- [ ] Choose and document frontend, API, database, object storage and vector/graph hosting.
+- [ ] Configure staging and demo environments without using confidential regulatory documents.
+- [ ] Provision persistent database and durable document storage; do not rely on ephemeral filesystem/local SQLite in hosted production.
+- [ ] Configure environment variables, secrets, CORS, auth callbacks and provider credentials.
+- [ ] Run database migrations and verify rollback procedure.
+- [ ] Deploy frontend and API; record exact public URLs and commit SHA.
+- [ ] Run health/readiness checks and end-to-end smoke test against deployed services.
+- [ ] Verify restart/redeploy does not lose documents, indexes or audit records.
+- [ ] Verify backups and restore into a clean environment.
+- [ ] Record release approval and known limitations.
+
+## D. Current verified delivery history
+
+| PR / commit | Change | CI / merge state |
+|---|---|---|
+| PR #48 | Route legacy Regulatory Intelligence retrieval through unified orchestrator | Merged to main; CI passed |
+| Main `6271369a167f` | Unified retrieval migration | Main sync confirmed |
+| PR #49 | PDF/DOCX table extraction and OCR fallback foundation | Open; initial CI failed on Ruff E501; lint fix committed on feature branch; re-run required |
+
+### PR #49 failure and remediation
+- [x] Failure identified from CI run `44760117497`: Ruff E501 line length in `apps/api/app/services/document_ingestion.py`.
+- [x] Remediation committed: `6a72c07d989541599d9e8ffdcbe4c3a8fba7961f`.
+- [ ] Re-run PR #49 CI and confirm all verification gates pass.
+- [ ] Review functional test output, not just lint.
+- [ ] Merge only after green CI; then verify merge SHA and main branch CI.
+
+## E. Mandatory execution handoff format
+
+Every future implementation session must update this block:
+
+**Current stage:** PR #49 multimodal extraction foundation  
+**Current branch:** `feat/multimodal-ingestion-foundation`  
+**Current PR:** https://github.com/usp1904/Regulatory-AugSys/pull/49  
+**Last known blocker:** Ruff E501; fix committed, CI rerun pending  
+**Next action:** Inspect latest PR checks; fix all failures; merge only after green checks  
+**Next stage after merge:** Complete OCR runtime verification, then mixed-page image/figure extraction  
+**Main branch SHA:** `6271369a167f9d07306a4224c6b6e0a831e79b40` (last verified before PR #49 merge)
+
+Before starting new work:
+1. Fetch latest `main`, PR state, latest branch SHA and CI results.
+2. Read this register and inspect the exact source files for the current stage.
+3. Reconcile documented status with actual code and test evidence.
+4. Resume the first incomplete or failed checklist item; do not redo verified work.
+5. Update this file in the same PR as the implementation.
+6. After merge, verify main SHA and main CI, then update the handoff block.
+
+## F. Known non-goals until explicitly approved
+- Do not create a second MARAS source-of-truth, document store, obligation store or audit system.
+- Do not label heuristic co-mention graph edges as legally validated relationships.
+- Do not label extractive retrieval as LLM-grounded generation.
+- Do not label local SQLite or optional cloud adapters as production infrastructure without operational verification.
+- Do not call the product production-live before the deployment checklist is complete.
