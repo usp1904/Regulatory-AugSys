@@ -192,4 +192,4 @@ The Regulatory Intelligence workspace reuses existing MARAS-controlled document 
 
 Run the existing API setup with `pip install -e ".[dev]"`. The local path uses standard-library SQLite, BM25 ranking and a provenance-linked candidate graph. No cloud credentials or paid APIs are required. The derived index is stored under `STORAGE_ROOT/indexes/` and is excluded from Git.
 
-Vertex AI and Firestore remain optional future adapters. The current engine returns evidence and an execution trace, not generated regulatory advice. See [`docs/regulatory-intelligence-engine.md`](docs/regulatory-intelligence-engine.md) for setup, limitations and next steps.
+Vertex AI and Firestore remain optional future adapters. The engine returns source passages and a verbatim evidence-only synthesis. Synthesis is allowed only when MARAS marks the source `VERIFIED` and its content hash matches the current document. Unverified, unregistered or stale sources remain visible for review but cause the synthesis layer to abstain. This is not generated regulatory advice. See [`docs/regulatory-intelligence-engine.md`](docs/regulatory-intelligence-engine.md) for setup, limitations and next steps.
