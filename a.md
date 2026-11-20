@@ -675,3 +675,24 @@ Bring the shared glassmorphism / modern neumorphism system beyond the Regulatory
 - Existing graph relations are still heuristic `MENTIONED_WITH` co-occurrences. They must not be described as validated semantic/legal relations.
 - Query generation remains extractive and source-verification gated; no ungrounded LLM generation has been introduced.
 - This is the first migration step, not the completion of production Agentic Graph RAG.
+
+
+## Stage 2 — structure-aware document extraction foundation — 2026-11-20
+
+### Implemented on `feat/multimodal-ingestion-foundation`
+- [x] Preserve DOCX table rows and cells in the existing controlled-document paragraph stream using explicit `[EXTRACTED TABLE n]` markers.
+- [x] Detect and serialize PDF tables into the corresponding page text while preserving page-level source identity.
+- [x] Attempt OCR for PDF pages with no selectable text using PyMuPDF's Tesseract OCR bridge.
+- [x] Explicitly return `OCR_REQUIRED` when a PDF has no selectable text and OCR is unavailable or yields no text. This prevents scanned documents from being incorrectly marked as fully extracted and indexed as empty content.
+- [x] Record OCR warnings, whether OCR was used, and table-preservation indicators in the existing extraction audit event.
+- [x] Add regression coverage for DOCX table extraction and the scanned-PDF/OCR-unavailable path.
+- [ ] CI verification and merge to main.
+- [ ] Verify OCR success on an actual scanned regulatory PDF in a runtime with Tesseract installed.
+- [ ] Add embedded image/figure extraction, OCR for image regions on mixed-content pages, chart/diagram interpretation, and richer layout metadata.
+- [ ] Validate PDF table extraction against multi-page, merged-cell and complex-layout regulatory tables.
+
+### Scope and limitations
+- The original uploaded file remains unchanged; extracted table text is added to the existing extracted text stream.
+- PDF OCR is currently an optional runtime capability. The Python package alone does not install the Tesseract system executable or language packs.
+- This stage does not yet provide image captioning, chart understanding, figure relationship extraction or visual-layout reconstruction.
+- No new document repository or parallel ingestion database was introduced. Existing MARAS document records, versioning, hashes, storage and audit events remain the source of truth.
