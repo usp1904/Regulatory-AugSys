@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.document import Document
-from app.regulatory_rag.engine import _local_store, index_document, retrieve_hybrid
+from app.regulatory_rag.engine import index_document, retrieve_hybrid
 from app.schemas.regulatory_intelligence import (
     RegulatoryEvidenceItem,
     RegulatoryIndexResponse,
@@ -94,28 +94,3 @@ def get_regulatory_candidate_graph(document_id: int) -> dict:
     from app.regulatory_rag.engine import _local_store
 
     return _local_store().graph_for_document(document_id)
-
-
-def get_regulatory_graph(db: Session, document_ids: list[int] | None = None) -> dict:
-    """Return source-linked candidate co-mentions for current indexed document versions."""
-    statement = select(Document).where(Document.parse_status == "EXTRACTED")
-    if document_ids:
-        statement = statement.where(Document.id.in_(document_ids[:100]))
-    documents = db.scalars(statement.order_by(Document.id.desc())).all()
-    versions = {item.id: (item.version, item.file_hash) for item in documents}
-    graph = _local_store().list_graph(list(versions))
-    current_ids = set(versions)
-    edges = [
-        edge for edge in graph["edges"]
-        if edge["document_id"] in current_ids
-        and (edge["document_version"], edge["file_hash"]) == versions[edge["document_id"]]
-    ]
-    entity_ids = {edge["source_id"] for edge in edges} | {edge["target_id"] for edge in edges}
-    return {
-        "entities": [item for item in graph["entities"] if item["entity_id"] in entity_ids],
-        "edges": edges,
-        "notice": (
-            "Candidate co-mentions only. Edges are not validated legal "
-            "or causal relationships."
-        ),
-    }
