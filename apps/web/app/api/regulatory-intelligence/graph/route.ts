@@ -5,9 +5,11 @@ export async function GET(request: NextRequest) {
   const key = process.env.MARAS_REQUIREMENTS_MAPPING_REVIEW_KEY ?? process.env.MARAS_REQUIREMENTS_MAPPING_WRITE_KEY;
   if (!key) return Response.json({ detail: "Configure the server-side MARAS reader key." }, { status: 503 });
   try {
-    const upstreamUrl = new URL("/api/v1/regulatory-intelligence/graph", apiBase);
     const documentId = request.nextUrl.searchParams.get("document_id");
-    if (documentId) upstreamUrl.searchParams.set("document_id", documentId);
+    if (!documentId || !/^\\d+$/.test(documentId)) {
+      return Response.json({ detail: "A valid document_id is required." }, { status: 400 });
+    }
+    const upstreamUrl = new URL(`/api/v1/regulatory-intelligence/graph/${documentId}`, apiBase);
     const upstream = await fetch(upstreamUrl, {
       headers: { Authorization: `Bearer ${key}` },
       cache: "no-store",
