@@ -209,32 +209,6 @@ class LocalIndexStore:
             ).fetchall()
         return {"entities": [dict(row) for row in entities], "edges": [dict(row) for row in edges]}
 
-    def list_graph(self, document_ids: list[int]) -> dict[str, list[dict[str, Any]]]:
-        """Return a bounded, source-linked graph view for selected indexed documents."""
-        if not document_ids:
-            return {"entities": [], "edges": []}
-        ids = document_ids[:100]
-        placeholders = ",".join("?" for _ in ids)
-        with self._connection() as connection:
-            entities = connection.execute(
-                f"""SELECT DISTINCT e.entity_id, e.label, e.entity_type
-                FROM rag_entities e
-                JOIN rag_edges r ON r.source_id = e.entity_id OR r.target_id = e.entity_id
-                JOIN rag_chunks c ON c.chunk_id = r.chunk_id
-                WHERE c.document_id IN ({placeholders})
-                ORDER BY e.entity_type, e.label LIMIT 300""", ids,
-            ).fetchall()
-            edges = connection.execute(
-                f"""SELECT DISTINCT r.edge_id, r.source_id, r.target_id, r.relation,
-                r.chunk_id, r.evidence, c.document_id, c.document_version,
-                c.file_hash, c.filename, c.page_number
-                FROM rag_edges r JOIN rag_chunks c ON c.chunk_id = r.chunk_id
-                WHERE c.document_id IN ({placeholders})
-                ORDER BY c.document_id, r.edge_id LIMIT 800""", ids,
-            ).fetchall()
-        return {"entities": [dict(row) for row in entities],
-                "edges": [dict(row) for row in edges]}
-
     def stats(self, document_id: int) -> dict[str, int]:
         with self._connection() as connection:
             chunks = connection.execute(
