@@ -270,14 +270,26 @@ No provider key, project ID, Firebase database, production tenant model or deplo
 - `apps/web/components/site-shell.tsx`
 - `index.html` (legacy compatibility only)
 
-### New files added in Phase 1
+### New files added in Phase 1 and 1.5/1.6
 - `apps/api/app/schemas/regulatory_intelligence.py`
 - `apps/api/app/services/regulatory_intelligence.py`
 - `apps/api/app/api/v1/regulatory_intelligence.py`
 - `apps/api/tests/test_regulatory_intelligence.py`
+- `apps/api/app/regulatory_rag/__init__.py`
+- `apps/api/app/regulatory_rag/chunking.py`
+- `apps/api/app/regulatory_rag/graph.py`
+- `apps/api/app/regulatory_rag/providers.py`
+- `apps/api/app/regulatory_rag/engine.py`
+- `apps/api/app/regulatory_rag/planner.py`
+- `apps/api/app/regulatory_rag/orchestrator.py`
+- `apps/api/app/schemas/regulatory_intelligence.py` (extended with index/query contracts)
+- `docs/regulatory-intelligence-engine.md`
 - `apps/web/app/regulatory-intelligence/page.tsx`
 - `apps/web/components/regulatory-intelligence-workbench.tsx`
 - `apps/web/app/api/regulatory-intelligence/retrieve/route.ts`
+- `apps/web/app/api/regulatory-intelligence/documents/route.ts`
+- `apps/web/app/api/regulatory-intelligence/index/route.ts`
+- `apps/web/app/api/regulatory-intelligence/query/route.ts`
 
 ### Planned later files
 - `apps/api/app/regulatory_rag/ingestion/*`
@@ -295,15 +307,14 @@ Do not create empty placeholder modules. Add each module when its contract and t
 
 ## 8. API contracts
 
-Initial retrieval endpoint:
-- `POST /api/v1/regulatory-intelligence/retrieve`
-- Request: query, optional document IDs, top-K.
-- Response: status, query, evidence list and scope message.
-- Access: existing MARAS mapping-reader credentials for this initial internal workspace.
-- Frontend: server-side Next.js proxy. Never send the service key to browser JavaScript.
+Current endpoints:
+- `GET /api/v1/regulatory-intelligence/documents` lists extracted MARAS source records.
+- `POST /api/v1/regulatory-intelligence/index` indexes one document; writer access required.
+- `POST /api/v1/regulatory-intelligence/retrieve` returns source-grounded retrieval results.
+- `POST /api/v1/regulatory-intelligence/query` runs query planning and bounded retrieval orchestration, returning evidence and an execution trace.
+- Access: existing MARAS mapping-reader/writer credentials for this internal workspace. The frontend uses server-side proxies; provider secrets are not sent to browser JavaScript.
 
 Planned future endpoints:
-- `POST /api/v1/regulatory-intelligence/query`
 - `POST /api/v1/regulatory-intelligence/analyze`
 - `GET /api/v1/regulatory-intelligence/index-status`
 - `GET /api/v1/regulatory-intelligence/documents/{document_id}`
@@ -339,13 +350,13 @@ A code scaffold is not a completed integration. A passing unit test is not produ
 | Multimodal parsing/OCR | Not started | Phase 2 |
 | Graph extraction and Firestore persistence adapter | Implemented, cloud unconfigured | Candidate co-mention edges; requires GCP |
 | Vertex embeddings and Firestore vector adapter | Implemented, cloud unconfigured | Optional `rag` dependencies and GCP configuration required |
-| Agent orchestration | Not started | Intent planner and bounded agents remain Phase 5 |
+| Query planner and retrieval orchestration | Implemented, CI pending | `planner.py`, `orchestrator.py`, `/query`; autonomous LLM agents remain Phase 5 |
 | Production security/observability | Not started | Phase 7 |
 | Deployment | Not started | Credentials and target environment required |
 
 ### Current honest product maturity
 
-**Phase 1 prototype / internal integration slice.** Not a production Agentic Graph RAG system. Do not market it as such until Phases 2–7 are implemented, evaluated and deployed.
+**Phase 1.6 intelligent retrieval prototype / internal integration slice.** It has source-aware chunking, candidate graph facts, optional cloud vector/graph persistence, hybrid retrieval and deterministic query planning. It does not yet provide multimodal extraction, durable indexing, autonomous LLM agents or grounded answer generation. It is not a production Agentic Graph RAG system.
 
 ## 11. Local verification commands
 
