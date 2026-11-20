@@ -13,6 +13,7 @@ from app.schemas.regulatory_intelligence import (
     RegulatoryRetrievalRequest,
     RegulatoryRetrievalResponse,
 )
+from app.regulatory_rag.engine import get_engine_status
 from app.services.regulatory_intelligence import (
     execute_regulatory_intelligence_query,
     get_regulatory_candidate_graph,
@@ -22,6 +23,14 @@ from app.services.regulatory_intelligence import (
 )
 
 router = APIRouter(prefix="/regulatory-intelligence", tags=["regulatory-intelligence"])
+
+
+@router.get("/engine/status")
+def regulatory_engine_status(
+    _access: str = Depends(require_mapping_reader),
+) -> dict:
+    """Expose active retrieval capabilities and honest configuration gaps."""
+    return get_engine_status()
 
 
 @router.get("/documents")
