@@ -5,7 +5,11 @@
 **Baseline:** `main`  
 **Plan owner:** Product / Engineering  
 **Last updated:** 2026-11-20  
-**Status:** In progress. Initial evidence-retrieval vertical slice is being added. This is not yet a production Graph RAG deployment.
+**Status:** Phase 1 code committed to feature branch; PR #46 open as draft; CI validation running. This is not yet a production Graph RAG deployment.
+
+**Working branch:** `feature/maras-agentic-graph-rag`  
+**Pull request:** https://github.com/usp1904/Regulatory-AugSys/pull/46  
+**Initial branch head:** `1354cd51344b002ee61f896d0b5203bc2f1cc071`
 
 ---
 
@@ -302,9 +306,9 @@ A code scaffold is not a completed integration. A passing unit test is not produ
 | Architecture decision | Complete | Reuse MARAS services; add intelligence layer |
 | Feature branch | Complete | `feature/maras-agentic-graph-rag` |
 | Build plan | Complete | This file |
-| Regulatory Intelligence UI | In progress | Phase 1 |
-| Source-grounded retrieval API | In progress | Phase 1 |
-| Automated tests | Not verified | Run backend and frontend suites |
+| Regulatory Intelligence UI | Implemented in branch | `apps/web/app/regulatory-intelligence/page.tsx`; CI pending |
+| Source-grounded retrieval API | Implemented in branch | `POST /api/v1/regulatory-intelligence/retrieve`; CI pending |
+| Automated tests | Added; CI running | PR #46 GitHub Actions run; record final outcome after completion |
 | Persistent indexing | Not started | Phase 2 |
 | Multimodal parsing/OCR | Not started | Phase 2 |
 | Persistent knowledge graph | Not started | Phase 3 |
