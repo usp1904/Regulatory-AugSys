@@ -8,10 +8,12 @@ from app.core.database import get_db
 from app.schemas.regulatory_intelligence import (
     RegulatoryIndexRequest,
     RegulatoryIndexResponse,
+    RegulatoryQueryResponse,
     RegulatoryRetrievalRequest,
     RegulatoryRetrievalResponse,
 )
 from app.services.regulatory_intelligence import (
+    execute_regulatory_intelligence_query,
     index_regulatory_document,
     list_indexable_documents,
     retrieve_regulatory_evidence,
@@ -49,3 +51,13 @@ def retrieve_evidence(
     _access: str = Depends(require_mapping_reader),
 ) -> RegulatoryRetrievalResponse:
     return retrieve_regulatory_evidence(db, payload)
+
+
+
+@router.post("/query", response_model=RegulatoryQueryResponse)
+def run_regulatory_query(
+    payload: RegulatoryRetrievalRequest,
+    db: Session = Depends(get_db),
+    _access: str = Depends(require_mapping_reader),
+) -> dict:
+    return execute_regulatory_intelligence_query(db, payload)
