@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from contextlib import contextmanager
 from pathlib import Path
+from collections.abc import Iterator
 from typing import Any
 
 from app.regulatory_rag.chunking import RegulatoryChunk
@@ -12,7 +14,7 @@ from app.regulatory_rag.graph import GraphEdge, GraphEntity
 
 
 class LocalIndexStore:
-    """Persist chunks, sparse TF-IDF vectors and provenance-linked graph facts locally."""
+    """Persist chunks, sparse term vectors and provenance-linked graph facts."""
 
     def __init__(self, path: str | Path) -> None:
         self.path = Path(path)
@@ -26,8 +28,17 @@ class LocalIndexStore:
         connection.execute("PRAGMA foreign_keys=ON")
         return connection
 
+    @contextmanager
+    def _connection(self) -> Iterator[sqlite3.Connection]:
+        connection = self._connect()
+        try:
+            with connection:
+                yield connection
+        finally:
+            connection.close()
+
     def _initialize(self) -> None:
-        with self._connect() as connection:
+        with self._connection() as connection:
             connection.executescript(
                 """
                 CREATE TABLE IF NOT EXISTS rag_chunks (
@@ -71,20 +82,16 @@ class LocalIndexStore:
         edges: list[GraphEdge],
         term_vectors: dict[str, dict[str, float]],
     ) -> None:
-        with self._connect() as connection:
-            old_ids = [
-                row["chunk_id"]
-                for row in connection.execute(
-                    "SELECT chunk_id FROM rag_chunks WHERE document_id = ?",
-                    (document_id,),
+        with self._connection() as connection:
+            connection.execute(
+                """
+                DELETE FROM rag_edges
+                WHERE chunk_id IN (
+                    SELECT chunk_id FROM rag_chunks WHERE document_id = ?
                 )
-            ]
-            if old_ids:
-                placeholders = ",".join("?" for _ in old_ids)
-                connection.execute(
-                    f"DELETE FROM rag_edges WHERE chunk_id IN ({placeholders})",
-                    old_ids,
-                )
+                """,
+                (document_id,),
+            )
             connection.execute("DELETE FROM rag_chunks WHERE document_id = ?", (document_id,))
             connection.executemany(
                 """
@@ -142,7 +149,7 @@ class LocalIndexStore:
             return []
         ids = list(document_versions)
         placeholders = ",".join("?" for _ in ids)
-        with self._connect() as connection:
+        with self._connection() as connection:
             rows = connection.execute(
                 f"SELECT * FROM rag_chunks WHERE document_id IN ({placeholders})",
                 ids,
@@ -157,23 +164,23 @@ class LocalIndexStore:
     def list_edges(self, entity_ids: list[str], chunk_ids: list[str]) -> list[dict[str, Any]]:
         if not entity_ids or not chunk_ids:
             return []
-        entity_placeholders = ",".join("?" for _ in entity_ids)
-        chunk_placeholders = ",".join("?" for _ in chunk_ids)
-        with self._connect() as connection:
+        bounded_entity_ids = entity_ids[:500]
+        placeholders = ",".join("?" for _ in bounded_entity_ids)
+        with self._connection() as connection:
             rows = connection.execute(
                 f"""
                 SELECT * FROM rag_edges
-                WHERE (source_id IN ({entity_placeholders})
-                    OR target_id IN ({entity_placeholders}))
-                  AND chunk_id IN ({chunk_placeholders})
-                LIMIT 500
+                WHERE source_id IN ({placeholders})
+                   OR target_id IN ({placeholders})
+                LIMIT 2000
                 """,
-                [*entity_ids, *entity_ids, *chunk_ids],
+                [*bounded_entity_ids, *bounded_entity_ids],
             ).fetchall()
-        return [dict(row) for row in rows]
+        allowed_chunks = set(chunk_ids)
+        return [dict(row) for row in rows if row["chunk_id"] in allowed_chunks]
 
     def stats(self, document_id: int) -> dict[str, int]:
-        with self._connect() as connection:
+        with self._connection() as connection:
             chunks = connection.execute(
                 "SELECT COUNT(*) FROM rag_chunks WHERE document_id = ?", (document_id,)
             ).fetchone()[0]
