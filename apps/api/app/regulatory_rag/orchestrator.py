@@ -36,9 +36,11 @@ def execute_regulatory_query(
             {
                 "stage": "graph_expansion",
                 "status": (
-                    "completed"
-                    if "GRAPH" in retrieval["retrieval_mode"]
+                    "persistent_graph"
+                    if "WITH_PERSISTENT_GRAPH" in retrieval["retrieval_mode"]
                     else "local_candidate_expansion"
+                    if "WITH_LOCAL_GRAPH_EXPANSION" in retrieval["retrieval_mode"]
+                    else "no_graph_match"
                 ),
             },
             {"stage": "evidence_assembly", "status": "completed"},
