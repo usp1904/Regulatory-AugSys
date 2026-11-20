@@ -12,6 +12,7 @@ The engine adds a zero-budget local retrieval path inside the existing MARAS app
 6. The local index stores chunks, term-frequency data, entities and edges in SQLite under `STORAGE_ROOT/indexes/regulatory_rag.sqlite3`. The index is derived data; MARAS PostgreSQL/SQLite business records remain authoritative.
 7. Queries use BM25 ranking and bounded graph expansion. Results are filtered against the current document version and SHA-256 before they are returned.
 8. The orchestrator returns the query plan, execution trace and evidence passages.
+9. An extractive synthesizer selects source sentences. A citation validator requires each displayed statement to be an exact normalized match within its cited excerpt. If no sentence passes, the engine abstains.
 
 ## Zero-budget runtime
 
@@ -46,7 +47,7 @@ Then configure server-side GCP project, location, Firestore database, Vertex emb
 - The current MARAS extractor supports PDF, DOCX and TXT. OCR, scanned-PDF processing, tables, figures, PPTX, XLSX, EPUB and audio/video extraction are not yet implemented.
 - Graph edges are deterministic co-mentions, not verified legal relationships. They must not be represented as authoritative regulatory logic.
 - Indexing is synchronous. It is suitable for small pilot corpora, not large-scale production ingestion.
-- The current engine returns evidence, not generated regulatory advice. Claim-to-evidence validation, source-authority checks, contradiction handling and abstention are still required.
+- The current engine returns verbatim extractive evidence statements, not generated regulatory advice. Claim-to-excerpt validation and abstention are implemented. Source-authority checks, contradiction handling and any interpretation layer are still required.
 - Current access reuses MARAS requirements-mapping reader/writer credentials. Tenant-level and document-level authorization must be added before external multi-tenant use.
 - Ranking scores are retrieval signals, not regulatory confidence.
 
