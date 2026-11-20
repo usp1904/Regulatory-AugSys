@@ -190,7 +190,7 @@ class LocalIndexStore:
                 JOIN rag_chunks c ON c.chunk_id = r.chunk_id
                 WHERE c.document_id = ?
                 ORDER BY e.entity_type, e.label
-                LIMIT 500
+                LIMIT 60
                 """,
                 (document_id,),
             ).fetchall()
@@ -203,7 +203,7 @@ class LocalIndexStore:
                 JOIN rag_chunks c ON c.chunk_id = r.chunk_id
                 WHERE c.document_id = ?
                 ORDER BY c.ordinal
-                LIMIT 2000
+                LIMIT 180
                 """,
                 (document_id,),
             ).fetchall()
