@@ -1,4 +1,4 @@
-"""Contracts for the MARAS Regulatory Intelligence retrieval slice."""
+"""Contracts for the MARAS Regulatory Intelligence engine."""
 
 from pydantic import BaseModel, Field
 
@@ -25,3 +25,19 @@ class RegulatoryRetrievalResponse(BaseModel):
     query: str
     results: list[RegulatoryEvidenceItem]
     message: str
+
+
+class RegulatoryIndexRequest(BaseModel):
+    document_id: int = Field(gt=0)
+
+
+class RegulatoryIndexResponse(BaseModel):
+    document_id: int
+    document_version: int
+    file_hash: str
+    chunk_count: int
+    entity_count: int
+    edge_count: int
+    vector_count: int
+    graph_persisted: bool
+    provider_status: str
