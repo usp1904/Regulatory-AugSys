@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
   { href: "/", label: "Dashboard" },
+  { href: "/regulatory-intelligence", label: "Regulatory Intelligence" },
   { href: "/ctd", label: "CTD Engine" },
   { href: "/clarifications", label: "Clarifications" },
   { href: "/obligations", label: "Obligation Extraction" },
