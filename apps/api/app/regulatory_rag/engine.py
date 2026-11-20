@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 from typing import Any
@@ -110,29 +111,43 @@ def retrieve_hybrid(
     if document_ids:
         statement = statement.where(Document.id.in_(document_ids))
     documents = db.scalars(statement).all()
-    candidates: dict[str, dict[str, Any]] = {}
-    local_chunks: list[RegulatoryChunk] = []
     current_versions = {
         document.id: (document.version, document.file_hash) for document in documents
     }
+    local_store = _local_store()
+    indexed = local_store.list_chunks(current_versions)
+    indexed_document_ids = {item["document_id"] for item in indexed}
+
+    candidates: dict[str, dict[str, Any]] = {}
+    local_chunks: list[RegulatoryChunk] = []
+    for item in indexed:
+        item["term_vector"] = json.loads(item.pop("term_vector") or "{}")
+        item.update({"lexical_score": 0.0, "vector_score": 0.0, "graph_score": 0.0})
+        candidates[item["chunk_id"]] = item
+
+    # Preserve immediate usability for documents that have not yet been indexed.
     for document in documents:
+        if document.id in indexed_document_ids:
+            continue
         for chunk in build_document_chunks(document):
             local_chunks.append(chunk)
-            score = _lexical_score(query, chunk.text)
-            if score:
-                item = _chunk_dict(chunk)
-                item.update(
-                    {"lexical_score": score, "vector_score": 0.0, "graph_score": 0.0}
-                )
-                candidates[chunk.chunk_id] = item
+            item = _chunk_dict(chunk)
+            item["term_vector"] = term_frequencies(chunk.text)
+            item.update({"lexical_score": 0.0, "vector_score": 0.0, "graph_score": 0.0})
+            candidates[chunk.chunk_id] = item
+
+    candidate_list = list(candidates.values())
+    bm25 = bm25_scores(query, candidate_list)
+    for chunk_id, score in bm25.items():
+        candidates[chunk_id]["lexical_score"] = score
 
     settings = get_settings()
-    retrieval_mode = "LEXICAL_FALLBACK"
+    retrieval_mode = "LOCAL_SQLITE_BM25_GRAPH" if indexed else "BM25_LIVE_FALLBACK"
     if settings.rag_enabled:
         embedder = VertexEmbeddingProvider()
-        store = FirestoreIndexStore()
+        cloud_store = FirestoreIndexStore()
         vector = embedder.embed(query)
-        for item in store.vector_search(vector, max(top_k * 4, 20)):
+        for item in cloud_store.vector_search(vector, max(top_k * 4, 20)):
             source_version = current_versions.get(item.get("document_id"))
             if source_version != (
                 item.get("document_version"), item.get("file_hash")
@@ -140,56 +155,72 @@ def retrieve_hybrid(
                 continue
             distance = float(item.get("vector_distance", 1.0))
             item["vector_score"] = max(0.0, min(1.0, 1.0 - distance))
-            item["lexical_score"] = _lexical_score(query, item.get("text", ""))
+            item["lexical_score"] = bm25.get(item["chunk_id"], 0.0)
             item["graph_score"] = 0.0
             candidates[item["chunk_id"]] = item
-        retrieval_mode = "HYBRID_VERTEX_FIRESTORE"
+        retrieval_mode = "LOCAL_SQLITE_PLUS_VERTEX_FIRESTORE"
 
-    # Reciprocal-rank fusion combines lexical and semantic candidate rankings.
-    lexical_rank = sorted(
-        candidates.values(), key=lambda item: item.get("lexical_score", 0), reverse=True
-    )
-    vector_rank = sorted(
-        candidates.values(), key=lambda item: item.get("vector_score", 0), reverse=True
-    )
-    rrf: dict[str, float] = {}
-    for ranking in (lexical_rank, vector_rank):
-        for rank, item in enumerate(ranking, start=1):
-            rrf[item["chunk_id"]] = rrf.get(item["chunk_id"], 0.0) + 1.0 / (60 + rank)
-
-    # Graph facts are extracted from the same controlled source chunks. When the
-    # cloud index is active, persistent graph edges are also consulted.
-    entities, edges = extract_graph_facts(local_chunks)
+    # Use the indexed graph when available. Unindexed documents get transparent
+    # in-memory candidate facts until the user runs the explicit index operation.
+    entities, live_edges = extract_graph_facts(local_chunks)
     query_terms = set(_terms(query))
     matched_entity_ids = [
         entity.entity_id
         for entity in entities
         if set(_terms(entity.label)) & query_terms
     ]
+    candidate_chunk_ids = list(candidates)
+    persisted_edges = local_store.list_edges(matched_entity_ids, candidate_chunk_ids)
     related_chunk_ids = {
+        edge["chunk_id"] for edge in persisted_edges
+    } | {
         edge.chunk_id
-        for edge in edges
+        for edge in live_edges
         if edge.source_id in matched_entity_ids or edge.target_id in matched_entity_ids
     }
-    persistent_graph_used = False
+    persistent_graph_used = bool(persisted_edges)
     if settings.rag_enabled and matched_entity_ids:
-        persistent_edges = store.get_related_edges(matched_entity_ids, limit=100)
-        related_chunk_ids.update(edge["chunk_id"] for edge in persistent_edges)
-        persistent_graph_used = bool(persistent_edges)
+        persistent_edges = cloud_store.get_related_edges(matched_entity_ids, limit=100)
+        related_chunk_ids.update(
+            edge["chunk_id"] for edge in persistent_edges
+            if edge["chunk_id"] in candidates
+        )
+        persistent_graph_used = persistent_graph_used or bool(persistent_edges)
+
+    # Reciprocal-rank fusion combines BM25, optional vector and graph candidates.
+    bm25_rank = sorted(
+        candidates.values(),
+        key=lambda item: item.get("lexical_score", 0.0),
+        reverse=True,
+    )
+    vector_rank = sorted(
+        candidates.values(),
+        key=lambda item: item.get("vector_score", 0.0),
+        reverse=True,
+    )
+    rrf: dict[str, float] = {}
+    for ranking in (bm25_rank, vector_rank):
+        for rank, item in enumerate(ranking, start=1):
+            if item.get("lexical_score", 0.0) or item.get("vector_score", 0.0):
+                rrf[item["chunk_id"]] = rrf.get(item["chunk_id"], 0.0) + 1.0 / (60 + rank)
+
     for chunk_id in related_chunk_ids:
         if chunk_id in candidates:
             candidates[chunk_id]["graph_score"] = 1.0
             rrf[chunk_id] = rrf.get(chunk_id, 0.0) + 1.0 / 61
+
     if persistent_graph_used:
         retrieval_mode += "_WITH_PERSISTENT_GRAPH"
     elif related_chunk_ids:
         retrieval_mode += "_WITH_LOCAL_GRAPH_EXPANSION"
 
     ranked = sorted(
-        candidates.values(), key=lambda item: rrf.get(item["chunk_id"], 0), reverse=True
+        candidates.values(), key=lambda item: rrf.get(item["chunk_id"], 0.0), reverse=True
     )
     results = []
     for item in ranked[:top_k]:
+        if not rrf.get(item["chunk_id"]):
+            continue
         results.append(
             {
                 "document_id": item["document_id"],
@@ -216,9 +247,10 @@ def retrieve_hybrid(
         "retrieval_mode": retrieval_mode,
         "results": results,
         "message": (
-            "Evidence passages retrieved. Scores rank retrieval candidates; "
-            "they are not regulatory confidence."
+            "Evidence passages retrieved. BM25/vector/graph scores are ranking signals, "
+            "not regulatory confidence."
             if results
             else "No evidence passages matched the query in the selected document scope."
         ),
     }
+
