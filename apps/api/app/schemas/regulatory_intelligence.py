@@ -15,6 +15,7 @@ class RegulatoryEvidenceItem(BaseModel):
     document_version: int
     file_hash: str
     chunk_id: str
+    source_status: str
     location_type: str
     location: str
     excerpt: str
