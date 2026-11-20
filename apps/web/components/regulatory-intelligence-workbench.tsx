@@ -27,6 +27,21 @@ type RetrievalResponse = {
   plan?: { intent: string; strategy: string[]; clause_reference?: string | null; max_graph_hops: number; rationale: string };
   trace?: { stage: string; status: string }[];
   generation_status?: string;
+  answer_mode?: string;
+  answer_text?: string;
+  validation_status?: string;
+  disclaimer?: string;
+  claims?: {
+    text: string;
+    citations: {
+      document_id: number;
+      filename: string;
+      document_version: number;
+      file_hash: string;
+      location: string;
+      chunk_id: string;
+    }[];
+  }[];
 };
 type IndexResponse = {
   document_id: number;
@@ -203,6 +218,30 @@ export function RegulatoryIntelligenceWorkbench() {
             <h2 className="text-lg font-semibold">Evidence results</h2>
             <p className="text-sm text-muted-foreground">{result.message}</p>
           </div>
+          {result.answer_text ? (
+            <div className="rounded-lg border bg-card p-4 text-sm">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="font-semibold">Evidence-only synthesis</p>
+                <span className="rounded-full border px-2 py-1 text-xs">{result.validation_status}</span>
+              </div>
+              <p className="mt-2 leading-relaxed">{result.answer_text}</p>
+              {result.claims?.length ? (
+                <ol className="mt-3 list-decimal space-y-3 pl-5">
+                  {result.claims.map((claim, index) => (
+                    <li key={`${index}-${claim.citations[0]?.chunk_id ?? "claim"}`}>
+                      <p>{claim.text}</p>
+                      {claim.citations.map((citation) => (
+                        <p key={citation.chunk_id} className="mt-1 text-xs text-muted-foreground">
+                          Source: {citation.filename} · v{citation.document_version} · {citation.location} · Document #{citation.document_id}
+                        </p>
+                      ))}
+                    </li>
+                  ))}
+                </ol>
+              ) : null}
+              <p className="mt-3 border-t pt-2 text-xs text-muted-foreground">{result.disclaimer}</p>
+            </div>
+          ) : null}
           {result.plan ? (
             <div className="rounded-lg border bg-card p-4 text-sm">
               <p className="font-semibold">Query plan · {result.plan.intent}</p>
