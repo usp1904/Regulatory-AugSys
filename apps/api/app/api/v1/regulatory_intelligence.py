@@ -16,6 +16,7 @@ from app.services.regulatory_intelligence import (
     execute_regulatory_intelligence_query,
     index_regulatory_document,
     list_indexable_documents,
+    get_regulatory_candidate_graph,
     retrieve_regulatory_evidence,
 )
 
@@ -42,6 +43,25 @@ def index_document(
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+@router.get("/graph/{document_id}")
+def get_candidate_graph(
+    document_id: int,
+    _access: str = Depends(require_mapping_reader),
+) -> dict:
+    """Return bounded, provenance-linked candidate graph data for an indexed document."""
+    from app.regulatory_rag.engine import _local_store
+
+    graph = get_regulatory_candidate_graph(document_id)
+    stats = _local_store().stats(document_id)
+    if stats["chunk_count"] == 0:
+        raise HTTPException(status_code=404, detail="Document has not been indexed in the local RAG engine.")
+    return {
+        "document_id": document_id,
+        "graph_semantics": "CANDIDATE_CO_MENTION_NOT_VALIDATED_REGULATORY_RELATIONSHIP",
+        **graph,
+    }
 
 
 @router.post("/retrieve", response_model=RegulatoryRetrievalResponse)
