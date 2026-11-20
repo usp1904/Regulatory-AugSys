@@ -190,8 +190,6 @@ The deliverable remains a static single-file application. Replace the existing G
 
 The Regulatory Intelligence workspace reuses existing MARAS-controlled document records. It adds stable chunking, source-linked candidate graph facts, query planning and hybrid retrieval. Cloud vector/graph persistence is optional.
 
-Install optional cloud dependencies from `apps/api` with `pip install -e ".[dev,rag]"`.
+Run the existing API setup with `pip install -e ".[dev]"`. The local path uses standard-library SQLite, BM25 ranking and a provenance-linked candidate graph. No cloud credentials or paid APIs are required. The derived index is stored under `STORAGE_ROOT/indexes/` and is excluded from Git.
 
-Configure `RAG_ENABLED`, `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_LOCATION`, Firestore database and Vertex embedding settings in the server environment. Use Application Default Credentials or workload identity. Create the Firestore vector index described in [`docs/regulatory-intelligence-engine.md`](docs/regulatory-intelligence-engine.md) before enabling cloud mode.
-
-With `RAG_ENABLED=false`, the engine uses lexical retrieval and local candidate graph expansion. It does not persist vectors or graph data. The current implementation returns evidence and an execution trace; it does not yet generate regulatory advice or replace SME review.
+Vertex AI and Firestore remain optional future adapters. The current engine returns evidence and an execution trace, not generated regulatory advice. See [`docs/regulatory-intelligence-engine.md`](docs/regulatory-intelligence-engine.md) for setup, limitations and next steps.
