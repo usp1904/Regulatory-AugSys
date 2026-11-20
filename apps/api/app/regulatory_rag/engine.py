@@ -23,18 +23,6 @@ def _terms(text: str) -> list[str]:
     return re.findall(r"[a-z0-9][a-z0-9._-]{1,}", text.casefold())
 
 
-def _lexical_score(query: str, text: str) -> float:
-    query_terms = set(_terms(query))
-    if not query_terms:
-        return 0.0
-    counts = Counter(_terms(text))
-    coverage = sum(bool(counts[term]) for term in query_terms) / len(query_terms)
-    frequency = sum(min(counts[term], 2) for term in query_terms) / (
-        2 * len(query_terms)
-    )
-    return round(0.85 * coverage + 0.15 * frequency, 4)
-
-
 def _chunk_dict(chunk: RegulatoryChunk) -> dict[str, Any]:
     return {
         "chunk_id": chunk.chunk_id,
@@ -124,6 +112,19 @@ def retrieve_hybrid(
         item["term_vector"] = json.loads(item.pop("term_vector") or "{}")
         item.update({"lexical_score": 0.0, "vector_score": 0.0, "graph_score": 0.0})
         candidates[item["chunk_id"]] = item
+        local_chunks.append(
+            RegulatoryChunk(
+                chunk_id=item["chunk_id"],
+                document_id=item["document_id"],
+                document_version=item["document_version"],
+                file_hash=item["file_hash"],
+                filename=item["filename"],
+                page_number=item["page_number"],
+                ordinal=item["ordinal"],
+                heading=item["heading"],
+                text=item["text"],
+            )
+        )
 
     # Preserve immediate usability for documents that have not yet been indexed.
     for document in documents:
