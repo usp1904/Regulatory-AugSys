@@ -70,9 +70,12 @@ class FirestoreIndexStore:
         self._prefix = settings.rag_collection_prefix
 
     def upsert_chunk(self, chunk: dict[str, Any]) -> None:
+        record = dict(chunk)
+        if "embedding" in record:
+            record["embedding"] = self._firestore_module.Vector(record["embedding"])
         self._db.collection(f"{self._prefix}_chunks").document(
             chunk["chunk_id"]
-        ).set(chunk)
+        ).set(record)
 
     def upsert_entity(self, entity: dict[str, Any]) -> None:
         self._db.collection(f"{self._prefix}_entities").document(
