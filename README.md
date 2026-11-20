@@ -26,6 +26,7 @@ docker compose up --build
 | Web CTD/eCTD Engine | http://localhost:3000/ctd |
 | Requirements Mapping Workbench | http://localhost:3000/requirements-mappings |
 | Regulatory Intelligence | http://localhost:3000/regulatory-intelligence |
+| Graph Exploration | http://localhost:3000/graph |
 | Clarification Queue | http://localhost:3000/clarifications |
 | Obligation Extraction | http://localhost:3000/obligations |
 | API (FastAPI `/health`) | http://localhost:8000/health |
