@@ -869,3 +869,23 @@ Before starting new work:
 - Do not label extractive retrieval as LLM-grounded generation.
 - Do not label local SQLite or optional cloud adapters as production infrastructure without operational verification.
 - Do not call the product production-live before the deployment checklist is complete.
+
+
+## Stage 2 merge reconciliation — 2026-11-20
+
+- [x] PR #49 merged to `main` after both latest PR CI runs passed.
+- PR: https://github.com/usp1904/Regulatory-AugSys/pull/49
+- PR head SHA verified before merge: `029874edc62046987c5d39c759988fccbe8cf3fd`.
+- Merge commit / new main SHA: `47f40d62b7595bb3c472efc7716a266a1387b11b`.
+- PR CI run `44761537253` for the final PR head: completed successfully.
+- PR CI run `44761454656` for the lint-fix commit: completed successfully.
+- Earlier CI run `44760117497` failed on Ruff E501 and was superseded by the successful runs above.
+- [ ] Verify a new CI run triggered for the merge commit on `main`; no run associated with the merge SHA was visible at reconciliation time.
+- [ ] Verify OCR success against a real scanned regulatory PDF in a runtime with Tesseract and language data installed.
+- [ ] Continue with mixed-page embedded-image OCR, figure/chart/diagram extraction and layout/provenance validation.
+
+**Current stage:** PR #49 merged; main-branch integration validation pending.  
+**Current branch:** `main`  
+**Current PR:** https://github.com/usp1904/Regulatory-AugSys/pull/49 (merged)  
+**Next action:** Verify main CI and application behaviour on the merged code, then test OCR runtime with a scanned PDF.  
+**Main branch SHA:** `47f40d62b7595bb3c472efc7716a266a1387b11b`
