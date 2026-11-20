@@ -41,3 +41,15 @@ class RegulatoryIndexResponse(BaseModel):
     vector_count: int
     graph_persisted: bool
     provider_status: str
+
+
+
+class RegulatoryQueryResponse(BaseModel):
+    status: str
+    query: str
+    retrieval_mode: str
+    results: list[RegulatoryEvidenceItem]
+    message: str
+    plan: dict
+    trace: list[dict]
+    generation_status: str
