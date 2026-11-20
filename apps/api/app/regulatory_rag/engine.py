@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.models.document import Document
+from app.models.regulatory_truth import RegulatorySourceRecord
 from app.regulatory_rag.chunking import RegulatoryChunk, build_document_chunks
 from app.regulatory_rag.graph import extract_graph_facts
 from app.regulatory_rag.index_store import LocalIndexStore
@@ -218,10 +219,23 @@ def retrieve_hybrid(
     ranked = sorted(
         candidates.values(), key=lambda item: rrf.get(item["chunk_id"], 0.0), reverse=True
     )
+    source_records = db.scalars(
+        select(RegulatorySourceRecord).where(
+            RegulatorySourceRecord.document_id.in_(list(current_versions))
+        )
+    ).all() if current_versions else []
+    source_by_document = {item.document_id: item for item in source_records}
     results = []
     for item in ranked[:top_k]:
         if not rrf.get(item["chunk_id"]):
             continue
+        source_record = source_by_document.get(item["document_id"])
+        if source_record is None:
+            source_status = "UNREGISTERED"
+        elif source_record.content_hash != item["file_hash"]:
+            source_status = "STALE"
+        else:
+            source_status = source_record.source_status
         results.append(
             {
                 "document_id": item["document_id"],
@@ -235,6 +249,7 @@ def retrieve_hybrid(
                     else f"chunk:{item['ordinal']}"
                 ),
                 "chunk_id": item["chunk_id"],
+                "source_status": source_status,
                 "excerpt": item["text"][:1200],
                 "lexical_score": item.get("lexical_score", 0.0),
                 "vector_score": item.get("vector_score", 0.0),
