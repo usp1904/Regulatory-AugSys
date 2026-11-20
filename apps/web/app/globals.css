@@ -178,3 +178,25 @@
   .maras-page-heading { padding:18px; }
   .maras-global-footer { flex-direction:column; }
 }
+
+.ri-graph-stats { display:flex;gap:10px;flex-wrap:wrap;margin:17px 0; }
+.ri-graph-stats span { padding:9px 13px;border:1px solid rgba(145,163,194,.22);border-radius:11px;background:rgba(255,255,255,.66);color:#7888a1;font-size:10px; }
+.ri-graph-stats b { color:#405d8b;font-size:15px;margin-right:4px; }
+.ri-graph-canvas { overflow:auto;margin:12px 0;border:1px solid rgba(255,255,255,.9);border-radius:18px;background:radial-gradient(ellipse at center,rgba(227,237,255,.8),rgba(245,248,254,.72) 68%);box-shadow:inset 4px 4px 12px rgba(40,57,89,.04),inset -3px -3px 10px white; }
+.ri-graph-canvas svg { display:block;width:100%;min-width:520px;height:auto;max-height:620px; }
+.ri-graph-edge { stroke:#aabbd8;stroke-width:1.25;stroke-opacity:.58; }
+.ri-graph-edge.active { stroke:#5579bd;stroke-width:2.6;stroke-opacity:.95; }
+.ri-graph-node { cursor:pointer;outline:none; }
+.ri-graph-node-circle { fill:url(#none);fill:#eaf0fc;stroke:#9aafd5;stroke-width:1.6;filter:drop-shadow(3px 4px 4px rgba(46,67,105,.15)); }
+.ri-graph-node-circle.active { fill:#dbe7ff;stroke:#496da9;stroke-width:2.5; }
+.ri-graph-label { fill:#3d5274;font-size:10px;font-weight:700; }
+.ri-graph-type { fill:#8b9bb4;font-size:7px;font-weight:800;letter-spacing:1px; }
+.ri-graph-center { fill:#2e4779;stroke:#91a8d6;stroke-width:3;filter:drop-shadow(0 4px 9px rgba(41,63,108,.25)); }
+.ri-graph-center-label { fill:white;font-size:13px;font-weight:800;letter-spacing:1px; }
+.ri-graph-center-sub { fill:#c9d8f5;font-size:7px;font-weight:800;letter-spacing:2px; }
+.ri-graph-node:focus .ri-graph-node-circle { stroke:#345a9e;stroke-width:3.5; }
+.ri-graph-detail { margin-top:18px;padding:17px;border:1px solid rgba(145,163,194,.22);border-radius:16px;background:rgba(242,246,253,.68); }
+.ri-graph-detail h3 { margin-top:4px;color:#2e4569;font-size:15px;font-weight:750; }
+.ri-graph-evidence { margin-top:11px;padding:13px;border:1px solid rgba(255,255,255,.9);border-radius:12px;background:rgba(255,255,255,.7); }
+.ri-graph-evidence b { color:#455d80;font-size:10px; }.ri-graph-evidence b span { color:#8ea2c5; }.ri-graph-evidence p { margin-top:8px;color:#5b6e8b;font-size:11px;line-height:1.7; }.ri-graph-evidence small { display:block;margin-top:8px;color:#8c9ab0;font-size:9px; }
+.ri-graph-warning { display:flex;gap:10px;margin-top:14px;padding:13px;border:1px solid rgba(204,154,68,.2);border-radius:13px;background:rgba(255,248,231,.7);color:#8a7046;font-size:10px;line-height:1.65; }.ri-graph-warning svg { flex:none;margin-top:1px; }
