@@ -7,9 +7,9 @@ import hashlib
 from app.models.document import Document, DocumentPage
 from app.regulatory_rag.chunking import build_document_chunks
 from app.regulatory_rag.engine import index_document, retrieve_hybrid
+from app.regulatory_rag.graph import extract_graph_facts
 from app.regulatory_rag.index_store import LocalIndexStore
 from app.regulatory_rag.sparse import bm25_scores, term_frequencies
-from app.regulatory_rag.graph import extract_graph_facts
 from app.schemas.regulatory_intelligence import RegulatoryRetrievalRequest
 from app.services.regulatory_intelligence import retrieve_regulatory_evidence
 
