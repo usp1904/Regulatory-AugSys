@@ -3,6 +3,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from app.models.document import Document
+
 from app.api.v1.requirements_mapping import require_mapping_reader, require_mapping_writer
 from app.core.database import get_db
 from app.schemas.regulatory_intelligence import (
@@ -48,22 +50,35 @@ def index_document(
 @router.get("/graph/{document_id}")
 def get_candidate_graph(
     document_id: int,
+    db: Session = Depends(get_db),
     _access: str = Depends(require_mapping_reader),
 ) -> dict:
-    """Return bounded, provenance-linked candidate graph data for an indexed document."""
-    from app.regulatory_rag.engine import _local_store
-
+    """Return only graph edges matching the current document version and hash."""
+    document = db.get(Document, document_id)
+    if document is None or document.parse_status != "EXTRACTED":
+        raise HTTPException(status_code=404, detail="Extracted source document not found.")
     graph = get_regulatory_candidate_graph(document_id)
-    stats = _local_store().stats(document_id)
-    if stats["chunk_count"] == 0:
+    current_edges = [
+        edge for edge in graph["edges"]
+        if edge["document_version"] == document.version
+        and edge["file_hash"] == document.file_hash
+    ]
+    if not current_edges:
         raise HTTPException(
             status_code=404,
-            detail="Document has not been indexed in the local RAG engine.",
+            detail="No current graph index found. Re-index this document in Regulatory Intelligence.",
         )
+    entity_ids = {
+        edge["source_id"] for edge in current_edges
+    } | {edge["target_id"] for edge in current_edges}
     return {
         "document_id": document_id,
         "graph_semantics": "CANDIDATE_CO_MENTION_NOT_VALIDATED_REGULATORY_RELATIONSHIP",
-        **graph,
+        "entities": [
+            entity for entity in graph["entities"]
+            if entity["entity_id"] in entity_ids
+        ],
+        "edges": current_edges,
     }
 
 
