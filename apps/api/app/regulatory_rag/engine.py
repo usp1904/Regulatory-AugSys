@@ -101,6 +101,9 @@ def retrieve_hybrid(
     documents = db.scalars(statement).all()
     candidates: dict[str, dict[str, Any]] = {}
     local_chunks: list[RegulatoryChunk] = []
+    current_versions = {
+        document.id: (document.version, document.file_hash) for document in documents
+    }
     for document in documents:
         for chunk in build_document_chunks(document):
             local_chunks.append(chunk)
@@ -119,7 +122,10 @@ def retrieve_hybrid(
         store = FirestoreIndexStore()
         vector = embedder.embed(query)
         for item in store.vector_search(vector, max(top_k * 4, 20)):
-            if document_ids and item.get("document_id") not in document_ids:
+            source_version = current_versions.get(item.get("document_id"))
+            if source_version != (
+                item.get("document_version"), item.get("file_hash")
+            ):
                 continue
             distance = float(item.get("vector_distance", 1.0))
             item["vector_score"] = max(0.0, min(1.0, 1.0 - distance))
@@ -140,7 +146,8 @@ def retrieve_hybrid(
         for rank, item in enumerate(ranking, start=1):
             rrf[item["chunk_id"]] = rrf.get(item["chunk_id"], 0.0) + 1.0 / (60 + rank)
 
-    # Graph facts are extracted from the same controlled source chunks.
+    # Graph facts are extracted from the same controlled source chunks. When the
+    # cloud index is active, persistent graph edges are also consulted.
     entities, edges = extract_graph_facts(local_chunks)
     query_terms = set(_terms(query))
     matched_entity_ids = [
@@ -153,6 +160,9 @@ def retrieve_hybrid(
         for edge in edges
         if edge.source_id in matched_entity_ids or edge.target_id in matched_entity_ids
     }
+    if settings.rag_enabled and matched_entity_ids:
+        persistent_edges = store.get_related_edges(matched_entity_ids, limit=100)
+        related_chunk_ids.update(edge["chunk_id"] for edge in persistent_edges)
     for chunk_id in related_chunk_ids:
         if chunk_id in candidates:
             candidates[chunk_id]["graph_score"] = 1.0
