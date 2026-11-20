@@ -6,7 +6,9 @@ import hashlib
 
 from app.models.document import Document, DocumentPage
 from app.regulatory_rag.chunking import build_document_chunks
-from app.regulatory_rag.engine import retrieve_hybrid
+from app.regulatory_rag.engine import index_document, retrieve_hybrid
+from app.regulatory_rag.index_store import LocalIndexStore
+from app.regulatory_rag.sparse import bm25_scores, term_frequencies
 from app.regulatory_rag.graph import extract_graph_facts
 from app.schemas.regulatory_intelligence import RegulatoryRetrievalRequest
 from app.services.regulatory_intelligence import retrieve_regulatory_evidence
@@ -122,3 +124,65 @@ def test_hybrid_retrieval_reports_lexical_mode_without_cloud_credentials(db_sess
     assert result["status"] == "OK"
     assert result["retrieval_mode"].startswith("LEXICAL_FALLBACK")
     assert result["results"][0]["file_hash"]
+
+
+
+def test_local_index_persists_and_retrieves_without_cloud(
+    db_session, tmp_path, monkeypatch
+) -> None:
+    import app.regulatory_rag.engine as engine
+
+    source = _add_document(
+        db_session,
+        "21 CFR Part 11 requires audit trail controls and electronic signatures.",
+    )
+    local_store = LocalIndexStore(tmp_path / "regulatory-index.sqlite3")
+    monkeypatch.setattr(engine, "_local_store", lambda: local_store)
+
+    indexed = index_document(db_session, source.id)
+    assert indexed["provider_status"] == "LOCAL_SQLITE_BM25_GRAPH"
+    assert indexed["graph_persisted"] is True
+    assert indexed["vector_count"] == 0
+    assert local_store.stats(source.id)["chunk_count"] > 0
+
+    result = retrieve_hybrid(db_session, "21 CFR Part 11 audit trail", [source.id], 5)
+    assert result["status"] == "OK"
+    assert result["retrieval_mode"].startswith("LOCAL_SQLITE_BM25_GRAPH")
+    assert result["results"][0]["document_id"] == source.id
+
+
+def test_local_index_ignores_stale_document_versions(
+    db_session, tmp_path, monkeypatch
+) -> None:
+    import app.regulatory_rag.engine as engine
+
+    source = _add_document(db_session, "Audit trail controls are required.")
+    local_store = LocalIndexStore(tmp_path / "regulatory-index.sqlite3")
+    monkeypatch.setattr(engine, "_local_store", lambda: local_store)
+    index_document(db_session, source.id)
+
+    source.version = 3
+    source.file_hash = hashlib.sha256(b"new version").hexdigest()
+    db_session.commit()
+
+    result = retrieve_hybrid(db_session, "audit trail controls", [source.id], 5)
+    assert result["status"] == "OK"
+    assert result["retrieval_mode"].startswith("BM25_LIVE_FALLBACK")
+    assert all(item["document_version"] == 3 for item in result["results"])
+
+
+def test_bm25_prefers_chunks_with_more_relevant_terms() -> None:
+    documents = [
+        {
+            "chunk_id": "relevant",
+            "text": "audit trail controls audit trail controls",
+            "term_vector": term_frequencies("audit trail controls audit trail controls"),
+        },
+        {
+            "chunk_id": "weak",
+            "text": "general quality documentation",
+            "term_vector": term_frequencies("general quality documentation"),
+        },
+    ]
+    scores = bm25_scores("audit trail controls", documents)
+    assert scores["relevant"] > scores["weak"]
