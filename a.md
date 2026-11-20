@@ -5,7 +5,7 @@
 **Baseline:** `main`  
 **Plan owner:** Product / Engineering  
 **Last updated:** 2026-11-20  
-**Status:** Phase 1 code committed to feature branch; PR #46 open as draft; CI validation running. This is not yet a production Graph RAG deployment.
+**Status:** RAG engine implementation added to feature branch; PR #46 remains draft. CI rerun required after latest changes. Cloud provider integration is optional and requires project credentials/index setup. This is not yet a production Agentic Graph RAG deployment.
 
 **Working branch:** `feature/maras-agentic-graph-rag`  
 **Pull request:** https://github.com/usp1904/Regulatory-AugSys/pull/46  
@@ -154,6 +154,22 @@ No provider key, project ID, Firebase database, production tenant model or deplo
 - [ ] Demo with a representative approved regulatory source.
 
 **Scope warning:** This first slice is lexical evidence retrieval, not embeddings, graph traversal, agentic reasoning or generated regulatory advice. It is a safe foundation and UI/API integration check.
+
+
+### Phase 1.5 — Modular intelligent retrieval engine (implemented; verification pending)
+- [x] Add stable source-addressable chunks over existing MARAS Document/Page/Paragraph records.
+- [x] Add transparent candidate entity extraction for regulatory references, controls and processes.
+- [x] Add provenance-linked co-mention graph edges referencing source chunk IDs.
+- [x] Add hybrid retrieval service with lexical ranking, optional Vertex AI embeddings and reciprocal-rank fusion.
+- [x] Add optional Firestore vector, entity and edge persistence adapters.
+- [x] Add document listing and explicit index operation endpoints.
+- [x] Add document selection and indexing controls to Regulatory Intelligence workspace.
+- [x] Enforce current document version and SHA-256 when filtering persistent vector results.
+- [ ] Configure GCP project, Vertex AI access, Firestore database and vector index.
+- [ ] Run CI and backend/frontend regression suites after latest commit.
+- [ ] Validate retrieval against SME-labelled regulatory question set.
+
+**Current limitation:** With `RAG_ENABLED=false` (default), the service runs source-grounded lexical retrieval plus per-query candidate graph expansion from MARAS text. It does not persist a graph or vectors. With `RAG_ENABLED=true`, the optional Vertex AI + Firestore adapters embed and persist chunks/entities/edges and query Firestore vector search. Firestore vector index creation, credentials, billing, IAM, regional/data-residency approval and integration tests remain deployment prerequisites. Graph extraction currently emits deterministic co-mention candidate edges, not validated legal relationships. Do not present these edges as authoritative regulatory logic.
 
 ### Phase 2 — Index lifecycle and structured extraction
 - [ ] Add index job and index manifest models/migrations.
@@ -309,11 +325,11 @@ A code scaffold is not a completed integration. A passing unit test is not produ
 | Regulatory Intelligence UI | Implemented in branch | `apps/web/app/regulatory-intelligence/page.tsx`; CI pending |
 | Source-grounded retrieval API | Implemented in branch | `POST /api/v1/regulatory-intelligence/retrieve`; CI pending |
 | Automated tests | Added; CI running | PR #46 GitHub Actions run; record final outcome after completion |
-| Persistent indexing | Not started | Phase 2 |
+| Chunking and index operation | Implemented, CI pending | `apps/api/app/regulatory_rag/chunking.py`; manual index endpoint |
 | Multimodal parsing/OCR | Not started | Phase 2 |
-| Persistent knowledge graph | Not started | Phase 3 |
-| Vector embeddings | Not started | Phase 4 |
-| Agent orchestration | Not started | Phase 5 |
+| Graph extraction and Firestore persistence adapter | Implemented, cloud unconfigured | Candidate co-mention edges; requires GCP |
+| Vertex embeddings and Firestore vector adapter | Implemented, cloud unconfigured | Optional `rag` dependencies and GCP configuration required |
+| Agent orchestration | Not started | Intent planner and bounded agents remain Phase 5 |
 | Production security/observability | Not started | Phase 7 |
 | Deployment | Not started | Credentials and target environment required |
 
