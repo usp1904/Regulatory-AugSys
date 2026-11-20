@@ -5,7 +5,7 @@
 **Baseline:** `main`  
 **Plan owner:** Product / Engineering  
 **Last updated:** 2026-11-20  
-**Status:** Zero-budget local indexing and retrieval implementation added to feature branch; PR #46 remains draft. CI verification is running. Local SQLite + BM25 + provenance-linked graph does not require cloud credentials. This is not yet a production Agentic Graph RAG deployment.
+**Status:** Zero-budget local indexing, retrieval, extractive synthesis and MARAS source-authority gate are implemented on the feature branch. CI verification passed for code changes through commit `04c0a3fc`; the latest documentation commit `123f3374` is under CI. PR #46 remains draft. Local SQLite + BM25 + provenance-linked graph does not require cloud credentials. Local end-to-end UAT is outstanding.
 
 **Working branch:** `feature/maras-agentic-graph-rag`  
 **Pull request:** https://github.com/usp1904/Regulatory-AugSys/pull/46  
@@ -386,12 +386,12 @@ A code scaffold is not a completed integration. A passing unit test is not produ
 | Build plan | Complete | This file |
 | Regulatory Intelligence UI | Implemented in branch | `apps/web/app/regulatory-intelligence/page.tsx`; CI pending |
 | Source-grounded retrieval API | Implemented in branch | `POST /api/v1/regulatory-intelligence/retrieve`; CI pending |
-| Automated tests | Added; CI running | PR #46 GitHub Actions run; record final outcome after completion |
-| Chunking and persistent local index | Implemented, CI pending | SQLite sidecar, BM25 term index, source version/hash checks; manual index endpoint |
+| Automated tests | CI passed for code commits | GitHub Actions passed for `dfb9ce7e` and `04c0a3fc`; latest docs-only commit CI pending |
+| Chunking and persistent local index | Implemented; CI passed | SQLite sidecar, BM25 term index, source version/hash checks; manual index endpoint |
 | Multimodal parsing/OCR | Not started | Phase 2 |
-| Candidate graph extraction and local persistence | Implemented, CI pending | SQLite entity/edge tables; co-mention edges only |
+| Candidate graph extraction and local persistence | Implemented; CI passed | SQLite entity/edge tables; co-mention edges only |
 | Vertex embeddings and Firestore vector adapter | Optional only | Not required for zero-budget MVP; requires GCP if later enabled |
-| Query planner, retrieval orchestration and extractive evidence synthesis | Implemented, CI pending | `planner.py`, `orchestrator.py`, `synthesis.py`, `/query`; no LLM generation |
+| Query planner, retrieval orchestration and extractive evidence synthesis | Implemented; CI passed | `planner.py`, `orchestrator.py`, `synthesis.py`, `/query`; no LLM generation |
 | Production security/observability | Not started | Phase 7 |
 | Deployment | Not started | Credentials and target environment required |
 
