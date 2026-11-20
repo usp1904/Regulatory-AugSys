@@ -14,6 +14,7 @@ type Evidence = {
   filename: string;
   document_version: number;
   file_hash: string;
+  chunk_id: string;
   location_type: string;
   location: string;
   excerpt: string;
