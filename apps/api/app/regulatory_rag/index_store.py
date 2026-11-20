@@ -179,6 +179,36 @@ class LocalIndexStore:
         allowed_chunks = set(chunk_ids)
         return [dict(row) for row in rows if row["chunk_id"] in allowed_chunks]
 
+    def graph_for_document(self, document_id: int) -> dict[str, Any]:
+        """Return indexed candidate entities and evidence-linked edges for one document."""
+        with self._connection() as connection:
+            entities = connection.execute(
+                """
+                SELECT DISTINCT e.entity_id, e.label, e.entity_type
+                FROM rag_entities e
+                JOIN rag_edges r ON r.source_id = e.entity_id OR r.target_id = e.entity_id
+                JOIN rag_chunks c ON c.chunk_id = r.chunk_id
+                WHERE c.document_id = ?
+                ORDER BY e.entity_type, e.label
+                LIMIT 500
+                """,
+                (document_id,),
+            ).fetchall()
+            edges = connection.execute(
+                """
+                SELECT r.edge_id, r.source_id, r.target_id, r.relation, r.chunk_id,
+                       r.evidence, c.filename, c.document_version, c.file_hash,
+                       c.page_number, c.ordinal
+                FROM rag_edges r
+                JOIN rag_chunks c ON c.chunk_id = r.chunk_id
+                WHERE c.document_id = ?
+                ORDER BY c.ordinal
+                LIMIT 2000
+                """,
+                (document_id,),
+            ).fetchall()
+        return {"entities": [dict(row) for row in entities], "edges": [dict(row) for row in edges]}
+
     def stats(self, document_id: int) -> dict[str, int]:
         with self._connection() as connection:
             chunks = connection.execute(
