@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from collections import Counter
+from pathlib import Path
 from typing import Any
 
 from sqlalchemy import select
@@ -13,7 +13,9 @@ from app.core.config import get_settings
 from app.models.document import Document
 from app.regulatory_rag.chunking import RegulatoryChunk, build_document_chunks
 from app.regulatory_rag.graph import extract_graph_facts
+from app.regulatory_rag.index_store import LocalIndexStore
 from app.regulatory_rag.providers import FirestoreIndexStore, VertexEmbeddingProvider
+from app.regulatory_rag.sparse import bm25_scores, term_frequencies
 
 
 def _terms(text: str) -> list[str]:
@@ -46,6 +48,11 @@ def _chunk_dict(chunk: RegulatoryChunk) -> dict[str, Any]:
     }
 
 
+def _local_store() -> LocalIndexStore:
+    settings = get_settings()
+    return LocalIndexStore(Path(settings.storage_root) / "indexes" / "regulatory_rag.sqlite3")
+
+
 def index_document(db: Session, document_id: int) -> dict[str, Any]:
     document = db.get(Document, document_id)
     if document is None:
@@ -54,11 +61,17 @@ def index_document(db: Session, document_id: int) -> dict[str, Any]:
         raise ValueError("Document extraction must complete before RAG indexing")
     chunks = build_document_chunks(document)
     entities, edges = extract_graph_facts(chunks)
+    local_store = _local_store()
+    local_store.replace_document(
+        document.id,
+        chunks,
+        entities,
+        edges,
+        {chunk.chunk_id: term_frequencies(chunk.text) for chunk in chunks},
+    )
     settings = get_settings()
     indexed_vector_count = 0
-    indexed_graph = False
-    provider_status = "LOCAL_LEXICAL_ONLY"
-
+    provider_status = "LOCAL_SQLITE_BM25_GRAPH"
     if settings.rag_enabled:
         embeddings = VertexEmbeddingProvider()
         store = FirestoreIndexStore()
@@ -72,8 +85,7 @@ def index_document(db: Session, document_id: int) -> dict[str, Any]:
             store.upsert_entity(entity.__dict__)
         for edge in edges:
             store.upsert_edge(edge.__dict__)
-        indexed_graph = True
-        provider_status = "VERTEX_FIRESTORE"
+        provider_status = "LOCAL_SQLITE_PLUS_VERTEX_FIRESTORE"
 
     return {
         "document_id": document.id,
@@ -83,10 +95,9 @@ def index_document(db: Session, document_id: int) -> dict[str, Any]:
         "entity_count": len(entities),
         "edge_count": len(edges),
         "vector_count": indexed_vector_count,
-        "graph_persisted": indexed_graph,
+        "graph_persisted": True,
         "provider_status": provider_status,
     }
-
 
 def retrieve_hybrid(
     db: Session, query: str, document_ids: list[int] | None, top_k: int
