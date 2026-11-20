@@ -1,0 +1,45 @@
+import { NextRequest } from "next/server";
+
+export async function POST(request: NextRequest) {
+  const apiBase =
+    process.env.API_URL ??
+    process.env.NEXT_PUBLIC_API_URL ??
+    "http://localhost:8000";
+  const key =
+    process.env.MARAS_REQUIREMENTS_MAPPING_WRITE_KEY ??
+    process.env.MARAS_REQUIREMENTS_MAPPING_REVIEW_KEY;
+
+  if (!key) {
+    return Response.json(
+      { detail: "Configure a server-side MARAS reader key before using Regulatory Intelligence." },
+      { status: 503 },
+    );
+  }
+
+  try {
+    const upstream = await fetch(
+      new URL("/api/v1/regulatory-intelligence/retrieve", apiBase),
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${key}`,
+          "Content-Type": "application/json",
+        },
+        body: await request.text(),
+        cache: "no-store",
+      },
+    );
+    return new Response(await upstream.text(), {
+      status: upstream.status,
+      headers: {
+        "content-type": upstream.headers.get("content-type") ?? "application/json",
+        "cache-control": "no-store",
+      },
+    });
+  } catch {
+    return Response.json(
+      { detail: "Regulatory Intelligence API is unreachable. Check API_URL and service status." },
+      { status: 502 },
+    );
+  }
+}
