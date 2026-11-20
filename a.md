@@ -602,3 +602,22 @@ Bring the shared glassmorphism / modern neumorphism system beyond the Regulatory
 - Main branch has not been changed. PR #46 remains open pending CI and review.
 - Vercel account discovery found no Vercel project linked to this GitHub repository. The only linked project visible is for a different repository. No production deployment was created.
 - Production release remains blocked until a deployable host and durable storage/database for FastAPI, uploaded source documents and the local RAG index are configured. GitHub Pages is only the legacy static MVP and cannot host the full application stack.
+
+
+### Graph endpoint hardening
+- [x] Use the existing document-scoped graph endpoint `GET /api/v1/regulatory-intelligence/graph/{document_id}` rather than introducing a second graph API.
+- [x] Filter returned graph edges against the current MARAS document version and SHA-256 before exposing them.
+- [x] Keep graph reads behind the existing MARAS reader authorization dependency.
+- [x] Route the Next.js graph proxy through the server-side reader credential and validate the document ID.
+- [x] Graph Explorer now consumes the document-scoped response and renders source evidence for the selected node.
+
+### CI remediation
+- [x] Inspected failing GitHub Actions logs. Initial failure was Ruff import ordering plus line-length violations in the graph API/service additions.
+- [x] Removed the duplicate graph read service and corrected import ordering.
+- [x] Corrected the graph proxy's numeric document-ID validation regex.
+- [ ] Confirm the latest workflow for the final feature-branch HEAD is green before merge.
+
+### Hosting and production readiness
+- The Vercel account currently has no Regulatory-AugSys project linked. Only a separate Saavify project is linked.
+- Vercel can host the Next.js web application, but it does not solve the FastAPI + persistent PostgreSQL + durable uploaded-document storage requirement by itself.
+- Do not merge and call this production-live solely because the web bundle deploys. Production configuration must include a reachable FastAPI URL, persistent PostgreSQL, durable object/file storage, server-only reader/writer secrets, migrations and upload/index/retrieve/review/graph smoke tests.
