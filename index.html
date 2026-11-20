@@ -1268,7 +1268,7 @@ html.maras-internal-surface .maras-internal-only{display:revert!important}
     </div>
     <div class="metric-row" id="compare-metrics"></div>
   </div>
-  <div class="assurance-section maras-internal-only">
+  <div class="assurance-section">
     <div class="assurance-section-h">
       <div class="assurance-section-t">Cross-market matrix</div>
       <div class="assurance-section-s">Same topic · different markets · citations and deltas</div>
@@ -6964,7 +6964,7 @@ function renderCompareCell(c,row){
 }
 function renderCompareMatrix(rows){
   const markets=COMPARE_MARKETS.filter(m=>compareMarketSel.has(m.id));
-  let h='<div class="cmp-matrix-wrap maras-internal-only"><table class="cmp-matrix"><thead><tr><th class="topic-col">Topic</th>';
+  let h='<div class="cmp-matrix-wrap"><table class="cmp-matrix"><thead><tr><th class="topic-col">Topic</th>';
   markets.forEach(m=>h+=`<th>${escapeHtml(m.short)}</th>`);
   h+='<th>Differences</th></tr></thead><tbody>';
   rows.forEach(row=>{
