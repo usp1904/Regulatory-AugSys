@@ -117,8 +117,8 @@ export function RegulatoryIntelligenceWorkbench() {
           <h2 className="text-lg font-semibold">Regulatory knowledge engine</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Uses MARAS-controlled documents as its source of truth. Indexing builds stable source
-            chunks and candidate regulatory graph facts. Cloud vector persistence requires configured
-            Vertex AI and Firestore credentials.
+            chunks, BM25 search data and provenance-linked candidate graph facts in a local SQLite index.
+            No cloud account or paid API is required for the local retrieval path.
           </p>
         </div>
         <label className="block space-y-1.5">
@@ -154,10 +154,10 @@ export function RegulatoryIntelligenceWorkbench() {
             <p className="font-semibold">Index operation completed · {indexResult.provider_status}</p>
             <p className="mt-1 text-muted-foreground">
               {indexResult.chunk_count} chunks · {indexResult.entity_count} entities ·
-              {" "}{indexResult.edge_count} candidate edges · {indexResult.vector_count} vectors persisted
+              {" "}{indexResult.edge_count} candidate edges · {indexResult.vector_count} cloud vectors persisted
             </p>
             <p className="text-xs text-muted-foreground">
-              Persistent graph: {indexResult.graph_persisted ? "yes" : "no, local extraction only"}
+              Local graph index: {indexResult.graph_persisted ? "saved" : "not saved"}
             </p>
           </div>
         ) : null}
@@ -166,8 +166,8 @@ export function RegulatoryIntelligenceWorkbench() {
       <section className="rounded-xl border bg-card p-5 shadow-sm">
         <h2 className="text-lg font-semibold">Ask the regulatory knowledge base</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Hybrid retrieval combines lexical and semantic ranking when cloud providers are enabled.
-          Every result retains its source document, version, hash and location.
+          Local retrieval combines BM25 ranking with source-linked graph expansion. Optional cloud
+          embeddings can be added later. Every result retains source document, version, hash and location.
         </p>
         <form onSubmit={submit} className="mt-4 space-y-4">
           <label className="block space-y-1.5">
