@@ -65,7 +65,10 @@ def build_evidence_answer(query: str, results: list[dict[str, Any]]) -> dict[str
     answer_text = (
         " ".join(claim["text"] for claim in claims)
         if claims
-        else "No source sentence could be safely selected for this question. Review the retrieved evidence or broaden the document scope."
+        else (
+            "No source sentence could be safely selected for this question. "
+            "Review the retrieved evidence or broaden the document scope."
+        )
     )
     return {
         "answer_mode": "EXTRACTIVE_EVIDENCE_ONLY",
