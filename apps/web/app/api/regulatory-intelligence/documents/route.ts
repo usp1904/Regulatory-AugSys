@@ -8,7 +8,7 @@ export async function GET(_request: NextRequest) {
   }
   try {
     const upstream = await fetch(new URL("/api/v1/regulatory-intelligence/documents", apiBase), {
-      headers: { Authorization: \`Bearer \${key}\` },
+      headers: { Authorization: \`Bearer ${key}\` },
       cache: "no-store",
     });
     return new Response(await upstream.text(), {
