@@ -14,6 +14,7 @@ class RegulatoryEvidenceItem(BaseModel):
     filename: str
     document_version: int
     file_hash: str
+    chunk_id: str
     location_type: str
     location: str
     excerpt: str
@@ -53,3 +54,8 @@ class RegulatoryQueryResponse(BaseModel):
     plan: dict
     trace: list[dict]
     generation_status: str
+    answer_mode: str
+    answer_text: str
+    claims: list[dict]
+    validation_status: str
+    disclaimer: str
