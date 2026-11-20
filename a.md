@@ -198,6 +198,17 @@ No provider key, project ID, Firebase database, production tenant model or deplo
 
 **Zero-budget boundary:** The local engine currently uses BM25, not dense semantic embeddings. It is a persistent lexical + graph retrieval baseline. Local embedding models, OCR, multimodal extraction and answer generation are subsequent increments and must be selected based on actual machine resources and evaluation results.
 
+
+### Phase 1.8 — Evidence-only synthesis and citation validation (implemented; CI pending)
+- [x] Add extractive sentence selection from retrieved evidence passages.
+- [x] Require every displayed claim to match verbatim text in its source excerpt.
+- [x] Attach document ID, version, SHA-256, page location and chunk ID to each claim citation.
+- [x] Abstain when no source sentence can be safely selected.
+- [x] Display evidence-only synthesis and citations in the Regulatory Intelligence workspace.
+- [ ] Complete CI verification and test the full UI/API flow with real MARAS documents.
+
+**Safety boundary:** This is extractive evidence assembly, not LLM-generated interpretation. It must not be represented as legal advice, applicability analysis or a compliance determination.
+
 ### Phase 2 — Index lifecycle and structured extraction
 - [ ] Add index job and index manifest models/migrations.
 - [ ] Dispatch indexing after successful existing document ingestion.
@@ -301,6 +312,7 @@ No provider key, project ID, Firebase database, production tenant model or deplo
 - `apps/api/app/regulatory_rag/orchestrator.py`
 - `apps/api/app/regulatory_rag/index_store.py`
 - `apps/api/app/regulatory_rag/sparse.py`
+- `apps/api/app/regulatory_rag/synthesis.py`
 - `apps/api/app/schemas/regulatory_intelligence.py` (extended with index/query contracts)
 - `docs/regulatory-intelligence-engine.md`
 - `apps/web/app/regulatory-intelligence/page.tsx`
@@ -369,13 +381,13 @@ A code scaffold is not a completed integration. A passing unit test is not produ
 | Multimodal parsing/OCR | Not started | Phase 2 |
 | Candidate graph extraction and local persistence | Implemented, CI pending | SQLite entity/edge tables; co-mention edges only |
 | Vertex embeddings and Firestore vector adapter | Optional only | Not required for zero-budget MVP; requires GCP if later enabled |
-| Query planner and retrieval orchestration | Implemented, CI pending | `planner.py`, `orchestrator.py`, `/query`; autonomous LLM agents remain Phase 5 |
+| Query planner, retrieval orchestration and extractive evidence synthesis | Implemented, CI pending | `planner.py`, `orchestrator.py`, `synthesis.py`, `/query`; no LLM generation |
 | Production security/observability | Not started | Phase 7 |
 | Deployment | Not started | Credentials and target environment required |
 
 ### Current honest product maturity
 
-**Phase 1.7 zero-budget persistent retrieval prototype / internal integration slice.** It has source-aware chunking, persistent local BM25 and graph indexes, version/hash-aware retrieval and deterministic query planning. It does not yet provide dense semantic embeddings, multimodal extraction, durable background jobs, autonomous LLM agents or grounded answer generation. It is not a production Agentic Graph RAG system.
+**Phase 1.8 zero-budget evidence retrieval prototype / internal integration slice.** It has source-aware chunking, persistent local BM25 and graph indexes, version/hash-aware retrieval, deterministic query planning, extractive evidence assembly and verbatim citation validation. It does not yet provide dense semantic embeddings, multimodal extraction, durable background jobs or autonomous LLM agents. It does not generate regulatory interpretations and is not a production Agentic Graph RAG system.
 
 ## 11. Local verification commands
 
