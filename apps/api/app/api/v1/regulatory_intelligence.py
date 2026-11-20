@@ -13,8 +13,8 @@ from app.schemas.regulatory_intelligence import (
     RegulatoryRetrievalResponse,
 )
 from app.services.regulatory_intelligence import (
-    execute_regulatory_intelligence_query,
     get_regulatory_candidate_graph,
+    execute_regulatory_intelligence_query,
     index_regulatory_document,
     list_indexable_documents,
     retrieve_regulatory_evidence,
