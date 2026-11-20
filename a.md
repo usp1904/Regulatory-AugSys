@@ -655,3 +655,23 @@ Bring the shared glassmorphism / modern neumorphism system beyond the Regulatory
 - [ ] Free-tier hosting can be used for a sponsor/demo environment, but verify free-tier sleep, compute, storage, request and data-retention limits. Do not upload confidential or regulated documents to an unapproved demo environment.
 - [ ] Current GitHub Actions reports 12 npm audit findings (7 moderate, 4 high, 1 critical). Resolve or explicitly risk-accept with documented justification before a production release.
 - [ ] Deployment still requires a reachable API, database migrations, durable document store, RAG provider configuration, end-to-end smoke tests and backup/restore checks.
+
+
+## Intelligent RAG migration rollout — 2026-11-20
+
+### Step 1 — unify MARAS retrieval entry points
+- [x] Created isolated branch `feat/unified-intelligent-rag-rollout` from the latest `main`.
+- [x] Routed the legacy Regulatory Intelligence evidence retrieval service through the existing `execute_regulatory_query` orchestrator rather than calling `retrieve_hybrid` directly.
+- [x] The existing orchestrator now handles both the legacy `POST /retrieve` compatibility endpoint and the richer `POST /query` endpoint. Existing request/response compatibility is preserved for the retrieval endpoint; the query endpoint continues to expose planner, trace and generation status.
+- [x] Kept existing MARAS business functions, source verification, document version/hash checks, obligation review, evidence approval and audit records intact.
+- [x] No duplicate document store, obligations store or regulatory-source truth model introduced.
+- [ ] CI and regression suite for this branch must pass before merge.
+- [ ] Audit every remaining retrieval consumer and confirm none bypasses the orchestrator.
+- [ ] After merge, inspect the deployed/runtime config separately; this code change does not activate Vertex/Firestore automatically.
+
+### Step 1 technical boundaries
+- Local mode remains the no-cost default: SQLite BM25 + candidate graph expansion.
+- Vertex AI embeddings and Firestore vector/graph persistence remain opt-in behind `RAG_ENABLED` and cloud credentials.
+- Existing graph relations are still heuristic `MENTIONED_WITH` co-occurrences. They must not be described as validated semantic/legal relations.
+- Query generation remains extractive and source-verification gated; no ungrounded LLM generation has been introduced.
+- This is the first migration step, not the completion of production Agentic Graph RAG.
