@@ -450,3 +450,51 @@ For every future implementation increment:
 - Added the zero-budget local demo runbook at `docs/zero-budget-demo.md`.
 - Remaining validation: run the application locally against actual MARAS regulatory documents, confirm the UI/API flow, and verify the source-record review process end to end.
 - Product maturity remains an internal prototype. CI success does not establish real-document correctness, production security, deployment readiness or regulatory advice capability.
+
+
+## 13. Immersive product experience — glassmorphism + modern neumorphism
+
+### UX audit: gaps found in the original Regulatory Intelligence workspace
+The original workspace was functional but visually close to a plain internal admin form. It lacked:
+- A strong product identity and a clear explanation of what the intelligence workspace does.
+- At-a-glance source and engine context.
+- A clear separation between source selection, query execution, evidence inspection and execution transparency.
+- A focused evidence explorer with source-status filtering and citation-copy affordance.
+- A visible trust narrative explaining the MARAS source-authority gate and the difference between retrieved evidence and regulatory interpretation.
+- Consistent visual hierarchy, responsive cards, interaction feedback and reduced-motion handling.
+
+### Implemented in the application
+- [x] Rebuilt the Regulatory Intelligence workspace as a three-view experience: Workspace, Evidence and Execution trace.
+- [x] Added a dark, premium intelligence hero with a restrained luminous grid, translucent trust chip and live data summaries.
+- [x] Added glass surfaces with layered translucency, blur, subtle reflective borders and soft neumorphic depth.
+- [x] Added consistent typography, spacing, icon tiles, status chips, gradient primary actions and tactile secondary actions.
+- [x] Added document context preview and clear source-selection state.
+- [x] Added suggested regulatory questions and query character count.
+- [x] Added evidence explorer with status filters (ALL, VERIFIED, UNVERIFIED, UNREGISTERED, STALE).
+- [x] Added copy-citation action retaining filename, document ID, version, location, SHA-256 and excerpt.
+- [x] Added extractive synthesis presentation with claim citations and disclaimer.
+- [x] Added execution trace view for intent, graph hop limit, planner rationale, strategies and returned stages.
+- [x] Added trust and traceability panel, capability disclosure and explicit local-first prototype boundary.
+- [x] Added responsive layouts and reduced-motion preference support.
+- [x] Kept the existing MARAS SiteShell and backend API contracts; no duplicate document or regulatory source registry introduced.
+
+### Files changed
+- `apps/web/components/regulatory-intelligence-workbench.tsx` — workspace, evidence and trace UX.
+- `apps/web/app/globals.css` — glassmorphism/neumorphism design tokens and component styles.
+- `a.md` — progress and implementation ledger.
+
+### Validation and limitations
+- Lucide icons were already present in `apps/web/package.json`; no new dependency was added.
+- Existing API endpoints and request/response contracts are retained.
+- GitHub Actions was triggered by the UI implementation commit; record the final workflow result before calling this milestone CI-passed.
+- Browser visual QA at desktop and mobile widths remains outstanding.
+- Accessibility review, keyboard-only testing, contrast measurements and cross-browser backdrop-filter fallback checks remain outstanding.
+- This is a presentation and interaction improvement. It does not add autonomous agents, semantic embeddings, multimodal parsing or production security.
+
+### Progress log — 2026-11-20
+- Replaced the plain single-page workbench with Workspace / Evidence / Execution trace views.
+- Added glassmorphism surfaces and modern neumorphic controls without introducing paid services or new package dependencies.
+- Kept the existing API calls and MARAS source verification semantics intact.
+- UI implementation commit: `ee2160ae7a3c92f357b34c1ab37f5faabd0e7061`.
+- Design-system commit: `68b41bd64fc663ddfcfdacaa0543c0075fe5d978`.
+- CI and real browser QA: pending confirmation.
