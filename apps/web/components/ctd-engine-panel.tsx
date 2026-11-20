@@ -108,8 +108,8 @@ export function CtdEnginePanel() {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="grid gap-5 sm:grid-cols-2">
+    <div className="ri-shell space-y-6">
+      <section className="ri-glass-card ri-main-card"><div className="ri-kicker">01 / DOCUMENT CONTEXT</div><h2 className="mb-5 text-lg font-semibold text-slate-800">Define the regulatory scope</h2><div className="grid gap-5 sm:grid-cols-2">
         <label className="space-y-2">
           <span className="form-label">Regulatory Framework(s)</span>
           <input
@@ -170,7 +170,7 @@ export function CtdEnginePanel() {
         )}
       </div>
 
-      <div className="flex flex-wrap gap-3">
+      </section>\n\n      <section className="ri-glass-card ri-main-card space-y-4"><div className="ri-kicker">03 / VALIDATION</div><h2 className="text-lg font-semibold text-slate-800">Review CTD coverage</h2><div className="flex flex-wrap gap-3">
         <button
           type="button"
           className="btn-primary"
@@ -220,7 +220,7 @@ export function CtdEnginePanel() {
         </div>
       ) : null}
 
-      {tree && tree.length > 0 ? (
+      </section>\n\n      {tree && tree.length > 0 ? (
         <div className="space-y-3">
           <h3 className="text-sm font-medium">CTD taxonomy reference</h3>
           <CtdSectionTree nodes={tree} />
