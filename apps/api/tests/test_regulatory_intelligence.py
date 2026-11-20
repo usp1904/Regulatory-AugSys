@@ -123,7 +123,7 @@ def test_hybrid_retrieval_reports_lexical_mode_without_cloud_credentials(db_sess
     _add_document(db_session, "21 CFR Part 11 requires audit trail controls.")
     result = retrieve_hybrid(db_session, "audit trail controls", None, 5)
     assert result["status"] == "OK"
-    assert result["retrieval_mode"].startswith("LEXICAL_FALLBACK")
+    assert result["retrieval_mode"].startswith("BM25_LIVE_FALLBACK")
     assert result["results"][0]["file_hash"]
 
 
