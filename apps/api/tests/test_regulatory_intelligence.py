@@ -299,3 +299,38 @@ def test_verified_regulatory_source_can_be_used_for_extractive_synthesis(
     assert result["results"][0]["source_status"] == "VERIFIED"
     assert answer["validation_status"] == "PASSED"
     assert answer["claims"][0]["citations"][0]["document_id"] == source.id
+
+
+
+def test_stale_source_hash_is_flagged_and_synthesis_abstains(db_session) -> None:
+    source = _add_document(
+        db_session,
+        "The system shall maintain audit trail controls for regulated records.",
+    )
+    db_session.add(
+        RegulatorySourceRecord(
+            document_id=source.id,
+            title="Previously verified regulation",
+            issuing_authority="Test authority",
+            jurisdiction="Test jurisdiction",
+            document_type="Regulation",
+            official_url="https://example.org/regulation",
+            version_label="Previous version",
+            applicability_scope="Test scope",
+            content_hash=source.file_hash,
+            source_status="VERIFIED",
+            created_by="test",
+            verified_by="reviewer",
+        )
+    )
+    db_session.commit()
+
+    source.file_hash = hashlib.sha256(b"new changed content").hexdigest()
+    source.version = 3
+    db_session.commit()
+
+    result = retrieve_hybrid(db_session, "audit trail controls", [source.id], 5)
+    assert result["results"][0]["source_status"] == "STALE"
+    answer = build_evidence_answer("audit trail controls", result["results"])
+    assert answer["validation_status"] == "ABSTAINED"
+    assert answer["claims"] == []
