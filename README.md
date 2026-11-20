@@ -25,6 +25,8 @@ docker compose up --build
 | Web (Next.js health page) | http://localhost:3000 |
 | Web CTD/eCTD Engine | http://localhost:3000/ctd |
 | Requirements Mapping Workbench | http://localhost:3000/requirements-mappings |
+| Regulatory Intelligence | http://localhost:3000/regulatory-intelligence |
+| Graph Exploration | http://localhost:3000/graph |
 | Clarification Queue | http://localhost:3000/clarifications |
 | Obligation Extraction | http://localhost:3000/obligations |
 | API (FastAPI `/health`) | http://localhost:8000/health |
@@ -34,6 +36,7 @@ docker compose up --build
 | API requirements mapping | `POST /api/v1/requirements-mappings`, `GET /api/v1/requirements-mappings`, `GET /api/v1/requirements-mappings/{id}`, `PUT /api/v1/requirements-mappings/{id}`, `POST /api/v1/requirements-mappings/{id}/review`, `POST/GET /api/v1/requirements-mappings/clarifications`, `GET /api/v1/requirements-mappings/clarifications/{id}`, `PATCH /api/v1/requirements-mappings/clarifications/{id}`, `GET /api/v1/requirements-mappings/obligations`, `POST /api/v1/requirements-mappings/obligations/extract/{document_id}`, `PUT /api/v1/requirements-mappings/obligations/{id}/review`, `POST /api/v1/requirements-mappings/obligations/{id}/create-mapping` |
 | API dossier export | `POST /api/v1/dossiers/{dossier_id}/export`, `GET /api/v1/dossier-exports/{export_id}`, `GET /api/v1/dossier-exports/{export_id}/download` |
 | API CTD validation | `POST /api/v1/ctd-engine/validate` |
+| API Regulatory Intelligence | `GET /api/v1/regulatory-intelligence/documents`, `POST /api/v1/regulatory-intelligence/index`, `GET /api/v1/regulatory-intelligence/graph`, `GET /api/v1/regulatory-intelligence/graph/{document_id}`, `POST /api/v1/regulatory-intelligence/query` |
 | PostgreSQL | `localhost:5432` (user/db: `regulatory` / `regulatory_augsys`) |
 
 Run database migrations inside the API container:
@@ -182,3 +185,29 @@ scripts/      verify-all.mjs, generate-notion-workflows.mjs
 ## Deployment
 
 The deliverable remains a static single-file application. Replace the existing GitHub Pages `index.html` with the MVP file, review it in a non-production branch, and publish only after the source owner confirms the official links and permitted-use statements.
+
+
+### Regulatory Intelligence RAG engine
+
+The Regulatory Intelligence workspace reuses existing MARAS-controlled document records. It adds stable chunking, source-linked candidate graph facts, query planning and hybrid retrieval. Cloud vector/graph persistence is optional.
+
+Run the existing API setup with `pip install -e ".[dev]"`. The local path uses standard-library SQLite, BM25 ranking and a provenance-linked candidate graph. No cloud credentials or paid APIs are required. The derived index is stored under `STORAGE_ROOT/indexes/` and is excluded from Git.
+
+Vertex AI and Firestore remain optional future adapters. The engine returns source passages and a verbatim evidence-only synthesis. Synthesis is allowed only when MARAS marks the source `VERIFIED` and its content hash matches the current document. Unverified, unregistered or stale sources remain visible for review but cause the synthesis layer to abstain. This is not generated regulatory advice. See [`docs/zero-budget-demo.md`](docs/zero-budget-demo.md) for the local demo runbook and [`docs/regulatory-intelligence-engine.md`](docs/regulatory-intelligence-engine.md) for technical details and limitations.
+
+
+### Unified MARAS Intelligence experience
+
+The Next.js workspace shares one glassmorphism / soft-neumorphism design language across document intake, controlled document detail, Regulatory Intelligence, graph exploration, obligation review, clarifications and dossier workflows.
+
+| Workspace | Route | Purpose |
+|---|---|---|
+| Document intake | `/ctd` | Upload controlled PDF, DOCX and TXT sources; view parser state and source register |
+| Regulatory Intelligence | `/regulatory-intelligence` | Index sources and retrieve traceable evidence |
+| Graph Explorer | `/graph` | Inspect indexed candidate entity co-mentions and source-linked edges |
+| Obligation review | `/obligations` | Extract candidate obligations, capture SME decisions and hand off mapping drafts |
+| Controlled document | `/documents/{id}` | Inspect extracted text, source hash, evidence capture and audit history |
+
+**Graph interpretation:** current graph edges are heuristic candidate co-mentions, not validated regulatory relationships or legal conclusions. Graph records retain source chunk, document version and file hash provenance.
+
+**Deployment note:** the GitHub Pages URL continues to serve the legacy static MVP. The Next.js + FastAPI application requires a separate web/API deployment, production database and durable `STORAGE_ROOT`. GitHub Pages alone cannot host the FastAPI API or persistent local RAG index.
