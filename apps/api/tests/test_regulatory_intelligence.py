@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 
 from app.models.document import Document, DocumentPage
+from app.models.regulatory_truth import RegulatorySourceRecord
 from app.regulatory_rag.chunking import build_document_chunks
 from app.regulatory_rag.engine import index_document, retrieve_hybrid
 from app.regulatory_rag.graph import extract_graph_facts
@@ -198,6 +199,7 @@ def test_extractive_synthesis_only_returns_verbatim_cited_source_sentences() -> 
         "file_hash": "a" * 64,
         "location": "page:12",
         "chunk_id": "chunk-abc",
+        "source_status": "VERIFIED",
         "excerpt": (
             "The system shall maintain audit trail controls for regulated records. "
             "Personnel must complete assigned training before performing the activity."
@@ -211,6 +213,7 @@ def test_extractive_synthesis_only_returns_verbatim_cited_source_sentences() -> 
     assert claim["text"] in evidence["excerpt"]
     assert claim["citations"][0]["document_id"] == evidence["document_id"]
     assert claim["citations"][0]["chunk_id"] == evidence["chunk_id"]
+    assert claim["citations"][0]["source_status"] == "VERIFIED"
 
 
 def test_extractive_synthesis_abstains_when_no_sentence_matches() -> None:
@@ -224,9 +227,75 @@ def test_extractive_synthesis_abstains_when_no_sentence_matches() -> None:
                 "file_hash": "b" * 64,
                 "location": "page:1",
                 "chunk_id": "chunk-1",
+                "source_status": "VERIFIED",
                 "excerpt": "Audit trail records shall be reviewed periodically.",
             }
         ],
     )
     assert answer["validation_status"] == "ABSTAINED"
     assert answer["claims"] == []
+
+
+
+def test_unverified_regulatory_source_is_retrievable_but_not_synthesized(
+    db_session,
+) -> None:
+    source = _add_document(
+        db_session,
+        "The system shall maintain audit trail controls for regulated records.",
+    )
+    db_session.add(
+        RegulatorySourceRecord(
+            document_id=source.id,
+            title="Test regulation",
+            issuing_authority="Test authority",
+            jurisdiction="Test jurisdiction",
+            document_type="Regulation",
+            official_url="https://example.org/regulation",
+            version_label="1",
+            applicability_scope="Test scope",
+            content_hash=source.file_hash,
+            source_status="UNVERIFIED",
+            created_by="test",
+        )
+    )
+    db_session.commit()
+
+    result = retrieve_hybrid(db_session, "audit trail controls", [source.id], 5)
+    assert result["status"] == "OK"
+    assert result["results"][0]["source_status"] == "UNVERIFIED"
+    answer = build_evidence_answer("audit trail controls", result["results"])
+    assert answer["validation_status"] == "ABSTAINED"
+    assert answer["claims"] == []
+
+
+def test_verified_regulatory_source_can_be_used_for_extractive_synthesis(
+    db_session,
+) -> None:
+    source = _add_document(
+        db_session,
+        "The system shall maintain audit trail controls for regulated records.",
+    )
+    db_session.add(
+        RegulatorySourceRecord(
+            document_id=source.id,
+            title="Verified test regulation",
+            issuing_authority="Test authority",
+            jurisdiction="Test jurisdiction",
+            document_type="Regulation",
+            official_url="https://example.org/verified-regulation",
+            version_label="1",
+            applicability_scope="Test scope",
+            content_hash=source.file_hash,
+            source_status="VERIFIED",
+            created_by="test",
+            verified_by="reviewer",
+        )
+    )
+    db_session.commit()
+
+    result = retrieve_hybrid(db_session, "audit trail controls", [source.id], 5)
+    answer = build_evidence_answer("audit trail controls", result["results"])
+    assert result["results"][0]["source_status"] == "VERIFIED"
+    assert answer["validation_status"] == "PASSED"
+    assert answer["claims"][0]["citations"][0]["document_id"] == source.id
