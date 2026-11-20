@@ -46,14 +46,14 @@ def plan_regulatory_query(query: str) -> RetrievalPlan:
     if any(term in normalized for term in obligation_terms):
         return RetrievalPlan(
             intent="OBLIGATION_RETRIEVAL",
-            strategy=("lexical", "vector", "graph"),
+            strategy=("bm25", "optional_vector", "graph"),
             clause_reference=None,
             max_graph_hops=1,
             rationale="The query focuses on obligations, requirements or compliance duties.",
         )
     return RetrievalPlan(
         intent="GENERAL_REGULATORY_RETRIEVAL",
-        strategy=("vector", "lexical", "graph"),
+        strategy=("bm25", "optional_vector", "graph"),
         clause_reference=None,
         max_graph_hops=1,
         rationale="Default grounded retrieval plan.",
