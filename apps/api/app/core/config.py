@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./data/regulatory_augsys.db"
     storage_root: str = "./storage"
     max_upload_bytes: int = 10 * 1024 * 1024
-    rag_enabled: bool = False\n    google_cloud_project: str = ""\n    google_cloud_location: str = "us-central1"\n    firestore_database: str = "(default)"\n    rag_collection_prefix: str = "maras_rag"\n    rag_embedding_model: str = "text-embedding-005"\n    rag_embedding_dimensions: int = 768\n    rag_enabled: bool = False
+    rag_enabled: bool = False
     google_cloud_project: str = ""
     google_cloud_location: str = "us-central1"
     firestore_database: str = "(default)"
@@ -34,7 +34,11 @@ class Settings(BaseSettings):
 
     @property
     def allowed_mime_set(self) -> set[str]:
-        return {m.strip().lower() for m in self.allowed_upload_mime_types.split(",") if m.strip()}
+        return {
+            mime.strip().lower()
+            for mime in self.allowed_upload_mime_types.split(",")
+            if mime.strip()
+        }
 
 
 @lru_cache
