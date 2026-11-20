@@ -926,7 +926,7 @@ Before starting new work:
   - `GET /api/v1/regulatory-intelligence/graph/{document_id}`
   - `POST /api/v1/regulatory-intelligence/query`
 - [x] API base URL and access key are held in browser session storage only; key is not embedded in source.
-- [x] API CORS is configurable through `MARAS_CORS_ALLOWED_ORIGINS` (default includes `https://usp1904.github.io` and local Next.js origins).
+- [x] API CORS is configurable through `CORS_ALLOWED_ORIGINS` (default includes `https://usp1904.github.io` and local Next.js origins).
 - [x] Restored Global Compare's graph, matrix, and cross-market matrix section to the default user surface; no longer hidden behind `maras-internal-only`.
 - [x] UI explicitly discloses current extraction limitations and `NO_LLM_USED_EXTRACTIVE_ONLY`; graph is labelled candidate co-mention, not validated regulatory relationships.
 - [ ] Run frontend lint/build and backend tests; fix any failures.
