@@ -87,3 +87,10 @@ def execute_regulatory_intelligence_query(
         for item in result["results"]
     ]
     return result
+
+
+def get_regulatory_candidate_graph(document_id: int) -> dict:
+    """Read the persisted source-linked candidate graph for one indexed document."""
+    from app.regulatory_rag.engine import _local_store
+
+    return _local_store().graph_for_document(document_id)
