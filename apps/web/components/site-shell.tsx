@@ -1,14 +1,13 @@
 import Link from "next/link";
-
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
-  { href: "/", label: "Dashboard" },
-  { href: "/regulatory-intelligence", label: "Regulatory Intelligence" },
-  { href: "/ctd", label: "CTD Engine" },
+  { href: "/", label: "Overview" },
+  { href: "/ctd", label: "Document Intake" },
+  { href: "/regulatory-intelligence", label: "Intelligence" },
+  { href: "/obligations", label: "Obligations" },
   { href: "/clarifications", label: "Clarifications" },
-  { href: "/obligations", label: "Obligation Extraction" },
-  { href: "/dossiers", label: "Dossier Export" },
+  { href: "/dossiers", label: "Dossiers" },
 ] as const;
 
 type SiteShellProps = {
@@ -19,66 +18,45 @@ type SiteShellProps = {
   wide?: boolean;
 };
 
-export function SiteShell({
-  children,
-  title,
-  description,
-  className,
-  wide = false,
-}: SiteShellProps) {
+export function SiteShell({ children, title, description, className, wide = false }: SiteShellProps) {
   return (
-    <div className="min-h-screen bg-background">
-      <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-center text-xs font-medium text-amber-900">
-        TRAINING / INTERNAL REVIEW ONLY — NOT A REGULATORY SUBMISSION
+    <div className="maras-app min-h-screen">
+      <div className="maras-safety-banner">
+        <span className="maras-banner-dot" />
+        TRAINING / INTERNAL REVIEW ONLY · NOT A REGULATORY SUBMISSION
       </div>
-
-      <header className="border-b bg-card/80 backdrop-blur">
-        <div
-          className={cn(
-            "mx-auto flex flex-col gap-4 px-6 py-4 sm:flex-row sm:items-center sm:justify-between",
-            wide ? "max-w-6xl" : "max-w-5xl",
-          )}
-        >
-          <div>
-            <Link href="/" className="text-lg font-semibold tracking-tight text-foreground">
-              Regulatory-AugSys
-            </Link>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Evidence capture · CTD mapping · dossier export
-            </p>
+      <header className="maras-header">
+        <div className={cn("maras-header-inner mx-auto px-5 py-4", wide ? "max-w-[1440px]" : "max-w-7xl")}>
+          <div className="maras-brand">
+            <Link href="/" className="maras-brand-mark" aria-label="MARAS home">M</Link>
+            <div>
+              <Link href="/" className="maras-brand-name">MARAS <span>INTELLIGENCE</span></Link>
+              <p className="maras-brand-caption">Regulatory assurance workspace</p>
+            </div>
           </div>
-          <nav className="flex flex-wrap gap-1">
+          <nav className="maras-nav" aria-label="Main navigation">
             {NAV_ITEMS.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              >
+              <Link key={item.href} href={item.href} className="maras-nav-link">
                 {item.label}
               </Link>
             ))}
           </nav>
+          <div className="maras-header-status"><span /> LOCAL-FIRST WORKSPACE</div>
         </div>
       </header>
-
-      <main
-        className={cn(
-          "mx-auto space-y-8 px-6 py-8",
-          wide ? "max-w-6xl" : "max-w-5xl",
-          className,
-        )}
-      >
+      <main className={cn("maras-main mx-auto px-5 py-8", wide ? "max-w-[1440px]" : "max-w-7xl", className)}>
         {title ? (
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
-            {description ? (
-              <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">
-                {description}
-              </p>
-            ) : null}
+          <div className="maras-page-heading">
+            <div className="maras-page-eyebrow">MARAS / WORKSPACE</div>
+            <h1>{title}</h1>
+            {description ? <p>{description}</p> : null}
           </div>
         ) : null}
         {children}
+        <footer className="maras-global-footer">
+          <span>MARAS · REGULATORY INTELLIGENCE</span>
+          <span>Evidence-led workflows · Human review remains mandatory</span>
+        </footer>
       </main>
     </div>
   );
