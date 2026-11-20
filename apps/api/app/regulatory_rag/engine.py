@@ -160,14 +160,18 @@ def retrieve_hybrid(
         for edge in edges
         if edge.source_id in matched_entity_ids or edge.target_id in matched_entity_ids
     }
+    persistent_graph_used = False
     if settings.rag_enabled and matched_entity_ids:
         persistent_edges = store.get_related_edges(matched_entity_ids, limit=100)
         related_chunk_ids.update(edge["chunk_id"] for edge in persistent_edges)
+        persistent_graph_used = bool(persistent_edges)
     for chunk_id in related_chunk_ids:
         if chunk_id in candidates:
             candidates[chunk_id]["graph_score"] = 1.0
             rrf[chunk_id] = rrf.get(chunk_id, 0.0) + 1.0 / 61
-    if related_chunk_ids:
+    if persistent_graph_used:
+        retrieval_mode += "_WITH_PERSISTENT_GRAPH"
+    elif related_chunk_ids:
         retrieval_mode += "_WITH_LOCAL_GRAPH_EXPANSION"
 
     ranked = sorted(
