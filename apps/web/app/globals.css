@@ -200,3 +200,59 @@
 .ri-graph-evidence { margin-top:11px;padding:13px;border:1px solid rgba(255,255,255,.9);border-radius:12px;background:rgba(255,255,255,.7); }
 .ri-graph-evidence b { color:#455d80;font-size:10px; }.ri-graph-evidence b span { color:#8ea2c5; }.ri-graph-evidence p { margin-top:8px;color:#5b6e8b;font-size:11px;line-height:1.7; }.ri-graph-evidence small { display:block;margin-top:8px;color:#8c9ab0;font-size:9px; }
 .ri-graph-warning { display:flex;gap:10px;margin-top:14px;padding:13px;border:1px solid rgba(204,154,68,.2);border-radius:13px;background:rgba(255,248,231,.7);color:#8a7046;font-size:10px;line-height:1.65; }.ri-graph-warning svg { flex:none;margin-top:1px; }
+
+/* MARAS unified product shell and shared design language */
+.maras-app{min-height:100vh;color:#1d2d49;background:radial-gradient(ellipse at 8% 0%,rgba(192,211,255,.35),transparent 35%),radial-gradient(ellipse at 94% 8%,rgba(215,208,255,.3),transparent 32%),linear-gradient(145deg,#edf2fb 0%,#f7f9fd 48%,#eaf0fa 100%)}
+.maras-safety-banner{display:flex;justify-content:center;align-items:center;gap:9px;padding:8px 14px;border-bottom:1px solid rgba(220,158,63,.18);background:linear-gradient(90deg,rgba(255,247,224,.94),rgba(255,250,237,.88));color:#8a5a13;font-size:9px;font-weight:850;letter-spacing:.12em}
+.maras-banner-dot{width:6px;height:6px;border-radius:50%;background:#d49b37;box-shadow:0 0 0 4px rgba(212,155,55,.12)}
+.maras-header{position:sticky;top:0;z-index:30;border-bottom:1px solid rgba(255,255,255,.8);background:rgba(247,250,255,.76);backdrop-filter:blur(24px) saturate(150%);box-shadow:0 8px 24px rgba(35,54,91,.045)}
+.maras-header-inner{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.maras-brand{display:flex;align-items:center;gap:11px;min-width:190px}
+.maras-brand-mark{display:grid;place-items:center;width:38px;height:38px;border:1px solid rgba(255,255,255,.95);border-radius:13px;background:linear-gradient(145deg,#fff,#dfe9ff);color:#365994;font-size:18px;font-weight:850;box-shadow:5px 5px 12px rgba(41,62,102,.12),-4px -4px 10px white}
+.maras-brand-name{color:#1e3458;font-size:14px;font-weight:850;letter-spacing:.06em}.maras-brand-name span{color:#6e83aa;font-weight:650}
+.maras-brand-caption{margin-top:2px;color:#8b9ab2;font-size:9px}
+.maras-nav{display:flex;gap:4px;flex-wrap:wrap}
+.maras-nav-link{padding:9px 11px;border:1px solid transparent;border-radius:10px;color:#687994;font-size:11px;font-weight:700;transition:.18s}
+.maras-nav-link:hover{border-color:rgba(255,255,255,.9);background:rgba(255,255,255,.76);color:#294c83;box-shadow:3px 4px 10px rgba(40,60,95,.06),-2px -2px 7px white}
+.maras-header-status{display:flex;align-items:center;gap:7px;color:#71839e;font-size:9px;font-weight:800;letter-spacing:.08em;white-space:nowrap}
+.maras-header-status span{width:6px;height:6px;border-radius:50%;background:#45b991;box-shadow:0 0 0 4px rgba(69,185,145,.12)}
+.maras-main{min-height:calc(100vh - 140px)}
+.maras-page-heading{margin-bottom:25px;padding:0 2px}
+.maras-page-eyebrow{margin-bottom:7px;color:#7187ad;font-size:9px;font-weight:850;letter-spacing:.16em}
+.maras-page-heading h1{color:#1b3155;font-size:clamp(27px,3vw,36px);font-weight:760;letter-spacing:-.045em;line-height:1.1}
+.maras-page-heading p{max-width:850px;margin-top:8px;color:#74839b;font-size:12px;line-height:1.7}
+.maras-global-footer{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:36px;padding:15px 2px 8px;border-top:1px solid rgba(137,157,192,.18);color:#96a3b7;font-size:9px;letter-spacing:.07em}
+.maras-global-footer span:last-child{letter-spacing:0}
+.maras-app .panel{border:1px solid rgba(255,255,255,.9);border-radius:20px;background:linear-gradient(145deg,rgba(255,255,255,.88),rgba(245,248,254,.76));box-shadow:10px 12px 30px rgba(39,58,94,.065),-6px -6px 18px rgba(255,255,255,.9),inset 0 1px white;backdrop-filter:blur(20px) saturate(140%)}
+.maras-app .form-label{color:#405574;font-size:11px;font-weight:750}
+.maras-app .form-input{border:1px solid rgba(145,164,198,.35);border-radius:12px;background:rgba(255,255,255,.78);color:#293e5e;box-shadow:inset 3px 3px 8px rgba(40,57,89,.035),0 1px white}
+.maras-app .form-input:focus{outline:none;border-color:#829fe0;box-shadow:0 0 0 3px rgba(101,137,214,.13),inset 2px 2px 5px rgba(40,57,89,.025)}
+.maras-app .btn-primary{border:1px solid rgba(255,255,255,.25);border-radius:11px;background:linear-gradient(135deg,#345a9e,#526fc0 60%,#6a70c5);box-shadow:0 7px 16px rgba(58,88,155,.2),inset 0 1px rgba(255,255,255,.3);transition:.18s}
+.maras-app .btn-primary:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 10px 22px rgba(58,88,155,.28)}
+.maras-app .btn-secondary{border:1px solid rgba(151,169,202,.35);border-radius:11px;background:linear-gradient(145deg,rgba(255,255,255,.94),rgba(235,241,251,.82));color:#4d6185;box-shadow:4px 4px 9px rgba(39,57,90,.06),-3px -3px 8px white}
+.maras-app a{transition:color .18s}
+.ri-graph-stats{display:flex;gap:12px;flex-wrap:wrap;margin:18px 0 12px}
+.ri-graph-stats span{padding:9px 12px;border:1px solid rgba(140,160,198,.2);border-radius:11px;background:rgba(255,255,255,.65);color:#75849c;font-size:10px}
+.ri-graph-stats b{color:#35598f;font-size:15px;margin-right:4px}
+.ri-graph-canvas{overflow:hidden;margin:10px 0 12px;border:1px solid rgba(140,160,198,.2);border-radius:18px;background:radial-gradient(ellipse at center,rgba(218,230,255,.75),rgba(246,249,255,.85) 65%,rgba(255,255,255,.65));box-shadow:inset 0 2px 10px rgba(52,77,124,.06)}
+.ri-graph-canvas svg{display:block;width:100%;max-height:560px}
+.ri-graph-edge{stroke:rgba(99,128,181,.34);stroke-width:1.5}
+.ri-graph-edge.active{stroke:#627fca;stroke-width:3}
+.ri-graph-node{cursor:pointer;outline:none}
+.ri-graph-node-circle{fill:#fff;stroke:#8da7d6;stroke-width:2;filter:drop-shadow(3px 5px 5px rgba(50,75,125,.16))}
+.ri-graph-node-circle.active{fill:#e5edff;stroke:#496cb5;stroke-width:3}
+.ri-graph-label{fill:#344a6c;font-size:10px;font-weight:750}
+.ri-graph-type{fill:#8998b0;font-size:8px;letter-spacing:.08em}
+.ri-graph-center{fill:#294a82;stroke:#fff;stroke-width:5;filter:drop-shadow(0 6px 12px rgba(35,63,112,.3))}
+.ri-graph-center-label{fill:white;font-size:12px;font-weight:850;letter-spacing:.12em}
+.ri-graph-center-sub{fill:#c8d8ff;font-size:7px;letter-spacing:.2em}
+.ri-graph-detail{margin-top:16px;padding:17px;border:1px solid rgba(140,160,198,.2);border-radius:16px;background:rgba(245,248,254,.72)}
+.ri-graph-detail h3{margin-top:4px;color:#304664;font-size:15px;font-weight:750}
+.ri-graph-evidence{margin-top:12px;padding:13px;border:1px solid rgba(255,255,255,.9);border-radius:13px;background:rgba(255,255,255,.74)}
+.ri-graph-evidence b{color:#425a7c;font-size:10px}.ri-graph-evidence b span{color:#8ba1c6;padding:0 4px}
+.ri-graph-evidence p{margin-top:9px;color:#586d8c;font-size:11px;line-height:1.7}
+.ri-graph-evidence small{display:block;margin-top:8px;color:#8b99ae;font-size:9px}
+.ri-graph-warning{display:flex;gap:9px;margin-top:14px;padding:13px;border:1px solid rgba(202,153,68,.2);border-radius:13px;background:rgba(255,248,232,.7);color:#8a6a36;font-size:10px;line-height:1.65}
+.ri-graph-warning svg{flex:none}
+@media(max-width:850px){.maras-header-inner{align-items:flex-start}.maras-nav{order:3;width:100%;overflow-x:auto;flex-wrap:nowrap;padding-bottom:3px}.maras-nav-link{white-space:nowrap}.maras-header-status{margin-left:auto}}
+@media(max-width:520px){.maras-main{padding-left:14px;padding-right:14px}.maras-safety-banner{font-size:8px}.maras-global-footer{font-size:8px}.ri-graph-canvas svg{min-width:620px}.ri-graph-canvas{overflow-x:auto}}
