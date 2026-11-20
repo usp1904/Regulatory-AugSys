@@ -36,7 +36,7 @@ docker compose up --build
 | API requirements mapping | `POST /api/v1/requirements-mappings`, `GET /api/v1/requirements-mappings`, `GET /api/v1/requirements-mappings/{id}`, `PUT /api/v1/requirements-mappings/{id}`, `POST /api/v1/requirements-mappings/{id}/review`, `POST/GET /api/v1/requirements-mappings/clarifications`, `GET /api/v1/requirements-mappings/clarifications/{id}`, `PATCH /api/v1/requirements-mappings/clarifications/{id}`, `GET /api/v1/requirements-mappings/obligations`, `POST /api/v1/requirements-mappings/obligations/extract/{document_id}`, `PUT /api/v1/requirements-mappings/obligations/{id}/review`, `POST /api/v1/requirements-mappings/obligations/{id}/create-mapping` |
 | API dossier export | `POST /api/v1/dossiers/{dossier_id}/export`, `GET /api/v1/dossier-exports/{export_id}`, `GET /api/v1/dossier-exports/{export_id}/download` |
 | API CTD validation | `POST /api/v1/ctd-engine/validate` |
-| API Regulatory Intelligence | `GET /api/v1/regulatory-intelligence/documents`, `POST /api/v1/regulatory-intelligence/index`, `GET /api/v1/regulatory-intelligence/graph`, `GET /api/v1/regulatory-intelligence/graph/{document_id}`, `POST /api/v1/regulatory-intelligence/query` |
+| API Regulatory Intelligence | `GET /api/v1/regulatory-intelligence/engine/status`, `GET /api/v1/regulatory-intelligence/documents`, `POST /api/v1/regulatory-intelligence/index`, `GET /api/v1/regulatory-intelligence/graph`, `GET /api/v1/regulatory-intelligence/graph/{document_id}`, `POST /api/v1/regulatory-intelligence/query` |
 | PostgreSQL | `localhost:5432` (user/db: `regulatory` / `regulatory_augsys`) |
 
 Run database migrations inside the API container:
