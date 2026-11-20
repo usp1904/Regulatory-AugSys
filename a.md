@@ -498,3 +498,51 @@ The original workspace was functional but visually close to a plain internal adm
 - UI implementation commit: `ee2160ae7a3c92f357b34c1ab37f5faabd0e7061`.
 - Design-system commit: `68b41bd64fc663ddfcfdacaa0543c0075fe5d978`.
 - CI and real browser QA: pending confirmation.
+
+
+## 14. Unified MARAS enterprise experience — intake, obligations and graph exploration
+
+### Shared platform design
+- [x] Replaced the plain navigation header with a unified MARAS Intelligence shell, product identity, workspace navigation and consistent safety banner.
+- [x] Applied the frosted-glass / soft-neumorphic design system to all existing `.panel`, form, input, file upload, table, button and page-heading patterns.
+- [x] Added responsive navigation, global footer, focus-visible keyboard outlines and a consistent background/surface system.
+- [x] Preserved the internal-review / non-submission disclaimer throughout the platform.
+
+### Document intake and document detail
+- [x] The existing CTD Engine upload and document register now inherit the shared glass surfaces and controls.
+- [x] Existing document detail, extracted text, evidence capture and audit-event cards inherit the shared system without duplicating their workflows.
+- [x] Kept the existing document storage, parsing, versioning, SHA-256 and evidence capture APIs.
+
+### Regulatory obligation review
+- [x] Existing candidate extraction, status filters, SME decision capture, review rationale and mapping handoff now inherit the shared platform styling.
+- [x] Kept the current obligation extraction API and review semantics; no parallel obligation register created.
+- [x] Retained the clear boundary that extraction is heuristic screening and that SME review is mandatory.
+
+### Graph exploration
+- [x] Added a read-only graph endpoint for indexed document candidate entities and provenance-linked edges.
+- [x] Added a protected Next.js API proxy using the existing server-side MARAS reader credential.
+- [x] Added a dedicated Graph Explorer route and navigation entry.
+- [x] Added an interactive SVG entity graph with entity selection and linked evidence excerpts.
+- [x] Graph edges show filename, version, hash, page/chunk provenance.
+- [x] Added explicit warning that graph edges are heuristic co-mentions, not validated regulatory relationships or legal interpretations.
+- [ ] Add robust graph layout / clustering and cross-document relationship browsing.
+- [ ] Add graph-specific API tests and end-to-end UI tests.
+
+### Files changed in this milestone
+- `apps/web/components/site-shell.tsx`
+- `apps/web/app/globals.css`
+- `apps/web/components/regulatory-graph-explorer.tsx` (new)
+- `apps/web/app/graph/page.tsx` (new)
+- `apps/web/app/api/regulatory-intelligence/graph/[documentId]/route.ts` (new)
+- `apps/api/app/regulatory_rag/index_store.py`
+- `apps/api/app/services/regulatory_intelligence.py`
+- `apps/api/app/api/v1/regulatory_intelligence.py`
+- `a.md`
+
+### Production readiness and deployment status
+- This monorepo's main branch README identifies the GitHub Pages single-file demo as the currently published MVP. The Next.js + FastAPI application is a separate stack requiring a running web service, API service, database and persistent document/index storage.
+- GitHub Pages cannot host the FastAPI service or the full server-rendered Next.js + persistent local SQLite workflow as configured.
+- Do not mark the product production-live merely because code is merged or GitHub Pages publishes the legacy `index.html`.
+- Deployment requires a supported app host, managed PostgreSQL or durable storage, API/web environment variables, secret configuration, TLS/domain, health checks, migration execution and a persistent volume for `STORAGE_ROOT`.
+- No production host/domain/credentials have been provided or verified in this task. Production deployment is therefore not claimed.
+- Run CI and browser QA for the new graph endpoint and shared design before merging to main.
