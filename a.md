@@ -153,7 +153,7 @@ No provider key, project ID, Firebase database, production tenant model or deplo
 - [ ] Validate access control and browser/API integration.
 - [ ] Demo with a representative approved regulatory source.
 
-**Scope warning:** This first slice is lexical evidence retrieval, not embeddings, graph traversal, agentic reasoning or generated regulatory advice. It is a safe foundation and UI/API integration check.
+**Scope note:** The initial lexical-only slice has since been extended by Phase 1.5 and Phase 1.6 below. This initial slice remains the baseline compatibility path.
 
 
 ### Phase 1.5 — Modular intelligent retrieval engine (implemented; verification pending)
@@ -170,6 +170,16 @@ No provider key, project ID, Firebase database, production tenant model or deplo
 - [ ] Validate retrieval against SME-labelled regulatory question set.
 
 **Current limitation:** With `RAG_ENABLED=false` (default), the service runs source-grounded lexical retrieval plus per-query candidate graph expansion from MARAS text. It does not persist a graph or vectors. With `RAG_ENABLED=true`, the optional Vertex AI + Firestore adapters embed and persist chunks/entities/edges and query Firestore vector search. Firestore vector index creation, credentials, billing, IAM, regional/data-residency approval and integration tests remain deployment prerequisites. Graph extraction currently emits deterministic co-mention candidate edges, not validated legal relationships. Do not present these edges as authoritative regulatory logic.
+
+
+### Phase 1.6 — Query planning and inspectable orchestration (implemented; verification pending)
+- [x] Add deterministic query intent classification for clause lookup, relationship analysis, obligation retrieval and general regulatory retrieval.
+- [x] Add bounded retrieval plan with explicit strategies and one-hop graph limit.
+- [x] Add orchestration endpoint returning plan, retrieval mode, stage trace and evidence.
+- [x] Route the Regulatory Intelligence workspace through the orchestrated query endpoint.
+- [ ] Add model-backed generation only after claim/evidence validation and source-authority checks are implemented.
+
+**Current product behaviour:** The new engine indexes extracted MARAS documents on demand, then performs lexical retrieval and local graph expansion. If the optional cloud mode is configured, it also uses Vertex AI embeddings, Firestore vector search and persistent Firestore graph edges. The orchestrator currently plans and coordinates retrieval; it does not yet invoke autonomous LLM agents or generate answers.
 
 ### Phase 2 — Index lifecycle and structured extraction
 - [ ] Add index job and index manifest models/migrations.
