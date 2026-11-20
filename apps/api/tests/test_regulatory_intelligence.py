@@ -10,6 +10,7 @@ from app.regulatory_rag.engine import index_document, retrieve_hybrid
 from app.regulatory_rag.graph import extract_graph_facts
 from app.regulatory_rag.index_store import LocalIndexStore
 from app.regulatory_rag.sparse import bm25_scores, term_frequencies
+from app.regulatory_rag.synthesis import build_evidence_answer
 from app.schemas.regulatory_intelligence import RegulatoryRetrievalRequest
 from app.services.regulatory_intelligence import retrieve_regulatory_evidence
 
@@ -186,3 +187,46 @@ def test_bm25_prefers_chunks_with_more_relevant_terms() -> None:
     ]
     scores = bm25_scores("audit trail controls", documents)
     assert scores["relevant"] > scores["weak"]
+
+
+
+def test_extractive_synthesis_only_returns_verbatim_cited_source_sentences() -> None:
+    evidence = {
+        "document_id": 42,
+        "filename": "regulation.pdf",
+        "document_version": 3,
+        "file_hash": "a" * 64,
+        "location": "page:12",
+        "chunk_id": "chunk-abc",
+        "excerpt": (
+            "The system shall maintain audit trail controls for regulated records. "
+            "Personnel must complete assigned training before performing the activity."
+        ),
+    }
+    answer = build_evidence_answer("audit trail controls", [evidence])
+    assert answer["validation_status"] == "PASSED"
+    assert answer["answer_mode"] == "EXTRACTIVE_EVIDENCE_ONLY"
+    assert len(answer["claims"]) == 1
+    claim = answer["claims"][0]
+    assert claim["text"] in evidence["excerpt"]
+    assert claim["citations"][0]["document_id"] == evidence["document_id"]
+    assert claim["citations"][0]["chunk_id"] == evidence["chunk_id"]
+
+
+def test_extractive_synthesis_abstains_when_no_sentence_matches() -> None:
+    answer = build_evidence_answer(
+        "quantum computing",
+        [
+            {
+                "document_id": 1,
+                "filename": "source.pdf",
+                "document_version": 1,
+                "file_hash": "b" * 64,
+                "location": "page:1",
+                "chunk_id": "chunk-1",
+                "excerpt": "Audit trail records shall be reviewed periodically.",
+            }
+        ],
+    )
+    assert answer["validation_status"] == "ABSTAINED"
+    assert answer["claims"] == []
