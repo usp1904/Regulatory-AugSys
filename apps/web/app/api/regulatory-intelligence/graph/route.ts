@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
   if (!key) return Response.json({ detail: "Configure the server-side MARAS reader key." }, { status: 503 });
   try {
     const documentId = request.nextUrl.searchParams.get("document_id");
-    if (!documentId || !/^\\d+$/.test(documentId)) {
+    if (!documentId || !/^\d+$/.test(documentId)) {
       return Response.json({ detail: "A valid document_id is required." }, { status: 400 });
     }
     const upstreamUrl = new URL(`/api/v1/regulatory-intelligence/graph/${documentId}`, apiBase);
