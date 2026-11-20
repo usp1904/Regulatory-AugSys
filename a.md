@@ -889,3 +889,26 @@ Before starting new work:
 **Current PR:** https://github.com/usp1904/Regulatory-AugSys/pull/49 (merged)  
 **Next action:** Verify main CI and application behaviour on the merged code, then test OCR runtime with a scanned PDF.  
 **Main branch SHA:** `47f40d62b7595bb3c472efc7716a266a1387b11b`
+
+
+## UI visibility and Global Compare regression audit — 2026-11-20
+
+### Verified findings
+- The public GitHub Pages deployment is the legacy single-file app served from repository-root `index.html`; the new Next.js + FastAPI workspace under `apps/web` and `apps/api` is a separate application and is not made live by merging backend changes alone.
+- The Next.js app has an Intelligence route at `/regulatory-intelligence` and a navigation entry labelled `Intelligence` in `apps/web/components/site-shell.tsx`. It does not have a dedicated Agentic RAG tab/workspace yet.
+- PR #49 changed only `a.md`, `apps/api/app/services/document_extraction.py`, `apps/api/app/services/document_ingestion.py` and `apps/api/tests/test_document_ingestion.py`; it made no frontend changes.
+- The legacy `index.html` still contains the Global Compare tab and comparison engine. Its cross-market matrix section and graph are marked `maras-internal-only`. The default end-user surface hides all `.maras-internal-only` content; `?internal=1` opts into the internal surface. This explains why the tab can remain visible while its matrix and advanced controls are hidden.
+- The Global Compare visibility restriction predates PR #49. The current `index.html` content is identical to its parent version before the 2026-11-20 workspace commits; PR #49 did not remove Global Compare code.
+- The Next.js application has no Global Compare route or navigation entry. The legacy workflow note exists at `docs/workflows/notion-export/wf-global-compare.md`, but that document is not a working UI.
+
+### Corrective work required (not yet implemented)
+- [ ] Decide and implement the supported product surface: either deploy the Next.js app as the main user-facing app or continue the static app and integrate the RAG experience there. Do not assume GitHub Pages can host FastAPI.
+- [ ] Add a clearly labelled RAG workspace/tab with document selection, extraction status, indexing, retrieval, evidence, and execution trace; connect it to the deployed API.
+- [ ] Restore the Global Compare matrix, market filters, gap analysis and comparison outputs to the intended user surface, while retaining only genuinely staff-only diagnostics behind the internal flag.
+- [ ] Add UI regression tests proving Global Compare matrix and controls are visible in default mode and functional in internal mode.
+- [ ] Add end-to-end validation for upload → extraction → index → query → cited evidence using the same deployed frontend/API.
+- [ ] Re-run CI and deployment smoke tests after UI changes.
+
+**Current UI integration status:** Not delivered. PR #49 was backend-only.  
+**Global Compare status:** Code remains in legacy `index.html`; its matrix/graph are hidden in default end-user mode by `maras-internal-only`.  
+**Do not mark UI validation complete until the actual deployed URL exposes and passes these workflows.**
