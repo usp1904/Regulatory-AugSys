@@ -5,7 +5,7 @@
 **Baseline:** `main`  
 **Plan owner:** Product / Engineering  
 **Last updated:** 2026-11-20  
-**Status:** RAG engine implementation added to feature branch; PR #46 remains draft. CI rerun required after latest changes. Cloud provider integration is optional and requires project credentials/index setup. This is not yet a production Agentic Graph RAG deployment.
+**Status:** Zero-budget local indexing and retrieval implementation added to feature branch; PR #46 remains draft. CI verification is running. Local SQLite + BM25 + provenance-linked graph does not require cloud credentials. This is not yet a production Agentic Graph RAG deployment.
 
 **Working branch:** `feature/maras-agentic-graph-rag`  
 **Pull request:** https://github.com/usp1904/Regulatory-AugSys/pull/46  
@@ -120,8 +120,9 @@ The architecture diagram is a target design, not proof that those services alrea
 
 Preferred direction already discussed for MARAS:
 - Existing Next.js + FastAPI + PostgreSQL.
-- Google Vertex AI for model and embedding access, subject to project credentials and model availability.
-- Firebase/Firestore is the preferred first vector-store direction to validate.
+- Zero-budget MVP: Python standard-library SQLite sidecar under existing STORAGE_ROOT, BM25 ranking and NetworkX-compatible graph abstraction (current persisted graph uses SQLite tables; no NetworkX dependency is needed yet).
+- Do not require Google Vertex AI, Firebase/Firestore or any paid service for local development and demonstration.
+- Keep Vertex AI/Firestore as optional adapters for a later sponsor-funded deployment.
 - Do not introduce Neo4j for the MVP.
 - A Firestore entity/edge model is not a native graph database. Benchmark bounded adjacency traversal and query scale. Keep graph storage behind an interface so a dedicated graph store can be introduced later without changing MARAS workflows.
 - OCR may use Google Document AI, subject to credentials, regional availability, data residency, and cost approval.
@@ -180,6 +181,21 @@ No provider key, project ID, Firebase database, production tenant model or deplo
 - [ ] Add model-backed generation only after claim/evidence validation and source-authority checks are implemented.
 
 **Current product behaviour:** The new engine indexes extracted MARAS documents on demand, then performs lexical retrieval and local graph expansion. If the optional cloud mode is configured, it also uses Vertex AI embeddings, Firestore vector search and persistent Firestore graph edges. The orchestrator currently plans and coordinates retrieval; it does not yet invoke autonomous LLM agents or generate answers.
+
+
+### Phase 1.7 — Zero-budget persistent local retrieval (implemented; CI pending)
+- [x] Add a persistent SQLite sidecar index under existing MARAS STORAGE_ROOT.
+- [x] Persist source-addressable chunks and sparse term-frequency data.
+- [x] Persist candidate entities and provenance-linked co-mention edges.
+- [x] Add dependency-free BM25 scoring and reciprocal-rank fusion with graph expansion.
+- [x] Filter indexed chunks against current MARAS document version and SHA-256.
+- [x] Replace a document's prior index atomically during re-indexing.
+- [x] Keep cloud providers optional and disabled by default.
+- [x] Add tests for local persistence, retrieval, stale versions and BM25 ranking.
+- [ ] Complete CI and review latest workflow results.
+- [ ] Run end-to-end test with real MARAS source documents in local environment.
+
+**Zero-budget boundary:** The local engine currently uses BM25, not dense semantic embeddings. It is a persistent lexical + graph retrieval baseline. Local embedding models, OCR, multimodal extraction and answer generation are subsequent increments and must be selected based on actual machine resources and evaluation results.
 
 ### Phase 2 — Index lifecycle and structured extraction
 - [ ] Add index job and index manifest models/migrations.
@@ -282,6 +298,8 @@ No provider key, project ID, Firebase database, production tenant model or deplo
 - `apps/api/app/regulatory_rag/engine.py`
 - `apps/api/app/regulatory_rag/planner.py`
 - `apps/api/app/regulatory_rag/orchestrator.py`
+- `apps/api/app/regulatory_rag/index_store.py`
+- `apps/api/app/regulatory_rag/sparse.py`
 - `apps/api/app/schemas/regulatory_intelligence.py` (extended with index/query contracts)
 - `docs/regulatory-intelligence-engine.md`
 - `apps/web/app/regulatory-intelligence/page.tsx`
@@ -346,17 +364,17 @@ A code scaffold is not a completed integration. A passing unit test is not produ
 | Regulatory Intelligence UI | Implemented in branch | `apps/web/app/regulatory-intelligence/page.tsx`; CI pending |
 | Source-grounded retrieval API | Implemented in branch | `POST /api/v1/regulatory-intelligence/retrieve`; CI pending |
 | Automated tests | Added; CI running | PR #46 GitHub Actions run; record final outcome after completion |
-| Chunking and index operation | Implemented, CI pending | `apps/api/app/regulatory_rag/chunking.py`; manual index endpoint |
+| Chunking and persistent local index | Implemented, CI pending | SQLite sidecar, BM25 term index, source version/hash checks; manual index endpoint |
 | Multimodal parsing/OCR | Not started | Phase 2 |
-| Graph extraction and Firestore persistence adapter | Implemented, cloud unconfigured | Candidate co-mention edges; requires GCP |
-| Vertex embeddings and Firestore vector adapter | Implemented, cloud unconfigured | Optional `rag` dependencies and GCP configuration required |
+| Candidate graph extraction and local persistence | Implemented, CI pending | SQLite entity/edge tables; co-mention edges only |
+| Vertex embeddings and Firestore vector adapter | Optional only | Not required for zero-budget MVP; requires GCP if later enabled |
 | Query planner and retrieval orchestration | Implemented, CI pending | `planner.py`, `orchestrator.py`, `/query`; autonomous LLM agents remain Phase 5 |
 | Production security/observability | Not started | Phase 7 |
 | Deployment | Not started | Credentials and target environment required |
 
 ### Current honest product maturity
 
-**Phase 1.6 intelligent retrieval prototype / internal integration slice.** It has source-aware chunking, candidate graph facts, optional cloud vector/graph persistence, hybrid retrieval and deterministic query planning. It does not yet provide multimodal extraction, durable indexing, autonomous LLM agents or grounded answer generation. It is not a production Agentic Graph RAG system.
+**Phase 1.7 zero-budget persistent retrieval prototype / internal integration slice.** It has source-aware chunking, persistent local BM25 and graph indexes, version/hash-aware retrieval and deterministic query planning. It does not yet provide dense semantic embeddings, multimodal extraction, durable background jobs, autonomous LLM agents or grounded answer generation. It is not a production Agentic Graph RAG system.
 
 ## 11. Local verification commands
 
