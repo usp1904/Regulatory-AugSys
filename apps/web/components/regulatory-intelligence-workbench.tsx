@@ -15,6 +15,7 @@ type Evidence = {
   document_version: number;
   file_hash: string;
   chunk_id: string;
+  source_status: string;
   location_type: string;
   location: string;
   excerpt: string;
@@ -41,6 +42,7 @@ type RetrievalResponse = {
       file_hash: string;
       location: string;
       chunk_id: string;
+      source_status: string;
     }[];
   }[];
 };
@@ -233,7 +235,7 @@ export function RegulatoryIntelligenceWorkbench() {
                       <p>{claim.text}</p>
                       {claim.citations.map((citation) => (
                         <p key={citation.chunk_id} className="mt-1 text-xs text-muted-foreground">
-                          Source: {citation.filename} · v{citation.document_version} · {citation.location} · Document #{citation.document_id}
+                          Source: {citation.filename} · v{citation.document_version} · {citation.location} · {citation.source_status} · Document #{citation.document_id}
                         </p>
                       ))}
                     </li>
@@ -257,7 +259,7 @@ export function RegulatoryIntelligenceWorkbench() {
                 <div>
                   <h3 className="font-semibold">{item.filename}</h3>
                   <p className="text-xs text-muted-foreground">
-                    Document #{item.document_id} · Version {item.document_version} · {item.location}
+                    Document #{item.document_id} · Version {item.document_version} · {item.location} · Source: {item.source_status}
                   </p>
                 </div>
                 <span className="text-xs text-muted-foreground">Fusion score: {item.score.toFixed(5)}</span>
