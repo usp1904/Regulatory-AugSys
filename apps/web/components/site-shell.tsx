@@ -5,6 +5,7 @@ const NAV_ITEMS = [
   { href: "/", label: "Overview" },
   { href: "/ctd", label: "Document Intake" },
   { href: "/regulatory-intelligence", label: "Intelligence" },
+  { href: "/graph", label: "Graph Explorer" },
   { href: "/obligations", label: "Obligations" },
   { href: "/clarifications", label: "Clarifications" },
   { href: "/dossiers", label: "Dossiers" },
