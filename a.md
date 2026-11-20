@@ -325,6 +325,7 @@ No provider key, project ID, Firebase database, production tenant model or deplo
 - `apps/api/app/regulatory_rag/synthesis.py`
 - `apps/api/app/schemas/regulatory_intelligence.py` (extended with index/query contracts)
 - `docs/regulatory-intelligence-engine.md`
+- `docs/zero-budget-demo.md`
 - `apps/web/app/regulatory-intelligence/page.tsx`
 - `apps/web/components/regulatory-intelligence-workbench.tsx`
 - `apps/web/app/api/regulatory-intelligence/retrieve/route.ts`
