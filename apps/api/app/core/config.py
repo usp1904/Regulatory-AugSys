@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./data/regulatory_augsys.db"
     storage_root: str = "./storage"
     max_upload_bytes: int = 10 * 1024 * 1024
+    cors_allowed_origins: str = "http://localhost:3000,http://127.0.0.1:3000,https://usp1904.github.io"
     rag_enabled: bool = False
     google_cloud_project: str = ""
     google_cloud_location: str = "us-central1"

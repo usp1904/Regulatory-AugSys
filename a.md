@@ -912,3 +912,30 @@ Before starting new work:
 **Current UI integration status:** Not delivered. PR #49 was backend-only.  
 **Global Compare status:** Code remains in legacy `index.html`; its matrix/graph are hidden in default end-user mode by `maras-internal-only`.  
 **Do not mark UI validation complete until the actual deployed URL exposes and passes these workflows.**
+
+
+## Intelligent RAG workspace UI implementation — 2026-11-20
+
+- [~] Added an `Intelligent RAG` tab and functional workspace to the GitHub Pages application in root `index.html`.
+- [x] Workspace UI includes API connection/health check, document upload and listing, extraction status, document indexing, candidate graph inspection, query execution, retrieval plan, execution trace and evidence provenance.
+- [x] Workspace uses existing API contracts:
+  - `GET /health`
+  - `GET /api/v1/documents`
+  - `POST /api/v1/documents`
+  - `POST /api/v1/regulatory-intelligence/index`
+  - `GET /api/v1/regulatory-intelligence/graph/{document_id}`
+  - `POST /api/v1/regulatory-intelligence/query`
+- [x] API base URL and access key are held in browser session storage only; key is not embedded in source.
+- [x] API CORS is configurable through `CORS_ALLOWED_ORIGINS` (default includes `https://usp1904.github.io` and local Next.js origins).
+- [x] Restored Global Compare's graph, matrix, and cross-market matrix section to the default user surface; no longer hidden behind `maras-internal-only`.
+- [x] UI explicitly discloses current extraction limitations and `NO_LLM_USED_EXTRACTIVE_ONLY`; graph is labelled candidate co-mention, not validated regulatory relationships.
+- [ ] Run frontend lint/build and backend tests; fix any failures.
+- [ ] Verify rendered tab and Global Compare in a browser against GitHub Pages.
+- [ ] Deploy FastAPI backend with persistent storage/database, HTTPS, secrets, configured CORS and authentication; this is not provisioned by GitHub Pages.
+- [ ] Validate end-to-end upload → extraction → index → query → cited evidence and graph against the deployed API.
+- [ ] Merge to `main` only after checks pass, then confirm GitHub Pages deployment.
+
+**Important integration dependency:** the GitHub Pages site is static. The RAG tab is now present in the frontend source but will show API unavailable until a reachable FastAPI backend is deployed and its base URL plus access key are configured. The current document endpoints are not uniformly protected by the same access-key dependencies as the regulatory-intelligence endpoints; deploy only behind an appropriate trusted access boundary and resolve endpoint authorization before exposing the API publicly.
+
+**Current branch:** `feat/agentic-rag-workspace-ui`  
+**Next action:** run CI and review frontend/backend checks before opening or merging the PR.
