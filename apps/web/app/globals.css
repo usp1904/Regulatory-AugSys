@@ -260,3 +260,6 @@
 /* Extend the same translucent surface treatment to shared shadcn cards. */
 .maras-app .bg-card{border-color:rgba(255,255,255,.88);background:linear-gradient(145deg,rgba(255,255,255,.88),rgba(245,248,254,.76));box-shadow:10px 12px 30px rgba(39,58,94,.06),-6px -6px 18px rgba(255,255,255,.88),inset 0 1px white;backdrop-filter:blur(20px) saturate(140%)}
 .maras-app .rounded-lg.border{border-color:rgba(145,164,198,.22);background:rgba(255,255,255,.55)}
+
+.maras-app .ri-shell{color:#20304d}
+.maras-app .panel,.maras-app .bg-card{color:#20304d}
