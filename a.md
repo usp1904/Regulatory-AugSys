@@ -5,7 +5,7 @@
 **Baseline:** `main`  
 **Plan owner:** Product / Engineering  
 **Last updated:** 2026-11-20  
-**Status:** Zero-budget local indexing, retrieval, extractive synthesis and MARAS source-authority gate are implemented on the feature branch. CI verification passed for code changes through commit `04c0a3fc`; the latest documentation commit `123f3374` is under CI. PR #46 remains draft. Local SQLite + BM25 + provenance-linked graph does not require cloud credentials. Local end-to-end UAT is outstanding.
+**Status:** Phase 1.9 implementation and its follow-up documentation/test changes are committed on the feature branch. GitHub Actions CI passed on the current branch head `7dbaf665` (run `44748618152`). PR #46 remains open as draft. Local SQLite + BM25 + provenance-linked candidate graph does not require cloud credentials. Local end-to-end UAT with real MARAS documents is still outstanding.
 
 **Working branch:** `feature/maras-agentic-graph-rag`  
 **Pull request:** https://github.com/usp1904/Regulatory-AugSys/pull/46  
@@ -184,7 +184,7 @@ No provider key, project ID, Firebase database, production tenant model or deplo
 **Current product behaviour:** The new engine indexes extracted MARAS documents on demand, then performs lexical retrieval and local graph expansion. If the optional cloud mode is configured, it also uses Vertex AI embeddings, Firestore vector search and persistent Firestore graph edges. The orchestrator currently plans and coordinates retrieval; it does not yet invoke autonomous LLM agents or generate answers.
 
 
-### Phase 1.7 — Zero-budget persistent local retrieval (implemented; CI pending)
+### Phase 1.7 — Zero-budget persistent local retrieval (implemented; CI passed)
 - [x] Add a persistent SQLite sidecar index under existing MARAS STORAGE_ROOT.
 - [x] Persist source-addressable chunks and sparse term-frequency data.
 - [x] Persist candidate entities and provenance-linked co-mention edges.
@@ -193,31 +193,33 @@ No provider key, project ID, Firebase database, production tenant model or deplo
 - [x] Replace a document's prior index atomically during re-indexing.
 - [x] Keep cloud providers optional and disabled by default.
 - [x] Add tests for local persistence, retrieval, stale versions and BM25 ranking.
-- [ ] Complete CI and review latest workflow results.
+- [x] Complete CI and review latest workflow results (current branch head `7dbaf665`, run `44748618152`, success).
 - [ ] Run end-to-end test with real MARAS source documents in local environment.
 
 **Zero-budget boundary:** The local engine currently uses BM25, not dense semantic embeddings. It is a persistent lexical + graph retrieval baseline. Local embedding models, OCR, multimodal extraction and answer generation are subsequent increments and must be selected based on actual machine resources and evaluation results.
 
 
-### Phase 1.8 — Evidence-only synthesis and citation validation (implemented; CI pending)
+### Phase 1.8 — Evidence-only synthesis and citation validation (implemented; CI passed)
 - [x] Add extractive sentence selection from retrieved evidence passages.
 - [x] Require every displayed claim to match verbatim text in its source excerpt.
 - [x] Attach document ID, version, SHA-256, page location and chunk ID to each claim citation.
 - [x] Abstain when no source sentence can be safely selected.
 - [x] Display evidence-only synthesis and citations in the Regulatory Intelligence workspace.
-- [ ] Complete CI verification and test the full UI/API flow with real MARAS documents.
+- [x] Complete CI verification for the current branch head (`7dbaf665`, run `44748618152`).
+- [ ] Test the full UI/API flow with real MARAS documents.
 
 **Safety boundary:** This is extractive evidence assembly, not LLM-generated interpretation. It must not be represented as legal advice, applicability analysis or a compliance determination.
 
 
-### Phase 1.9 — MARAS source-authority gate (implemented; CI pending)
+### Phase 1.9 — MARAS source-authority gate (implemented; CI passed)
 - [x] Reuse existing `RegulatorySourceRecord` rather than creating a second source registry.
 - [x] Attach source status to every retrieved evidence item.
 - [x] Mark missing source records as `UNREGISTERED` and content-hash mismatches as `STALE`.
 - [x] Permit extractive synthesis only when the MARAS source status is `VERIFIED` and the source hash matches the current document.
 - [x] Keep unverified evidence visible for review while abstaining from synthesis.
-- [x] Add tests for verified and unverified source behaviour.
-- [ ] Complete CI verification and run the workflow against existing MARAS verified source records.
+- [x] Add tests for verified, unverified and stale source behaviour.
+- [x] Complete CI verification for the current branch head (`7dbaf665`, run `44748618152`).
+- [ ] Run the workflow against existing MARAS verified source records in a local end-to-end session.
 
 ### Phase 2 — Index lifecycle and structured extraction
 - [ ] Add index job and index manifest models/migrations.
@@ -385,14 +387,14 @@ A code scaffold is not a completed integration. A passing unit test is not produ
 | Architecture decision | Complete | Reuse MARAS services; add intelligence layer |
 | Feature branch | Complete | `feature/maras-agentic-graph-rag` |
 | Build plan | Complete | This file |
-| Regulatory Intelligence UI | Implemented in branch | `apps/web/app/regulatory-intelligence/page.tsx`; CI pending |
-| Source-grounded retrieval API | Implemented in branch | `POST /api/v1/regulatory-intelligence/retrieve`; CI pending |
-| Automated tests | CI passed for code commits | GitHub Actions passed for `dfb9ce7e` and `04c0a3fc`; latest docs-only commit CI pending |
+| Regulatory Intelligence UI | Implemented in branch; CI passed | `apps/web/app/regulatory-intelligence/page.tsx`; full real-document UAT outstanding |
+| Source-grounded retrieval API | Implemented in branch; CI passed | `POST /api/v1/regulatory-intelligence/retrieve`; full real-document UAT outstanding |
+| Automated tests | <span>CI passed</span> | Current branch head `7dbaf665`; GitHub Actions run `44748618152` completed successfully |
 | Chunking and persistent local index | Implemented; CI passed | SQLite sidecar, BM25 term index, source version/hash checks; manual index endpoint |
 | Multimodal parsing/OCR | Not started | Phase 2 |
 | Candidate graph extraction and local persistence | Implemented; CI passed | SQLite entity/edge tables; co-mention edges only |
 | Vertex embeddings and Firestore vector adapter | Optional only | Not required for zero-budget MVP; requires GCP if later enabled |
-| Query planner, retrieval orchestration and extractive evidence synthesis | Implemented; CI passed | `planner.py`, `orchestrator.py`, `synthesis.py`, `/query`; no LLM generation |
+| Query planner, retrieval orchestration, extractive synthesis and MARAS source gate | Implemented; CI passed | `planner.py`, `orchestrator.py`, `synthesis.py`, `/query`; source status and SHA-256 gate; no LLM generation |
 | Production security/observability | Not started | Phase 7 |
 | Deployment | Not started | Credentials and target environment required |
 
@@ -425,3 +427,26 @@ node scripts/verify-all.mjs
 ```
 
 Record the actual command output and commit SHA here after execution. Do not mark tests passed without running them.
+
+
+## 12. Progress update policy
+
+This file is the living build ledger for the product. Update it in the same implementation sequence as the application, not as a retrospective afterthought.
+
+For every future implementation increment:
+1. Update the relevant phase checklist and delivery-status row in this file.
+2. Add a dated entry to the progress log below with the exact scope, changed files, tests/CI result, commit SHA and known limitations.
+3. Update the maturity statement. Do not mark a capability complete until code, tests and required integration checks support that claim.
+4. Record blockers and the next concrete action. Distinguish implemented, CI-passed, locally validated, deployed and production-ready.
+5. Keep this file in the same feature branch/PR as the code it describes.
+
+### Progress log
+
+#### 2026-11-20 — Phase 1.9 verification and delivery ledger refresh
+- Confirmed GitHub Actions CI passed on branch head `7dbaf665b9b0ae0a550f084c15a83675c7fa9f8c` (workflow run `44748618152`).
+- Confirmed PR #46 remains open and in draft state.
+- Updated Phase 1.7, 1.8 and 1.9 status to reflect CI success.
+- Added coverage for verified, unverified and stale regulatory source behaviour; stale or hash-mismatched sources must abstain from extractive synthesis.
+- Added the zero-budget local demo runbook at `docs/zero-budget-demo.md`.
+- Remaining validation: run the application locally against actual MARAS regulatory documents, confirm the UI/API flow, and verify the source-record review process end to end.
+- Product maturity remains an internal prototype. CI success does not establish real-document correctness, production security, deployment readiness or regulatory advice capability.
