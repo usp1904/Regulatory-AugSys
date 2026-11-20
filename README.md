@@ -25,6 +25,7 @@ docker compose up --build
 | Web (Next.js health page) | http://localhost:3000 |
 | Web CTD/eCTD Engine | http://localhost:3000/ctd |
 | Requirements Mapping Workbench | http://localhost:3000/requirements-mappings |
+| Regulatory Intelligence | http://localhost:3000/regulatory-intelligence |
 | Clarification Queue | http://localhost:3000/clarifications |
 | Obligation Extraction | http://localhost:3000/obligations |
 | API (FastAPI `/health`) | http://localhost:8000/health |
@@ -34,6 +35,7 @@ docker compose up --build
 | API requirements mapping | `POST /api/v1/requirements-mappings`, `GET /api/v1/requirements-mappings`, `GET /api/v1/requirements-mappings/{id}`, `PUT /api/v1/requirements-mappings/{id}`, `POST /api/v1/requirements-mappings/{id}/review`, `POST/GET /api/v1/requirements-mappings/clarifications`, `GET /api/v1/requirements-mappings/clarifications/{id}`, `PATCH /api/v1/requirements-mappings/clarifications/{id}`, `GET /api/v1/requirements-mappings/obligations`, `POST /api/v1/requirements-mappings/obligations/extract/{document_id}`, `PUT /api/v1/requirements-mappings/obligations/{id}/review`, `POST /api/v1/requirements-mappings/obligations/{id}/create-mapping` |
 | API dossier export | `POST /api/v1/dossiers/{dossier_id}/export`, `GET /api/v1/dossier-exports/{export_id}`, `GET /api/v1/dossier-exports/{export_id}/download` |
 | API CTD validation | `POST /api/v1/ctd-engine/validate` |
+| API Regulatory Intelligence | `GET /api/v1/regulatory-intelligence/documents`, `POST /api/v1/regulatory-intelligence/index`, `POST /api/v1/regulatory-intelligence/query` |
 | PostgreSQL | `localhost:5432` (user/db: `regulatory` / `regulatory_augsys`) |
 
 Run database migrations inside the API container:
@@ -182,3 +184,14 @@ scripts/      verify-all.mjs, generate-notion-workflows.mjs
 ## Deployment
 
 The deliverable remains a static single-file application. Replace the existing GitHub Pages `index.html` with the MVP file, review it in a non-production branch, and publish only after the source owner confirms the official links and permitted-use statements.
+
+
+### Regulatory Intelligence RAG engine
+
+The Regulatory Intelligence workspace reuses existing MARAS-controlled document records. It adds stable chunking, source-linked candidate graph facts, query planning and hybrid retrieval. Cloud vector/graph persistence is optional.
+
+Install optional cloud dependencies from `apps/api` with `pip install -e ".[dev,rag]"`.
+
+Configure `RAG_ENABLED`, `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_LOCATION`, Firestore database and Vertex embedding settings in the server environment. Use Application Default Credentials or workload identity. Create the Firestore vector index described in [`docs/regulatory-intelligence-engine.md`](docs/regulatory-intelligence-engine.md) before enabling cloud mode.
+
+With `RAG_ENABLED=false`, the engine uses lexical retrieval and local candidate graph expansion. It does not persist vectors or graph data. The current implementation returns evidence and an execution trace; it does not yet generate regulatory advice or replace SME review.
