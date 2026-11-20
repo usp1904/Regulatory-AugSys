@@ -6,7 +6,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.document import Document
-from app.regulatory_rag.engine import index_document, retrieve_hybrid
+from app.regulatory_rag.engine import index_document
+from app.regulatory_rag.orchestrator import execute_regulatory_query
 from app.schemas.regulatory_intelligence import (
     RegulatoryEvidenceItem,
     RegulatoryIndexResponse,
@@ -19,7 +20,10 @@ def retrieve_regulatory_evidence(
     db: Session,
     payload: RegulatoryRetrievalRequest,
 ) -> RegulatoryRetrievalResponse:
-    result = retrieve_hybrid(db, payload.query, payload.document_ids, payload.top_k)
+    # All evidence retrieval consumers share one planner and retrieval path.
+    result = execute_regulatory_query(
+        db, payload.query, payload.document_ids, payload.top_k
+    )
     items = [
         RegulatoryEvidenceItem(
             document_id=item["document_id"],
@@ -39,7 +43,11 @@ def retrieve_regulatory_evidence(
         status=result["status"],
         query=result["query"],
         results=items,
-        message=f"{result['message']} Retrieval mode: {result['retrieval_mode']}.",
+        message=(
+            f"{result['message']} Retrieval mode: {result['retrieval_mode']}. "
+            f"Planner intent: {result['plan']['intent']}. "
+            f"Generation: {result['generation_status']}."
+        ),
     )
 
 
