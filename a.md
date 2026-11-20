@@ -621,3 +621,14 @@ Bring the shared glassmorphism / modern neumorphism system beyond the Regulatory
 - The Vercel account currently has no Regulatory-AugSys project linked. Only a separate Saavify project is linked.
 - Vercel can host the Next.js web application, but it does not solve the FastAPI + persistent PostgreSQL + durable uploaded-document storage requirement by itself.
 - Do not merge and call this production-live solely because the web bundle deploys. Production configuration must include a reachable FastAPI URL, persistent PostgreSQL, durable object/file storage, server-only reader/writer secrets, migrations and upload/index/retrieve/review/graph smoke tests.
+
+
+### Main-branch merge — 2026-11-20
+- [x] Final feature-branch verification completed successfully for HEAD `3f56b9cdc9f5569946fe0e183346a75729d80d1e` (GitHub Actions run `44755497937`).
+- [x] Pull request #46 marked ready and squash-merged into `main`.
+- [x] Main merge commit: `cf3147e7d984785c2ca87fa6b087b5c13ea25e05`.
+- [x] The unified MARAS shell, shared design system, graph explorer and authenticated current-version graph API are now in `main`.
+- [ ] Production hosting is not complete. The Vercel account context had no Regulatory-AugSys project linked; no FastAPI production URL, persistent PostgreSQL, durable document storage or production secrets were available to configure.
+- [ ] The existing GitHub Pages URL remains the legacy static app. It does not execute the Next.js + FastAPI application.
+- [ ] Next release gate: provision the web/API hosting and durable services, configure environment variables and secrets, run migrations, then complete end-to-end upload → extract → index → retrieve → obligation SME review → graph exploration smoke tests.
+- [ ] Address the 12 npm audit findings reported by CI (7 moderate, 4 high, 1 critical) before calling this production-ready.
