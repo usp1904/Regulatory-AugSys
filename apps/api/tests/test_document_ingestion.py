@@ -204,3 +204,48 @@ def test_fixture_factory_generates_binary_samples() -> None:
     docx = write_sample_docx()
     assert pdf.startswith(b"%PDF")
     assert docx.startswith(b"PK")
+
+
+def test_extract_docx_preserves_table_cells() -> None:
+    from docx import Document as DocxDocument
+
+    buffer = io.BytesIO()
+    document = DocxDocument()
+    table = document.add_table(rows=2, cols=2)
+    table.cell(0, 0).text = "Control"
+    table.cell(0, 1).text = "Requirement"
+    table.cell(1, 0).text = "Audit trail"
+    table.cell(1, 1).text = "Records must be retained"
+    document.save(buffer)
+
+    result = extract_docx_paragraphs(buffer.getvalue())
+    assert result.status == "EXTRACTED"
+    assert any("[EXTRACTED TABLE 1]" in paragraph for paragraph in result.paragraphs)
+    assert "Audit trail" in result.full_text
+    assert "Records must be retained" in result.full_text
+
+
+def test_blank_scanned_pdf_is_flagged_when_ocr_is_unavailable(monkeypatch) -> None:
+    import pymupdf
+
+    pdf = pymupdf.open()
+    pdf.new_page()
+    data = pdf.tobytes()
+    pdf.close()
+
+    def unavailable_ocr(*args, **kwargs):
+        raise RuntimeError("Tesseract is not installed")
+
+    monkeypatch.setattr(pymupdf.Page, "get_textpage_ocr", unavailable_ocr)
+    result = extract_pdf_pages(data)
+    assert result.status == "OCR_REQUIRED"
+    assert result.error and "Tesseract OCR" in result.error
+    assert any("OCR_UNAVAILABLE" in warning for warning in result.warnings)
+
+
+def test_pdf_extraction_reports_ocr_and_table_warnings_without_losing_text() -> None:
+    data = (FIXTURES / "sample.pdf").read_bytes()
+    result = extract_pdf_pages(data)
+    assert result.status == "EXTRACTED"
+    assert len(result.pages) == 2
+    assert "stability" in result.pages[0].lower()
