@@ -655,3 +655,39 @@ Bring the shared glassmorphism / modern neumorphism system beyond the Regulatory
 - [ ] Free-tier hosting can be used for a sponsor/demo environment, but verify free-tier sleep, compute, storage, request and data-retention limits. Do not upload confidential or regulated documents to an unapproved demo environment.
 - [ ] Current GitHub Actions reports 12 npm audit findings (7 moderate, 4 high, 1 critical). Resolve or explicitly risk-accept with documented justification before a production release.
 - [ ] Deployment still requires a reachable API, database migrations, durable document store, RAG provider configuration, end-to-end smoke tests and backup/restore checks.
+
+
+## 15. Phase 2 — intelligent RAG migration and deployment preparation
+
+**Branch:** `feature/intelligent-rag-migration-phase2`  
+**Base:** `main`  
+**Status:** In progress. Not merged or deployed.
+
+### Engineering actions completed in this phase
+- [x] Created a separate implementation branch from current `main`; no direct changes to main.
+- [x] Re-audited the production retrieval path. The MARAS Regulatory Intelligence query endpoint calls the bounded planner/orchestrator, which calls the hybrid retrieval engine and extractive evidence validator.
+- [x] Confirmed the legacy document repository, controlled ingestion, obligation review, regulatory truth, requirements mapping, evidence and audit workflows are distinct MARAS business capabilities. They must remain intact; they are not separate competing RAG engines.
+- [x] Added `GET /api/v1/regulatory-intelligence/engine/status` behind the existing MARAS reader authorization. It reports active retrieval mode, cloud configuration availability and explicit unsupported capabilities without exposing secrets.
+- [x] Status response is deliberately truthful: local BM25 + candidate graph is active by default; Vertex/Firestore vectors are optional and disabled without configuration; LLM-grounded synthesis, OCR/multimodal parsing and semantic legal graph relations are not yet implemented.
+- [x] Added a focused test for local-mode capability reporting.
+- [ ] Run API test suite, Ruff and type/build checks for the current branch head.
+- [ ] Inspect all frontend query consumers and verify they use the Regulatory Intelligence query endpoint through the server-side proxy.
+- [ ] Add regression coverage for indexing idempotency, stale source versions, access controls and provider failure handling.
+- [ ] Migrate obligation extraction from rule-only candidate generation to RAG-assisted evidence discovery while retaining the existing human approval gate and audit records.
+- [ ] Implement multimodal extraction (OCR, tables, figures, chart/image evidence) as an additive stage in controlled ingestion. Never overwrite original source files.
+- [ ] Implement typed graph entities/relations, normalization, provenance, confidence and reviewer validation. Do not relabel co-mentions as regulatory relationships.
+- [ ] Implement grounded LLM synthesis with claim-level citation validation and abstention. Keep extractive-only mode as a safe fallback.
+- [ ] Configure a cloud vector provider only after secrets, index schema, cost limits and retry/failure behaviour are in place.
+- [ ] Deploy demo stack with durable PostgreSQL and object storage. Do not use ephemeral local SQLite or filesystem storage for production documents.
+
+### Retrieval migration boundary
+- The existing MARAS Regulatory Intelligence engine is the single retrieval service boundary. Existing document storage, regulatory source verification, obligation lifecycle, evidence review, mapping and audit persistence remain the system of record.
+- The endpoint `POST /api/v1/regulatory-intelligence/query` is the product-facing query contract. New search/retrieval consumers must call this contract or its shared service; do not create a second retriever.
+- `POST /api/v1/regulatory-intelligence/retrieve` remains a compatibility evidence-only contract and is backed by the same hybrid retrieval implementation.
+- Direct rule-based obligation extraction remains a candidate generator until the RAG-assisted replacement passes parity tests. It must not be silently deleted or bypass the SME approval workflow.
+
+### Deployment gate
+- This branch is not yet merged.
+- No deployment has been made.
+- No provider credentials, database or durable storage have been configured in this phase.
+- A frontend-only deploy is not an application deployment because the API, database and document storage are required.
