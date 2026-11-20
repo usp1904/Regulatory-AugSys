@@ -24,6 +24,9 @@ type RetrievalResponse = {
   query: string;
   results: Evidence[];
   message: string;
+  plan?: { intent: string; strategy: string[]; clause_reference?: string | null; max_graph_hops: number; rationale: string };
+  trace?: { stage: string; status: string }[];
+  generation_status?: string;
 };
 type IndexResponse = {
   document_id: number;
@@ -88,7 +91,7 @@ export function RegulatoryIntelligenceWorkbench() {
     setError("");
     setResult(null);
     try {
-      const response = await fetch("/api/regulatory-intelligence/retrieve", {
+      const response = await fetch("/api/regulatory-intelligence/query", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -200,6 +203,14 @@ export function RegulatoryIntelligenceWorkbench() {
             <h2 className="text-lg font-semibold">Evidence results</h2>
             <p className="text-sm text-muted-foreground">{result.message}</p>
           </div>
+          {result.plan ? (
+            <div className="rounded-lg border bg-card p-4 text-sm">
+              <p className="font-semibold">Query plan · {result.plan.intent}</p>
+              <p className="mt-1 text-muted-foreground">{result.plan.rationale}</p>
+              <p className="mt-1 text-xs text-muted-foreground">Strategies: {result.plan.strategy.join(" → ")} · Graph hops: {result.plan.max_graph_hops} · Generation: {result.generation_status}</p>
+              {result.trace?.length ? <p className="mt-2 text-xs text-muted-foreground">Execution: {result.trace.map((step) => `${step.stage} (${step.status})`).join(" · ")}</p> : null}
+            </div>
+          ) : null}
           {result.results.length ? result.results.map((item, index) => (
             <article key={\`\${item.document_id}-\${item.location}-\${index}\`} className="rounded-xl border bg-card p-4">
               <div className="flex flex-wrap justify-between gap-2">
