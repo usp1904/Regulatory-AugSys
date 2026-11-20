@@ -5,8 +5,8 @@ from __future__ import annotations
 import hashlib
 
 from app.models.document import Document, DocumentPage
-from app.services.regulatory_intelligence import retrieve_regulatory_evidence
 from app.schemas.regulatory_intelligence import RegulatoryRetrievalRequest
+from app.services.regulatory_intelligence import retrieve_regulatory_evidence
 
 
 def _add_document(db_session, text: str, *, filename: str = "regulation.pdf") -> Document:
@@ -50,7 +50,11 @@ def test_retrieval_returns_exact_versioned_source_evidence(db_session) -> None:
 
 
 def test_retrieval_respects_document_scope(db_session) -> None:
-    first = _add_document(db_session, "Electronic signatures shall be controlled.", filename="one.pdf")
+    first = _add_document(
+        db_session,
+        "Electronic signatures shall be controlled.",
+        filename="one.pdf",
+    )
     _add_document(db_session, "Audit trails shall be reviewed.", filename="two.pdf")
 
     result = retrieve_regulatory_evidence(
