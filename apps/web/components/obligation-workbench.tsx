@@ -90,8 +90,8 @@ export function ObligationWorkbench() {
     finally { setBusy(false); }
   }
 
-  return <div className="space-y-6">
-    <section className="panel space-y-4">
+  return <div className="ri-shell space-y-6">
+    <section className="ri-glass-card ri-main-card space-y-4">
       <div><h2 className="text-lg font-semibold">Extract obligation candidates</h2><p className="mt-1 text-sm text-muted-foreground">Rule-based screening of extracted text. It identifies sentences containing normative terms; it does not interpret law or establish compliance.</p></div>
       <div className="grid gap-4 md:grid-cols-2">
         <label className="space-y-1.5"><span className="form-label">Controlled source document</span><select className="form-input" value={documentId} onChange={e=>setDocumentId(e.target.value)}><option value="">Select document…</option>{docs.map(doc=><option key={doc.id} value={doc.id}>{doc.filename} · v{doc.version} · {doc.parse_status}</option>)}</select></label>
@@ -106,9 +106,9 @@ export function ObligationWorkbench() {
       <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-semibold">Candidate register</h2><p className="text-xs text-muted-foreground">Approve only after a subject-matter expert checks the source excerpt and applicability context.</p></div><select className="form-input max-w-48" value={filter} onChange={e=>setFilter(e.target.value)}>{["ALL","DRAFT","APPROVED","REJECTED"].map(s=><option key={s} value={s}>{s}</option>)}</select></div>
       <label className="block max-w-xl space-y-1.5"><span className="form-label">Reviewer / SME</span><input className="form-input" value={reviewer} onChange={e=>setReviewer(e.target.value)}/></label>
       <label className="block space-y-1.5"><span className="form-label">Review rationale</span><textarea className="form-input" rows={2} value={rationale} onChange={e=>setRationale(e.target.value)} placeholder="Required for approval or rejection."/></label>
-      {visible.length===0 ? <p className="text-sm text-muted-foreground">No candidates for this document/filter. Run extraction to create draft candidates.</p> : <div className="space-y-4">{visible.map(item=><article key={item.id} className="rounded-xl border p-4 space-y-3">
-        <div className="flex flex-wrap items-start justify-between gap-2"><div><p className="text-xs font-semibold text-primary">{item.obligation_key} · {item.clause_id}</p><p className="mt-1 text-xs text-muted-foreground">Source v{item.source_version} · {item.extraction_method} · heuristic confidence {Math.round(item.confidence*100)}%</p></div><span className="rounded-full border px-2 py-1 text-xs">{item.status}</span></div>
-        <blockquote className="border-l-2 pl-3 text-sm">{item.excerpt}</blockquote>
+      {visible.length===0 ? <p className="text-sm text-muted-foreground">No candidates for this document/filter. Run extraction to create draft candidates.</p> : <div className="space-y-4">{visible.map(item=><article key={item.id} className="ri-evidence-card space-y-3">
+        <div className="flex flex-wrap items-start justify-between gap-2"><div><p className="text-xs font-semibold text-primary">{item.obligation_key} · {item.clause_id}</p><p className="mt-1 text-xs text-muted-foreground">Source v{item.source_version} · {item.extraction_method} · heuristic confidence {Math.round(item.confidence*100)}%</p></div><span className={"ri-status "+(item.status==="APPROVED"?"good":item.status==="REJECTED"?"bad":"neutral")}>{item.status}</span></div>
+        <blockquote className="border-l-2 border-blue-300 pl-3 text-sm leading-7 text-slate-600">{item.excerpt}</blockquote>
         <p className="text-xs text-muted-foreground">Trigger terms: {item.trigger_terms}</p>
         <p className="break-all text-xs text-muted-foreground">Source SHA-256: {item.source_file_hash}</p>
         {item.reviewer ? <p className="text-xs text-muted-foreground">Reviewed by {item.reviewer}: {item.review_rationale}</p> : null}
