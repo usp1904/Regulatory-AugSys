@@ -27,6 +27,7 @@ def retrieve_regulatory_evidence(
             document_version=item["document_version"],
             file_hash=item["file_hash"],
             chunk_id=item["chunk_id"],
+            source_status=item["source_status"],
             location_type=item["location_type"],
             location=item["location"],
             excerpt=item["excerpt"],
