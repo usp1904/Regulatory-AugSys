@@ -546,3 +546,47 @@ The original workspace was functional but visually close to a plain internal adm
 - Deployment requires a supported app host, managed PostgreSQL or durable storage, API/web environment variables, secret configuration, TLS/domain, health checks, migration execution and a persistent volume for `STORAGE_ROOT`.
 - No production host/domain/credentials have been provided or verified in this task. Production deployment is therefore not claimed.
 - Run CI and browser QA for the new graph endpoint and shared design before merging to main.
+
+
+## 14. Product-wide experience unification and graph exploration
+
+### Scope
+Bring the shared glassmorphism / modern neumorphism system beyond the Regulatory Intelligence landing workspace. Preserve existing MARAS business flows and APIs; do not create a parallel document repository or obligation register.
+
+### Implemented in this iteration
+- [x] Replaced the shared SiteShell identity and navigation with a consistent MARAS Intelligence header, safety banner, responsive navigation and global footer.
+- [x] Added common glass surfaces, frosted backgrounds, typography, form controls, primary/secondary buttons, and soft neumorphic depth to the shared global stylesheet.
+- [x] Applied the shared visual language to obligation extraction and SME review cards using the existing obligation APIs and status model.
+- [x] Applied the shared glass surface and input/button styling to document detail, evidence capture and CTD intake/review through shared shell and global component styles. Existing CTD markup was restored to its original validated structure after a failed markup-only transformation; no workflow logic was replaced.
+- [x] Added a Graph Exploration route and shared navigation entry.
+- [x] Added a bounded, authenticated graph read endpoint for currently indexed document versions.
+- [x] Added a graph read service that excludes stale document-version/hash edges from the response.
+- [x] Added a graph explorer that displays actual candidate entities, source-linked co-mention edges and source excerpts; selecting an entity filters connected edges.
+- [x] Added explicit interpretation warning: current graph edges are heuristic co-mentions, not validated legal, causal or compliance relationships.
+- [x] Documented graph route and API in README.
+
+### Files changed in this iteration
+- `apps/web/components/site-shell.tsx`
+- `apps/web/app/globals.css`
+- `apps/web/components/obligation-workbench.tsx`
+- `apps/web/components/regulatory-graph-explorer.tsx`
+- `apps/web/app/graph/page.tsx`
+- `apps/web/app/regulatory-intelligence/page.tsx`
+- `apps/web/app/api/regulatory-intelligence/graph/route.ts`
+- `apps/api/app/regulatory_rag/index_store.py`
+- `apps/api/app/services/regulatory_intelligence.py`
+- `apps/api/app/api/v1/regulatory_intelligence.py`
+- `README.md`
+
+### Deployment assessment
+- Repository default branch is `main`; current work is on `feature/maras-agentic-graph-rag` and PR #46.
+- The existing GitHub Pages deployment is the legacy static MARAS UI. It cannot run the Next.js + FastAPI application stack.
+- Vercel account context currently shows a Hobby team with a linked Saavify project, but no linked Regulatory-AugSys project.
+- The web app can be deployed as a Vercel project rooted at `apps/web`, but the FastAPI service, persistent PostgreSQL database, durable document storage and production secrets still need a host/configuration. The current SQLite RAG index and uploaded-file storage are local persistent-volume paths, not safe as ephemeral serverless filesystem state.
+- Do not label the product production-live until the API and durable storage are deployed, server-side API URL/reader-writer keys are configured, migrations run, and end-to-end upload → index → retrieve → obligation review → graph tests pass.
+
+### Validation status — 2026-11-20
+- GitHub Actions CI has been triggered for the graph API, graph explorer and shared design-system changes.
+- Some intermediate commits have failed CI; latest verification is in progress. Inspect the latest run and fix any failure before merging.
+- Browser visual QA, keyboard accessibility, real-corpus graph sanity check and hosted end-to-end smoke test remain pending.
+- No production deployment has been claimed or attempted against an unconfigured API host.
