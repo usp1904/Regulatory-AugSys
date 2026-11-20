@@ -14,6 +14,7 @@ from app.schemas.regulatory_intelligence import (
 )
 from app.services.regulatory_intelligence import (
     execute_regulatory_intelligence_query,
+    get_regulatory_graph,
     index_regulatory_document,
     list_indexable_documents,
     get_regulatory_candidate_graph,
@@ -81,3 +82,14 @@ def run_regulatory_query(
     _access: str = Depends(require_mapping_reader),
 ) -> dict:
     return execute_regulatory_intelligence_query(db, payload)
+
+
+@router.get("/graph")
+def get_graph(
+    document_id: int | None = None,
+    db: Session = Depends(get_db),
+    _access: str = Depends(require_mapping_reader),
+) -> dict:
+    """Read the bounded candidate graph for indexed, current source documents."""
+    ids = [document_id] if document_id is not None else None
+    return get_regulatory_graph(db, ids)
