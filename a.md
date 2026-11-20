@@ -590,3 +590,15 @@ Bring the shared glassmorphism / modern neumorphism system beyond the Regulatory
 - Some intermediate commits have failed CI; latest verification is in progress. Inspect the latest run and fix any failure before merging.
 - Browser visual QA, keyboard accessibility, real-corpus graph sanity check and hosted end-to-end smoke test remain pending.
 - No production deployment has been claimed or attempted against an unconfigured API host.
+
+
+### Progress update — 2026-11-20 (continued)
+- Added a protected, read-only graph API for indexed document entities and source-linked candidate edges.
+- Added a Next.js server-side proxy and interactive Graph Explorer page. Entity selection filters associated evidence passages.
+- Added the Graph Explorer to the global navigation.
+- Extended the shared design system to the existing platform shell, upload controls, panels, forms, tables and buttons.
+- Updated the README with the new workspace routes and deployment constraints.
+- CI exposed Ruff import-order and line-length errors in the graph API/service; corrected those formatting issues. A subsequent full CI run for the latest branch head is still running.
+- Main branch has not been changed. PR #46 remains open pending CI and review.
+- Vercel account discovery found no Vercel project linked to this GitHub repository. The only linked project visible is for a different repository. No production deployment was created.
+- Production release remains blocked until a deployable host and durable storage/database for FastAPI, uploaded source documents and the local RAG index are configured. GitHub Pages is only the legacy static MVP and cannot host the full application stack.
